@@ -5,7 +5,7 @@ export class ResponseUserDto {
   id: number;
 
   @Expose()
-  fullName: string;
+  name: string;
 
   @Expose()
   email: string;
