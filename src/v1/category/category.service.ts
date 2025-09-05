@@ -34,7 +34,7 @@ export class CategoryService {
   }
 
   async softDelete(id: number, deletedBy?: number) {
-    await this.categoryRepo.update(id, { deleted_by: deletedBy });
+    await this.categoryRepo.update(id, { deletedBy: deletedBy });
     const result = await this.categoryRepo.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Category #${id} not found`);
