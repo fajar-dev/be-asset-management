@@ -1,7 +1,22 @@
 services:
-  mysql:
-    image: mysql
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asset-be
+    ports:
+      - '${APP_PORT:-3000}:3000'
     env_file:
       - .env
+    environment:
+      - NODE_ENV=${APP_ENV:-production}
+    depends_on:
+      - db
+  db:
+    image: mysql
     ports:
-      - '3306:3306'
+      - '${DB_PORT:-3306}:3306'
+    env_file:
+      - .env
+volumes:
+  db-data:
