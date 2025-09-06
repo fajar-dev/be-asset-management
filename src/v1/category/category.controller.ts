@@ -8,6 +8,7 @@ import {
   Body,
   ParseIntPipe,
   Patch,
+  Version,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Category } from './entities/category.entity';
@@ -17,7 +18,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoriesService: CategoryService) {}
-
+  
   @Get()
   findAll(): Promise<Category[]> {
     return this.categoriesService.findAll();

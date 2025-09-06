@@ -9,7 +9,7 @@ import { V1Module } from './v1/v1.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.setGlobalPrefix('v1');
+  app.setGlobalPrefix('api');
   app.set('trust proxy', true);
   app.useGlobalPipes(customValidationPipe());
   app.enableCors();

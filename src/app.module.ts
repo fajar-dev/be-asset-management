@@ -10,7 +10,8 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     DatabaseModule, 
-    V1Module, AuthModule
+    V1Module, 
+    AuthModule
   ],
     providers: [
     {

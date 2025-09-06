@@ -15,14 +15,14 @@ export class UserSeeder {
     const count = await this.userRepository.count();
     if (count === 0) {
       const hashedPassword = await bcrypt.hash('password', 10);
-      await this.userRepository.save([
-        {
-          name: 'Fajar Rivaldi Chan',
-          email: 'fajarchan@nusa.net.id',
-          phoneNumber: '0895611024559',
-          password: hashedPassword,
-        },
-      ]);
+      const user = this.userRepository.create({
+        name: 'Fajar Rivaldi Chan',
+        email: 'fajarchan@nusa.net.id',
+        phoneNumber: '0895611024559',
+        password: hashedPassword,
+      });
+
+      await this.userRepository.save(user);
       console.log('✅ User seeder done!');
     } else {
       console.log('⚠️ Users already seeded, skipping...');
