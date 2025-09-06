@@ -18,12 +18,13 @@ export class CategoryService {
    * @param createCategorydto - DTO containing data to create a category
    * @returns Promise<Category> - the created category entity
    */
-  async create(createCategorydto: CreateCategoryDto): Promise<Category> {
+  async create(userId, createCategorydto: CreateCategoryDto): Promise<Category> {
     const category = this.categoryRepository.create({
       name: createCategorydto.name,
       hasLocation: createCategorydto.hasLocation,
       hasMaintenance: createCategorydto.hasMaintenance,
       hasHolder: createCategorydto.hasHolder,
+      createdBy: userId,
     });
     return this.categoryRepository.save(category);
   }
@@ -71,6 +72,7 @@ export class CategoryService {
    */
   async update(
     uuid: string,
+    userId: number,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     const category = await this.categoryRepository.findOneOrFail({
@@ -83,6 +85,7 @@ export class CategoryService {
     category.hasLocation = updateCategoryDto.hasLocation;
     category.hasMaintenance = updateCategoryDto.hasMaintenance;
     category.hasHolder = updateCategoryDto.hasHolder;
+    category.updatedBy = userId;
 
     return this.categoryRepository.save(category);
   }
@@ -92,7 +95,12 @@ export class CategoryService {
    * @param uuid - UUID of the category to delete
    * @returns Promise<import("typeorm").UpdateResult> - result of soft delete operation
    */
-  async remove(uuid: string) {
-    return await this.categoryRepository.softDelete({ categoryUuid: uuid });
+  async remove(uuid: string, userId: number) {
+    const category = await this.categoryRepository.findOneOrFail({
+      where: { categoryUuid: uuid },
+    });
+    category.deletedBy = userId;
+    await this.categoryRepository.save(category);
+    return await this.categoryRepository.softRemove(category);
   }
 }

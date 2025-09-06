@@ -18,7 +18,7 @@ import { ResponseUserDto } from '../v1/user/dto/response-user.dto';
 import { ApiResponse } from '../common/utils/ApiResponse';
 import { JwtAuthGuard } from './guards/JwtAuthGuard';
 import { ResponseDto } from '../common/decorator/response-dto.decorator';
-import { SerializeV2Interceptor } from 'src/common/interceptor/serialize-v2.interceptor';
+import { SerializeV2Interceptor } from '../common/interceptor/serialize-v2.interceptor';
 
 @Controller('auth')
 export class AuthController {

@@ -7,21 +7,20 @@ import {
   Param,
   Body,
   ParseIntPipe,
-  Patch,
-  Version,
   UseGuards,
   Query,
   DefaultValuePipe,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseCategoryDto } from './dto/response-category.dto';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
+import { User } from 'src/common/decorator/auth-user.decorator';
+import { User as UserEntity } from '../user/entities/user.entity';
 
 @Controller('category')
 export class CategoryController {
@@ -33,11 +32,12 @@ export class CategoryController {
   @Post()
   @Serialize(ResponseCategoryDto)
   async create(
+    @User() user: UserEntity,
     @Body() createCategoryDto: CreateCategoryDto,
   ) {
     return new ApiResponse(
       'category created successfully',
-      await this.categoryService.create(createCategoryDto),
+      await this.categoryService.create(user.id, createCategoryDto),
     );
   }
 
@@ -72,11 +72,12 @@ export class CategoryController {
   @Serialize(ResponseCategoryDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @User() user: UserEntity,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
     return new ApiResponse(
       'Category updated successfully',
-      await this.categoryService.update(uuid, updateCategoryDto),
+      await this.categoryService.update(uuid, user.id, updateCategoryDto),
     );
   }
 
@@ -84,8 +85,9 @@ export class CategoryController {
   @UseGuards(JwtAuthGuard)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @User() user: UserEntity,
   ) {
-    await this.categoryService.remove(uuid);
-    return new ApiResponse('category removed successfully');
+    await this.categoryService.remove(uuid, user.id);
+    return new ApiResponse('Category removed successfully');
   }
 }
