@@ -8,51 +8,31 @@ import {
   Body,
   ParseIntPipe,
   Patch,
+  Version,
+  UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
+import { ResponseCategoryDto } from './dto/response-category.dto';
+import { ApiResponse } from '../../common/utils/ApiResponse';
+import { Serialize } from '../../common/interceptor/serialize.interceptor';
 
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoriesService: CategoryService) {}
-
-  @Get()
-  findAll(): Promise<Category[]> {
-    return this.categoriesService.findAll();
-  }
-
-  @Get('with-deleted')
-  findWithDeleted(): Promise<Category[]> {
-    return this.categoriesService.findWithDeleted();
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Category> {
-    return this.categoriesService.findOne(id);
-  }
-
+  
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateCategoryDto) {
-    return this.categoriesService.create(dto);
-  }
-
-  @Put(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCategoryDto,
+  // @Serialize(ResponseCategoryDto)
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
   ) {
-    return this.categoriesService.update(id, dto);
-  }
-
-  @Delete(':id')
-  softDelete(@Param('id', ParseIntPipe) id: number) {
-    return this.categoriesService.softDelete(id);
-  }
-
-  @Patch(':id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
-    return this.categoriesService.restore(id);
+    return new ApiResponse(
+      'category created successfully',
+      await this.categoriesService.create(createCategoryDto),
+    );
   }
 }

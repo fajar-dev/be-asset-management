@@ -1,6 +1,6 @@
-# 📦 Backend Asset Management - PT. Media Antar Nusa
+# 📦 Backend Asset Management 
 
-Backend service for the **Asset Management System** at PT. Media Antar Nusa, built with **NestJS**, **MySQL**.
+Backend service for the **Asset Management System**  built with **NestJS**, **MySQL**.
 
 ---
 
@@ -10,7 +10,6 @@ Backend service for the **Asset Management System** at PT. Media Antar Nusa, bui
 - [TypeORM](https://typeorm.io/) - ORM for database management  
 - [Docker](https://www.docker.com/) - Containerization  
 
----
 
 ---
 
@@ -18,28 +17,16 @@ Backend service for the **Asset Management System** at PT. Media Antar Nusa, bui
 
 ### 1️⃣ Clone Repository
 ```bash
-git clone https://github.com/fajar-dev/be-asset-management-nusanet.git
-cd asset-management-backend
+git clone https://github.com/fajar-dev/be-asset-management.git
+cd be-asset-management
 ```
 
 ### 2️⃣ Environment Variables
-Create a `.env` file in the project root:
-
-```env
-# Database
-DATABASE_HOST=mysql
-DATABASE_PORT=3306
-DATABASE_USERNAME=root
-DATABASE_PASSWORD=yourpassword
-DATABASE_NAME=asset_management
-
-# App
-APP_PORT=3000
-```
+Copy the `.env.example` file in the project root and rename it to `.env`:
 
 ### 3️⃣ Run with Docker
 ```bash
-docker-compose up --build
+docker compose up -d
 ```
 
 ### 4️⃣ Run without Docker (optional)
@@ -47,17 +34,6 @@ docker-compose up --build
 npm install
 npm run start:dev
 ```
-
----
-
-## 🗂️ Database ERD
-
-Here is the **Entity Relationship Diagram (ERD)** for the Asset Management System:
-
-![ERD](docs/erd.png)
-
-
----
 
 ## 📖 API Documentation
 - Base URL: `http://localhost:3000/api`
@@ -90,10 +66,6 @@ npm run test
 
 ## 📌 Notes
 - Ensure **Docker** & **Docker Compose** are installed.  
-- Run `docker-compose up` before starting development.  
+- Run `docker compose up -d` before starting development.  
 - Use TypeORM migrations to update the database schema.  
 
----
-
-## 🏢 PT. Media Antar Nusa
-This backend was developed to support the internal **Asset Management System** of PT. **Media Antar Nusa**.
