@@ -5,12 +5,17 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiResponse } from '../utils/ApiResponse';
 import { Pagination } from 'nestjs-typeorm-paginate';
 import { Reflector } from '@nestjs/core';
 import { Observable, from } from 'rxjs';
 import { DTO_METADATA } from '../decorator/response-dto.decorator';
+
+export function Serialize(dto: any) {
+  return UseInterceptors(new SerializeInterceptor(dto));
+}
 
 @Injectable()
 export class SerializeInterceptor implements NestInterceptor {

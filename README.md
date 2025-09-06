@@ -1,6 +1,6 @@
-# 📦 Backend Asset Management - PT. Media Antar Nusa
+# 📦 Backend Asset Management 
 
-Backend service for the **Asset Management System** at PT. Media Antar Nusa, built with **NestJS**, **MySQL**.
+Backend service for the **Asset Management System**  built with **NestJS**, **MySQL**.
 
 ---
 
@@ -17,8 +17,8 @@ Backend service for the **Asset Management System** at PT. Media Antar Nusa, bui
 
 ### 1️⃣ Clone Repository
 ```bash
-git clone https://github.com/fajar-dev/be-asset-management-nusanet.git
-cd be-asset-management-nusanet
+git clone https://github.com/fajar-dev/be-asset-management.git
+cd be-asset-management
 ```
 
 ### 2️⃣ Environment Variables
@@ -34,17 +34,6 @@ docker compose up -d
 npm install
 npm run start:dev
 ```
-
----
-
-## 🗂️ Database ERD
-
-Here is the **Entity Relationship Diagram (ERD)** for the Asset Management System:
-
-![ERD](docs/erd.png)
-
-
----
 
 ## 📖 API Documentation
 - Base URL: `http://localhost:3000/api`
@@ -80,7 +69,3 @@ npm run test
 - Run `docker compose up -d` before starting development.  
 - Use TypeORM migrations to update the database schema.  
 
----
-
-## 🏢 PT. Media Antar Nusa
-This backend was developed to support the internal **Asset Management System** of PT. **Media Antar Nusa**.
