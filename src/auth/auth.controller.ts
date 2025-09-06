@@ -18,7 +18,7 @@ import { ResponseUserDto } from '../v1/user/dto/response-user.dto';
 import { ApiResponse } from '../common/utils/ApiResponse';
 import { JwtAuthGuard } from './guards/JwtAuthGuard';
 import { ResponseDto } from '../common/decorator/response-dto.decorator';
-import { SerializeInterceptor } from 'src/common/interceptor/serialize.interceptor';
+import { SerializeV2Interceptor } from 'src/common/interceptor/serialize-v2.interceptor';
 
 @Controller('auth')
 export class AuthController {
@@ -29,7 +29,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   @ResponseDto(ResponseUserDto)
-  @UseInterceptors(SerializeInterceptor)
+  @UseInterceptors(SerializeV2Interceptor)
   async getMe(@User() user: UserEntity) {
     return new ApiResponse('User fetched successfully', {
       ...user,

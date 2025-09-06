@@ -8,11 +8,11 @@ export class ResponseCategoryDto {
   name: string;
 
   @Expose()
-  has_location: boolean;
+  hasLocation: boolean;
 
   @Expose()
-  has_maintenance: boolean;
+  hasMaintenance: boolean;
 
   @Expose()
-  has_holder: boolean;
+  hasHolder: boolean;
 }

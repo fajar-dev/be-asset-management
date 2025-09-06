@@ -1,56 +1,98 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectRepository(Category)
-    private categoryRepo: Repository<Category>,
+    private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll() {
-    return this.categoryRepo.find();
+  /**
+   * Create a new category
+   * @param createCategorydto - DTO containing data to create a category
+   * @returns Promise<Category> - the created category entity
+   */
+  async create(createCategorydto: CreateCategoryDto): Promise<Category> {
+    const category = this.categoryRepository.create({
+      name: createCategorydto.name,
+      hasLocation: createCategorydto.hasLocation,
+      hasMaintenance: createCategorydto.hasMaintenance,
+      hasHolder: createCategorydto.hasHolder,
+    });
+    return this.categoryRepository.save(category);
   }
 
-  async findOne(id: number) {
-    const category = await this.categoryRepo.findOne({ where: { id } });
-    if (!category) throw new NotFoundException(`Category #${id} not found`);
-    return category;
+  /**
+   * Find a category by UUID
+   * @param id - UUID of the category
+   * @returns Promise<Category> - the found category entity
+   * @throws NotFoundException if category is not found
+   */
+  findOne(id: string): Promise<Category> {
+    return this.categoryRepository.findOneOrFail({
+      where: {
+        categoryUuid: id,
+      },
+    });
   }
 
-  async create(dto: CreateCategoryDto) {
-    const category = this.categoryRepo.create(dto);
-    return this.categoryRepo.save(category);
-  }
-
-  async update(id: number, dto: UpdateCategoryDto) {
-    const category = await this.findOne(id);
-    Object.assign(category, dto);
-    return this.categoryRepo.save(category);
-  }
-
-  async softDelete(id: number, deletedBy?: number) {
-    await this.categoryRepo.update(id, { deletedBy: deletedBy });
-    const result = await this.categoryRepo.softDelete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Category #${id} not found`);
+  /**
+   * Paginate categories with optional search
+   * @param options - Pagination options plus optional search string
+   * @returns Promise<Pagination<Category>> - paginated result of categories
+   */
+  async paginate(
+    options: IPaginationOptions & { search?: string },
+  ): Promise<Pagination<Category>> {
+    const queryBuilder = this.categoryRepository.createQueryBuilder('category');
+    if (options.search) {
+      queryBuilder.andWhere('category.name LIKE :search', {
+        search: `%${options.search}%`,
+      });
     }
-    return { message: `Category #${id} soft deleted` };
+    return paginate<Category>(queryBuilder, {
+      limit: options.limit || 10,
+      page: options.page || 1,
+    });
   }
 
-  async restore(id: number) {
-    const result = await this.categoryRepo.restore(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Category #${id} not found`);
-    }
-    return { message: `Category #${id} restored` };
+  /**
+   * Update a category by UUID
+   * @param uuid - UUID of the category to update
+   * @param updateCategoryDto - DTO containing updated category data
+   * @returns Promise<Category> - the updated category entity
+   * @throws NotFoundException if category is not found
+   */
+  async update(
+    uuid: string,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    const category = await this.categoryRepository.findOneOrFail({
+      where: {
+        categoryUuid: uuid,
+      },
+    });
+
+    category.name = updateCategoryDto.name;
+    category.hasLocation = updateCategoryDto.hasLocation;
+    category.hasMaintenance = updateCategoryDto.hasMaintenance;
+    category.hasHolder = updateCategoryDto.hasHolder;
+
+    return this.categoryRepository.save(category);
   }
 
-  async findWithDeleted() {
-    return this.categoryRepo.find({ withDeleted: true });
+  /**
+   * Soft delete a category by UUID
+   * @param uuid - UUID of the category to delete
+   * @returns Promise<import("typeorm").UpdateResult> - result of soft delete operation
+   */
+  async remove(uuid: string) {
+    return await this.categoryRepository.softDelete({ categoryUuid: uuid });
   }
 }

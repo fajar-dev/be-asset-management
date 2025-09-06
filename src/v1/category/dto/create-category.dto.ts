@@ -5,15 +5,12 @@ export class CreateCategoryDto {
   @IsNotEmpty()
   name: string;
 
-  @IsOptional()
   @IsBoolean()
-  has_location?: boolean;
+  hasLocation: boolean;
 
-  @IsOptional()
   @IsBoolean()
-  has_maintenance?: boolean;
+  hasMaintenance: boolean;
 
-  @IsOptional()
   @IsBoolean()
-  has_holder?: boolean;
+  hasHolder: boolean;
 }
