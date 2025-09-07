@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseCategoryDto } from './dto/response-category.dto';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
-import { User } from 'src/common/decorator/auth-user.decorator';
+import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 
 @Controller('category')
@@ -62,7 +62,7 @@ export class CategoryController {
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
   ) {
     return new ApiResponse(
-      'Friend fetched successfully',
+      'Category fetched successfully',
       await this.categoryService.findOne(uuid),
     );
   }

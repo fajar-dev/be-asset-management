@@ -11,19 +11,26 @@ import { Injectable } from '@nestjs/common';
 export class IsExist implements ValidatorConstraintInterface {
   constructor(private readonly dataSource: DataSource) {}
 
-  async validate(value: any, validationArguments?: ValidationArguments) {
-    if (!validationArguments?.constraints) {
-      return false;
-    }
-    const [entity, propertyName] = validationArguments.constraints;
-    const repository = this.dataSource.getRepository(entity);
+  async validate(value: any, args?: ValidationArguments): Promise<boolean> {
+    if (!args?.constraints) return false;
 
-    const record = await repository.findOneBy({ [propertyName]: value });
+    const [EntityClass, propertyName] = args.constraints;
+    const repository = this.dataSource.getRepository(EntityClass);
+
+    if (!value) return false;
+
+    const record = await repository.findOne({
+      where: {
+        [propertyName]: value,
+        deletedAt: null,
+      },
+    });
+
     return !!record;
   }
 
   defaultMessage(args: ValidationArguments): string {
     const [EntityClass, property] = args.constraints;
-    return `${property} with value ${args.value} is not exists in ${EntityClass.name}.`;
+    return `${EntityClass.name} with ${property} = ${args.value} does not exist or has been deleted`;
   }
 }
