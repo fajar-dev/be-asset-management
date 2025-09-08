@@ -18,7 +18,7 @@ export class CategoryService {
    * @param createCategorydto - DTO containing data to create a category
    * @returns Promise<Category> - the created category entity
    */
-  async create(userId, createCategorydto: CreateCategoryDto): Promise<Category> {
+  async create(userId: number, createCategorydto: CreateCategoryDto): Promise<Category> {
     const category = this.categoryRepository.create({
       name: createCategorydto.name,
       hasLocation: createCategorydto.hasLocation,
@@ -51,9 +51,9 @@ export class CategoryService {
   async paginate(
     options: IPaginationOptions & { search?: string },
   ): Promise<Pagination<Category>> {
-    const queryBuilder = this.categoryRepository.createQueryBuilder('category');
+    const queryBuilder = this.categoryRepository.createQueryBuilder('categories');
     if (options.search) {
-      queryBuilder.andWhere('category.name LIKE :search', {
+      queryBuilder.andWhere('categories.name LIKE :search', {
         search: `%${options.search}%`,
       });
     }
