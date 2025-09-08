@@ -6,6 +6,8 @@ import { CatchEverythingFilter } from './common/filters/http-exception.filter';
 import { IsNotExist } from './common/validators/is-not-exist.decorator';
 import { IsExist } from './common/validators/is-exist.decorator';
 import { AuthModule } from './auth/auth.module';
+import { IsValidPropertyValue } from './common/validators/is-valid-property-value.decorator';
+import { AreAllPropertiesFilled } from './common/validators/are-all-properties-filled.decorator';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { AuthModule } from './auth/auth.module';
     },
     IsNotExist,
     IsExist,
+    AreAllPropertiesFilled,
+    IsValidPropertyValue
   ],
 })
 export class AppModule {}

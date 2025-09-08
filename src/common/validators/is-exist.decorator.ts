@@ -22,7 +22,7 @@ export class IsExist implements ValidatorConstraintInterface {
     const record = await repository.findOne({
       where: {
         [propertyName]: value,
-        deletedAt: null,
+        deletedAt: null, // ignore soft-deleted rows
       },
     });
 

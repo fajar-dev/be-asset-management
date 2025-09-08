@@ -5,7 +5,7 @@ import { customValidationPipe } from './common/pipes/validation.pipe';
 import { ResponseInterceptor } from './common/response/response.interceptor';
 import { useContainer } from 'class-validator';
 import { AppSingleton } from './common/singleton/app.singleton';
-import { V1Module } from './v1/v1.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -14,6 +14,14 @@ async function bootstrap() {
   app.useGlobalPipes(customValidationPipe());
   app.enableCors();
   app.useGlobalInterceptors(new ResponseInterceptor());
+
+  const config = new DocumentBuilder()
+    .setTitle('Asset Management')
+    .setDescription('Backend service for the Asset Management System')
+    .setVersion('1.0')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, documentFactory);
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   AppSingleton.setInstance(app);
