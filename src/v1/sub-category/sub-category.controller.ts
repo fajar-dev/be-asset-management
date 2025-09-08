@@ -9,7 +9,7 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseSubCategoryDto } from './dto/response-sub-category.dto';
 
-@Controller('sub-category')
+@Controller()
 export class SubCategoryController {
   constructor(private readonly subCategoryService: SubCategoryService) {}
 

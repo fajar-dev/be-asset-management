@@ -1,5 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import { ResponseCategoryDto } from '../../category/dto/response-category.dto';
+import { ResponseAssetPropertyDto } from '../../asset-property/dto/response-asset-property.dto';
 
 export class ResponseSubCategoryDto {
   @Expose({ name: 'subCategoryUuid' })
@@ -11,4 +12,8 @@ export class ResponseSubCategoryDto {
   @Expose()
   @Type(() => ResponseCategoryDto)
   category: ResponseCategoryDto;
+
+  @Expose()
+  @Type(() => ResponseAssetPropertyDto)
+  assetProperties: ResponseAssetPropertyDto[];
 }

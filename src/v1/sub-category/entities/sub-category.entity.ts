@@ -5,10 +5,12 @@ import {
   Index,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { v7 as uuidv7 } from 'uuid';
 import { Category } from '../../category/entities/category.entity';
+import { AssetProperty } from '../../asset-property/entities/asset-property.entity';
 
 @Entity('sub_categories')
 export class SubCategory extends BaseEntity {
@@ -26,6 +28,9 @@ export class SubCategory extends BaseEntity {
   @ManyToOne(() => Category, (category) => category.subCategories)
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  @OneToMany(() => AssetProperty, (assetProperty) => assetProperty.subCategory)
+  assetProperties: AssetProperty[];
 
   @BeforeInsert()
   async generateUuid() {

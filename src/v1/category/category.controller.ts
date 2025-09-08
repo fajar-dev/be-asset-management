@@ -22,7 +22,7 @@ import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 
-@Controller('category')
+@Controller()
 export class CategoryController {
   constructor(
     private readonly categoryService: CategoryService

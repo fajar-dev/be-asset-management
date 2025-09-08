@@ -36,19 +36,19 @@ export class SubCategoryService {
     return this.subCategoryRepository.save(subCategory);
   }
 
-
   /**
     * Paginate sub categories with optional search
     * @param options - Pagination options plus optional search string
     * @returns Promise<Pagination<SubCategory>> - paginated result of sub categories
  */
   async paginate(
-    options: IPaginationOptions & { search?: string; categoryId?: number },
+  options: IPaginationOptions & { search?: string; categoryId?: number },
   ): Promise<Pagination<SubCategory>> {
     const queryBuilder = this.subCategoryRepository.createQueryBuilder('sub_categories');
 
     queryBuilder
-      .leftJoinAndSelect('sub_categories.category', 'categories');
+      .leftJoinAndSelect('sub_categories.category', 'categories')
+      .leftJoinAndSelect('sub_categories.assetProperties', 'asset_properties'); 
 
     if (options.categoryId) {
       queryBuilder.andWhere('categories.id = :id', { id: options.categoryId });
@@ -67,6 +67,7 @@ export class SubCategoryService {
     });
   }
 
+
   /**
    * Find a sub category by UUID
    * @param id - UUID of the sub category
@@ -78,11 +79,11 @@ export class SubCategoryService {
       where: {
         subCategoryUuid: id,
       },
-      relations: ['category']
+      relations: ['category', 'assetProperties'],
     });
   }
 
-/**
+  /**
  * Update a sub category by UUID
  * @param uuid - UUID of the sub category to update
  * @param userId - ID of the user performing the update
