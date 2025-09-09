@@ -32,7 +32,7 @@ export class Category extends BaseEntity {
   subCategories: SubCategory[];
 
   @BeforeInsert()
-    async generateUuid() {
-      this.categoryUuid = uuidv7();
-    }
+  async generateUuid() {
+    this.categoryUuid = uuidv7();
+  }
 }

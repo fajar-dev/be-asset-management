@@ -7,6 +7,9 @@ import { AssetPropertyModule } from './asset-property/asset-property.module';
 import { AssetModule } from './asset/asset.module';
 import { AssetPropertyValueModule } from './asset-property-value/asset-property-value.module';
 import { AssetMaintenanceModule } from './asset-maintenance/asset-maintenance.module';
+import { AssetHolderModule } from './asset-holder/asset-holder.module';
+import { LocationModule } from './location/location.module';
+import { AssetLocationModule } from './asset-location/asset-location.module';
 
 @Module({
   imports: [
@@ -14,9 +17,12 @@ import { AssetMaintenanceModule } from './asset-maintenance/asset-maintenance.mo
     CategoryModule,
     SubCategoryModule,
     AssetPropertyModule,
+    LocationModule,
     AssetModule,
     AssetPropertyValueModule,
     AssetMaintenanceModule,
+    AssetHolderModule,
+    AssetLocationModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -24,6 +30,10 @@ import { AssetMaintenanceModule } from './asset-maintenance/asset-maintenance.mo
           {
             path: '/',
             module: UserModule,
+          },
+          {
+            path: '/location',
+            module: LocationModule
           },
           {
             path: '/category',
@@ -44,6 +54,10 @@ import { AssetMaintenanceModule } from './asset-maintenance/asset-maintenance.mo
           {
             path: '/asset/:assetUuid/maintenance',
             module: AssetMaintenanceModule,
+          },
+          {
+            path: '/asset/:assetUuid/location',
+            module: AssetLocationModule
           },
         ],
       },

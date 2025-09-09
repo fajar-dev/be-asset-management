@@ -12,6 +12,8 @@ import { v7 as uuidv7 } from 'uuid';
 import { SubCategory } from '../../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../../asset-property-value/entities/asset-property-value.entity';
 import { AssetMaintenance } from '../../asset-maintenance/entities/asset-maintenance.entity';
+import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
+import { AssetLocation } from 'src/v1/asset-location/entities/asset-location.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
@@ -55,6 +57,12 @@ export class Asset extends BaseEntity {
 
   @OneToMany(() => AssetMaintenance, (history) => history.asset)
   maintenanceRecords: AssetMaintenance[];
+
+  @OneToMany(() => AssetHolder, (holder) => holder.asset)
+  holderRecords: AssetHolder[];
+
+  @OneToMany(() => AssetLocation, (location) => location.asset)
+  locationRecords: AssetLocation[];
   
   @BeforeInsert()
     async generateUuid() {
