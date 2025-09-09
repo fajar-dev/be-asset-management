@@ -3,7 +3,7 @@ import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
-import { ResponselocationDto } from './dto/response-location.dto';
+import { ResponseLocationDto } from './dto/response-location.dto';
 import { Serialize } from 'src/common/interceptor/serialize.interceptor';
 import { User } from 'src/common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
@@ -16,7 +16,7 @@ export class LocationController {
   
   @UseGuards(JwtAuthGuard)
   @Post()
-  @Serialize(ResponselocationDto)
+  @Serialize(ResponseLocationDto)
   async create(
     @User() user: UserEntity,
     @Body() CreateLocationDto: CreateLocationDto,
@@ -29,7 +29,7 @@ export class LocationController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @Serialize(ResponselocationDto)
+  @Serialize(ResponseLocationDto)
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
@@ -43,7 +43,7 @@ export class LocationController {
   
   @Get(':uuid')
   @UseGuards(JwtAuthGuard)
-  @Serialize(ResponselocationDto)
+  @Serialize(ResponseLocationDto)
   async findOne(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
   ) {
@@ -55,7 +55,7 @@ export class LocationController {
 
   @Put(':uuid')
   @UseGuards(JwtAuthGuard)
-  @Serialize(ResponselocationDto)
+  @Serialize(ResponseLocationDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @User() user: UserEntity,

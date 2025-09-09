@@ -12,8 +12,8 @@ import { AreAllPropertiesFilled } from './common/validators/are-all-properties-f
 @Module({
   imports: [
     DatabaseModule, 
-    V1Module, 
-    AuthModule
+    AuthModule,
+    V1Module
   ],
     providers: [
     {

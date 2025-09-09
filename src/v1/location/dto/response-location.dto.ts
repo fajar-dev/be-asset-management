@@ -1,6 +1,6 @@
 import { Expose } from 'class-transformer';
 
-export class ResponselocationDto {
+export class ResponseLocationDto {
   @Expose({ name: 'locationUuid' })
   id: string;
 

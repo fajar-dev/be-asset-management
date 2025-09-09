@@ -31,7 +31,7 @@ export class AssetMaintenance extends BaseEntity {
   asset: Asset;
   
   @BeforeInsert()
-    async generateUuid() {
-      this.assetMaintenanceUuid = uuidv7();
-    }
+  async generateUuid() {
+    this.assetMaintenanceUuid = uuidv7();
+  }
 }
