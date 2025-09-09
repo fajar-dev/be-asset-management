@@ -11,14 +11,14 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { v7 as uuidv7 } from 'uuid';
 import { SubCategory } from '../../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../../asset-property-value/entities/asset-property-value.entity';
+import { AssetMaintenance } from '../../asset-maintenance/entities/asset-maintenance.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
   @Index('IDX_category_uuid')
-  @Column({ name: 'asset_property_uuid', type: 'char', length: 36, unique: true })
-  assetPropertyUuid: string;
+  @Column({ name: 'asset_uuid', type: 'char', length: 36, unique: true })
+  assetUuid: string;
 
-  
   @Column({ name: 'sub_category_id' })
   subCategoryId: number;
 
@@ -52,9 +52,12 @@ export class Asset extends BaseEntity {
   
   @OneToMany(() => AssetPropertyValue, (value) => value.asset)
   propertyValues: AssetPropertyValue[];
+
+  @OneToMany(() => AssetMaintenance, (history) => history.asset)
+  maintenanceRecords: AssetMaintenance[];
   
   @BeforeInsert()
     async generateUuid() {
-      this.assetPropertyUuid = uuidv7();
+      this.assetUuid = uuidv7();
     }
 }

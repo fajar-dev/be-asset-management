@@ -24,5 +24,4 @@ export class AssetController {
       await this.assetService.create(user.id, createAssetDto),
     );
   }
-
 }

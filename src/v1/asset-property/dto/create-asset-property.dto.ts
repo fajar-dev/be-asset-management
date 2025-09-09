@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString, MaxLength} from 'class-validator';
 
 export enum AssetPropertyDataType {
   STRING = 'string',
