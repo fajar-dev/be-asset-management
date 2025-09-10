@@ -46,7 +46,7 @@ export class Asset extends BaseEntity {
     type: 'enum',
     enum: ['active', 'in repair', 'disposed'],
   })
-  dataType: 'active' | 'in repair' | 'disposed';
+  status: 'active' | 'in repair' | 'disposed';
   
   @ManyToOne(() => SubCategory, (subCategory) => subCategory.assetProperties)
   @JoinColumn({ name: 'sub_category_id' })

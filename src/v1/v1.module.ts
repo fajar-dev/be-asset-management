@@ -54,6 +54,10 @@ import { AssetNoteModule } from './asset-note/asset-note.module';
             module: AssetModule,
           },
           {
+            path: '/asset/:assetUuid/holder',
+            module: AssetHolderModule,
+          },
+          {
             path: '/asset/:assetUuid/maintenance',
             module: AssetMaintenanceModule,
           },
