@@ -8,10 +8,14 @@ import { User } from 'src/common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ApiResponse } from 'src/common/utils/ApiResponse';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
+import { CategoryGuard } from 'src/common/guards/category.guard';
 
 @Controller()
+@UseGuards(CategoryGuard)
 export class AssetHolderController {
-  constructor(private readonly assetHolderService: AssetHolderService) {}
+  constructor(
+    private readonly assetHolderService: AssetHolderService
+  ) {}
   
   @Get()
   @UseGuards(JwtAuthGuard)

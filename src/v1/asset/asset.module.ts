@@ -13,5 +13,6 @@ import { AssetPropertyValueModule } from '../asset-property-value/asset-property
   ],
   controllers: [AssetController],
   providers: [AssetService],
+  exports: [TypeOrmModule.forFeature([Asset])],
 })
 export class AssetModule {}
