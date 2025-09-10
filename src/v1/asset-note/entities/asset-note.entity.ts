@@ -18,7 +18,7 @@ export class AssetNote extends BaseEntity {
   @Column({ name: 'note', type: 'text', nullable: true })
   note: string;
 
-  @ManyToOne(() => Asset, (asset) => asset.maintenanceRecords)
+  @ManyToOne(() => Asset, (asset) => asset.noteRecords)
   @JoinColumn({ name: 'asset_id' })     
   asset: Asset;
   

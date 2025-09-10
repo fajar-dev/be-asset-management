@@ -1,7 +1,7 @@
 import { Controller, Module } from '@nestjs/common';
 import { CategoryModule } from './category/category.module';
 import { UserModule } from './user/user.module';
-import { RouterModule } from '@nestjs/core';
+import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { SubCategoryModule } from './sub-category/sub-category.module';
 import { AssetPropertyModule } from './asset-property/asset-property.module';
 import { AssetModule } from './asset/asset.module';
@@ -11,6 +11,7 @@ import { AssetHolderModule } from './asset-holder/asset-holder.module';
 import { LocationModule } from './location/location.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
+import { CategoryGuard } from '../common/guards/category.guard';
 
 @Module({
   imports: [
@@ -72,6 +73,12 @@ import { AssetNoteModule } from './asset-note/asset-note.module';
         ],
       },
     ]),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: CategoryGuard,
+    },
   ],
 })
 export class V1Module {}

@@ -2,14 +2,16 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUID
 import { AssetLocationService } from './asset-location.service';
 import { CreateAssetLocationDto } from './dto/create-asset-location.dto';
 import { UpdateAssetLocationDto } from './dto/update-asset-location.dto';
-import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
+import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseAssetLocationDto } from './dto/response-asset-location.dto';
-import { Serialize } from 'src/common/interceptor/serialize.interceptor';
-import { User } from 'src/common/decorator/auth-user.decorator';
+import { Serialize } from '../../common/interceptor/serialize.interceptor';
+import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
-import { ApiResponse } from 'src/common/utils/ApiResponse';
+import { ApiResponse } from '../../common/utils/ApiResponse';
+import { CategoryGuard } from '../../common/guards/category.guard';
 
 @Controller()
+@UseGuards(CategoryGuard)
 export class AssetLocationController {
   constructor(private readonly assetLocationService: AssetLocationService) {}
   
