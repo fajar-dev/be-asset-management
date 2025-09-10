@@ -5,7 +5,7 @@ import { Asset } from './entities/asset.entity';
 import { Repository } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
-import { AssetPropertyValueService } from '../asset-property-value/asset-property-value.service';
+import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class AssetService {
@@ -14,39 +14,114 @@ export class AssetService {
     private readonly assetRepository: Repository<Asset>,
     @InjectRepository(SubCategory)
     private readonly subCategoryRepository: Repository<SubCategory>,
-    private readonly assetPropertyValueService: AssetPropertyValueService,
+    @InjectRepository(AssetPropertyValue)
+    private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
   ) {}
   
-  /**
-    * Create a new asset
-    * @param createAssetdto - DTO containing data to create a asset
-    * @returns Promise<SubCategory> - the created asset entity
-  */
-  async create(
-    userId: number,
-    createAssetDto: CreateAssetDto,
-  ): Promise<Asset> {
-    const subCategory = await this.subCategoryRepository.findOneOrFail({
-      where: { subCategoryUuid: createAssetDto.subCategoryId }
-    });
-    const asset = this.assetRepository.create({
-      subCategoryId: subCategory.id,
-      name:createAssetDto.name,
-      code: createAssetDto.code,
-      description: createAssetDto.description,
-      brand: createAssetDto.brand,
-      model: createAssetDto.model,
-      createdBy: userId
-    });
-    const savedAsset = await this.assetRepository.save(asset);
+/**
+ * Create a new asset
+ * @param userId - ID user yang membuat asset
+ * @param createAssetDto - DTO containing data to create an asset
+ * @returns Promise<Asset> - the created asset entity
+ */
+async create(
+  userId: number,
+  createAssetDto: CreateAssetDto,
+): Promise<Asset> {
+  // 1️⃣ Cari subCategory dari UUID
+  const subCategory = await this.subCategoryRepository.findOneOrFail({
+    where: { subCategoryUuid: createAssetDto.subCategoryId },
+    relations: ['assetProperties'],
+  });
 
-    // if (createAssetDto.properties?.length) {
-    //   await this.assetPropertyValueService.createMany(
-    //     userId,
-    //     savedAsset.id,
-    //     createAssetDto.properties,
-    //   );
-    // }
-    return savedAsset
+  // 2️⃣ Buat asset baru
+  const asset = this.assetRepository.create({
+    subCategoryId: subCategory.id,
+    name: createAssetDto.name,
+    code: createAssetDto.code,
+    description: createAssetDto.description,
+    brand: createAssetDto.brand,
+    model: createAssetDto.model,
+    createdBy: userId,
+  });
+  const savedAsset = await this.assetRepository.save(asset);
+
+  const propertyValues = createAssetDto.properties.map((p) => {
+    const propertyDef = subCategory.assetProperties.find(
+      (def) => def.assetPropertyUuid === p.id,
+    );
+
+    if (!propertyDef) {
+      throw new Error(`Property dengan id ${p.id} tidak ditemukan di SubCategory`);
+    }
+
+    return this.assetPropertyValueRepository.create({
+      assetId: savedAsset.id,
+      propertyId: propertyDef.id,
+      valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
+      valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+      createdBy: userId,
+    });
+  });
+
+  await this.assetPropertyValueRepository.save(propertyValues);
+
+  return this.assetRepository.findOneOrFail({
+    where: { id: savedAsset.id },
+    relations: ['propertyValues', 'propertyValues.property', 'subCategory', 'subCategory.category'],
+  });
+}
+
+
+  /**
+   * Paginate assets with optional search and filters by category or sub-category
+   * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
+   * @returns Promise<Pagination<Asset>> - paginated result of assets
+  */
+  async paginate(
+    options: IPaginationOptions & { search?: string; subCategoryUuid?: string; categoryUuid?: string },
+  ): Promise<Pagination<Asset>> {
+    const queryBuilder = this.assetRepository.createQueryBuilder('asset');
+
+    queryBuilder
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.propertyValues', 'propertyValues')
+      .leftJoinAndSelect('propertyValues.property', 'property');
+
+    if (options.search) {
+      queryBuilder.andWhere(
+        '(asset.name LIKE :search OR asset.code LIKE :search OR asset.description LIKE :search)',
+        { search: `%${options.search}%` },
+      );
+    }
+
+    if (options.subCategoryUuid) {
+      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryUuid', {
+        subCategoryUuid: options.subCategoryUuid,
+      });
+    }
+
+    if (options.categoryUuid) {
+      queryBuilder.andWhere('category.categoryUuid = :categoryUuid', {
+        categoryUuid: options.categoryUuid,
+      });
+    }
+
+    return paginate<Asset>(queryBuilder, options);
   }
+
+  /**
+   * Find an asset by UUID
+   * @param id - UUID of the asset
+   * @returns Promise<Asset> - the found asset entity
+   * @throws NotFoundException if the asset is not found
+   */
+    findOne(id: string): Promise<Asset> {
+      return this.assetRepository.findOneOrFail({
+      where: { assetUuid: id },
+      relations: ['propertyValues', 'propertyValues.property', 'subCategory', 'subCategory.category'],
+    });
+  }
+
 }

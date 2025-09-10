@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { V1Module } from './v1/v1.module';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
 import { CatchEverythingFilter } from './common/filters/http-exception.filter';
 import { IsNotExist } from './common/validators/is-not-exist.decorator';
 import { IsExist } from './common/validators/is-exist.decorator';
 import { AuthModule } from './auth/auth.module';
-import { IsValidPropertyValue } from './common/validators/is-valid-property-value.decorator';
-import { AreAllPropertiesFilled } from './common/validators/are-all-properties-filled.decorator';
-import { CategoryGuard } from './common/guards/category.guard';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ValidatePropertiesBySubCategoryConstraint } from './common/validators/validate-properties-by-subcategory.decorator';
 
 @Module({
   imports: [
@@ -24,8 +21,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     },
     IsNotExist,
     IsExist,
-    AreAllPropertiesFilled,
-    IsValidPropertyValue
+    ValidatePropertiesBySubCategoryConstraint,
   ],
 })
 export class AppModule {}

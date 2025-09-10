@@ -1,18 +1,37 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
 
-export class ResponseAssetPropertyValueDto {
-  @Expose()
-  propertyId: string; // bisa tetap ada kalau mau identifikasi
+export class ResponsePropertyDto {
+  @Expose({ name: 'assetPropertyUuid' })
+  id: string;
 
   @Expose()
   name: string;
 
   @Expose()
   dataType: string;
+}
+
+export class ResponseAssetPropertyValueDto {
+  @Expose({ name: 'assetPropertyValueUuid' })
+  id: string;
 
   @Expose()
-  value: string | number;
+  @Transform(({ obj }) => {
+    switch (obj.property?.dataType) {
+      case 'number':
+        return obj.valueInt;
+      case 'string':
+        return obj.valueString;
+      default:
+        return null;
+    }
+  })
+  value: string | number | null;
+
+  @Expose()
+  @Type(() => ResponsePropertyDto)
+  property: ResponsePropertyDto;
 }
 
 export class ResponseAssetDto {
@@ -38,7 +57,7 @@ export class ResponseAssetDto {
   @Type(() => ResponseSubCategoryDto)
   subCategory: ResponseSubCategoryDto;
 
-  @Expose()
+  @Expose({ name: 'propertyValues' })
   @Type(() => ResponseAssetPropertyValueDto)
   properties: ResponseAssetPropertyValueDto[];
 }

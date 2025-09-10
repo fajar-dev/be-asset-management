@@ -42,17 +42,13 @@ export class SubCategoryService {
     * @returns Promise<Pagination<SubCategory>> - paginated result of sub categories
  */
   async paginate(
-  options: IPaginationOptions & { search?: string; categoryId?: number },
+  options: IPaginationOptions & { search?: string;},
   ): Promise<Pagination<SubCategory>> {
     const queryBuilder = this.subCategoryRepository.createQueryBuilder('sub_categories');
 
     queryBuilder
       .leftJoinAndSelect('sub_categories.category', 'categories')
       .leftJoinAndSelect('sub_categories.assetProperties', 'asset_properties'); 
-
-    if (options.categoryId) {
-      queryBuilder.andWhere('categories.id = :id', { id: options.categoryId });
-    }
 
     if (options.search) {
       queryBuilder.andWhere('sub_categories.name LIKE :search', {
@@ -63,7 +59,6 @@ export class SubCategoryService {
     return paginate<SubCategory>(queryBuilder, {
       limit: options.limit || 10,
       page: options.page || 1,
-      route: '/v1/sub-categories',
     });
   }
 

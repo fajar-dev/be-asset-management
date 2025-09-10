@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
@@ -24,4 +24,21 @@ export class AssetController {
       await this.assetService.create(user.id, createAssetDto),
     );
   }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+    @Query('search', new DefaultValuePipe('')) search: string,
+    // @Query('subCategoryUuid', new DefaultValuePipe(null), ParseUUIDPipe) subCategoryUuid?: string,
+    // @Query('categoryUuid', new DefaultValuePipe(null), ParseUUIDPipe) categoryUuid?: string,
+  ) {
+    return new ApiResponse(
+      'Assets retrieved successfully',
+      await this.assetService.paginate({ page, limit, search,  }),
+    );
+  }
+
 }
