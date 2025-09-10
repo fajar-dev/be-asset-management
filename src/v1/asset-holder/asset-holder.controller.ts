@@ -1,14 +1,14 @@
 import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { AssetHolderService } from './asset-holder.service';
-import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
-import { Serialize } from 'src/common/interceptor/serialize.interceptor';
+import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
+import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ResponseAssetHolderDto } from './dto/response-asset-holder.dto';
 import { assignedAssetHolderDto } from './dto/assigned-asset-holder.dto';
-import { User } from 'src/common/decorator/auth-user.decorator';
+import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
-import { ApiResponse } from 'src/common/utils/ApiResponse';
+import { ApiResponse } from '../../common/utils/ApiResponse';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
-import { CategoryGuard } from 'src/common/guards/category.guard';
+import { CategoryGuard } from '../../common/guards/category.guard';
 
 @Controller()
 @UseGuards(CategoryGuard)

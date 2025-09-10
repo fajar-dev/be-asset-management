@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, Validate, IsOptional } from 'class-validator';
-import { SubCategory } from 'src/v1/sub-category/entities/sub-category.entity';
-import { IsExist } from 'src/common/validators/is-exist.decorator';
+import { SubCategory } from '../../sub-category/entities/sub-category.entity';
+import { IsExist } from '../../../common/validators/is-exist.decorator';
 
 export class CreateAssetDto {
   @IsNotEmpty()

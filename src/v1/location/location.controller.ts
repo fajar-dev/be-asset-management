@@ -2,12 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, De
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
+import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseLocationDto } from './dto/response-location.dto';
-import { Serialize } from 'src/common/interceptor/serialize.interceptor';
-import { User } from 'src/common/decorator/auth-user.decorator';
+import { Serialize } from '../../common/interceptor/serialize.interceptor';
+import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
-import { ApiResponse } from 'src/common/utils/ApiResponse';
+import { ApiResponse } from '../../common/utils/ApiResponse';
 
 @Controller()
 export class LocationController {

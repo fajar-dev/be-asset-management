@@ -3,7 +3,7 @@ import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
-import { ApiResponse } from 'src/common/utils/ApiResponse';
+import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetDto } from './dto/response-asset.dto';

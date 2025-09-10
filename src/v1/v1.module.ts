@@ -11,7 +11,7 @@ import { AssetHolderModule } from './asset-holder/asset-holder.module';
 import { LocationModule } from './location/location.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
-import { CategoryGuard } from 'src/common/guards/category.guard';
+import { CategoryGuard } from '../common/guards/category.guard';
 
 @Module({
   imports: [
