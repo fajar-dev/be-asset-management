@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -41,6 +41,24 @@ export class CategoryService {
         categoryUuid: id,
       },
     });
+  }
+  
+
+  /**
+   * Get all categories or search by name
+   * @param search - Optional name search string
+   * @returns Promise<Category[]> - Array of category entities matching the search criteria, if provided
+   */
+  async findAll(search?: string): Promise<Category[]> {
+    if (search) {
+      return this.categoryRepository.find({
+        where: {
+          name: Like(`%${search}%`)
+        },
+      });
+    } else {
+      return this.categoryRepository.find();
+    }
   }
 
   /**

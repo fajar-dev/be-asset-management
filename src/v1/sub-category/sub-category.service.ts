@@ -64,6 +64,24 @@ export class SubCategoryService {
 
 
   /**
+   * Find all sub categories by category UUID
+   * @param categoryUuid - UUID of the category
+   * @returns Promise<SubCategory[]> - the found sub categories
+   */
+  async findAllByCategory(categoryUuid: string): Promise<SubCategory[]> {
+    const category = await this.categoryRepository.findOneOrFail({
+      where: { categoryUuid }
+    });
+
+    return this.subCategoryRepository.find({
+      where: {
+        categoryId: category.id,
+      },
+      relations: ['assetProperties'],
+    });
+  }
+
+  /**
    * Find a sub category by UUID
    * @param id - UUID of the sub category
    * @returns Promise<Category> - the found sub category entity
