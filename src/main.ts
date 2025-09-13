@@ -12,7 +12,17 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.set('trust proxy', true);
   app.useGlobalPipes(customValidationPipe());
-  app.enableCors();
+
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'https://dashboard.example.com'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   const config = new DocumentBuilder()
@@ -25,6 +35,7 @@ async function bootstrap() {
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   AppSingleton.setInstance(app);
-  await app.listen(3000);
+
+  await app.listen(4000);
 }
 bootstrap();
