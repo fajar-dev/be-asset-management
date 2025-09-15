@@ -76,37 +76,51 @@ async create(
  * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
-  async paginate(
-  options: IPaginationOptions & { search?: string; subCategoryUuid?: string; categoryUuid?: string },
-  ): Promise<Pagination<Asset>> {
-    const queryBuilder = this.assetRepository.createQueryBuilder('asset');
-    
-    queryBuilder
-      .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category');
+async paginate(
+  options: IPaginationOptions & {
+    search?: string;
+    subCategoryId?: string;
+    categoryId?: string;
+    status?: string;
+  },
+): Promise<Pagination<Asset>> {
+  const { search, subCategoryId, categoryId, status, ...paginationOptions } = options;
 
-    // Apply filters (tanpa join ke propertyValues dulu)
-    if (options.search) {
-      queryBuilder.andWhere(
-        '(asset.name LIKE :search OR asset.code LIKE :search OR asset.description LIKE :search)',
-        { search: `%${options.search}%` },
-      );
-    }
-    if (options.subCategoryUuid) {
-      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryUuid', {
-        subCategoryUuid: options.subCategoryUuid,
-      });
-    }
-    if (options.categoryUuid) {
-      queryBuilder.andWhere('category.categoryUuid = :categoryUuid', {
-        categoryUuid: options.categoryUuid,
-      });
-    }
+  const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+    .leftJoinAndSelect('asset.subCategory', 'subCategory')
+    .leftJoinAndSelect('subCategory.category', 'category');
 
-    const paginationResult = await paginate<Asset>(queryBuilder, options);
+  if (search) {
+    queryBuilder.andWhere(
+      '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search)',
+      { search: `%${search}%` },
+    );
+  }
 
-    // Load propertyValues secara terpisah
-    if (paginationResult.items.length > 0) {
+  if (subCategoryId) {
+    queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { 
+      subCategoryId 
+    });
+  }
+
+  if (categoryId) {
+    queryBuilder.andWhere('category.categoryUuid = :categoryId', { 
+      categoryId 
+    });
+  }
+
+  if (status) {
+    queryBuilder.andWhere('asset.status = :status', { status });
+  }
+
+  // 📋 Order by untuk konsistensi hasil
+  queryBuilder.orderBy('asset.createdAt', 'DESC');
+
+  // 📄 Execute pagination
+  const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+
+  // 🚀 Stage 2: Load propertyValues untuk items yang sudah dipaginate
+  if (paginationResult.items.length > 0) {
       const assetsWithProperties = await this.assetRepository.find({
         where: { 
           assetUuid: In(paginationResult.items.map(asset => asset.assetUuid)) 
@@ -120,8 +134,7 @@ async create(
     }
 
     return paginationResult;
-  }
-
+}
 
 
   /**
