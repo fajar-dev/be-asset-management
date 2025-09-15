@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from './entities/asset.entity';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -28,13 +28,11 @@ async create(
   userId: number,
   createAssetDto: CreateAssetDto,
 ): Promise<Asset> {
-  // 1️⃣ Cari subCategory dari UUID
   const subCategory = await this.subCategoryRepository.findOneOrFail({
     where: { subCategoryUuid: createAssetDto.subCategoryId },
     relations: ['assetProperties'],
   });
 
-  // 2️⃣ Buat asset baru
   const asset = this.assetRepository.create({
     subCategoryId: subCategory.id,
     name: createAssetDto.name,
@@ -74,42 +72,57 @@ async create(
 
 
   /**
-   * Paginate assets with optional search and filters by category or sub-category
-   * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
-   * @returns Promise<Pagination<Asset>> - paginated result of assets
-  */
+ * Paginate assets with optional search and filters by category or sub-category
+ * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
+ * @returns Promise<Pagination<Asset>> - paginated result of assets
+ */
   async paginate(
-    options: IPaginationOptions & { search?: string; subCategoryUuid?: string; categoryUuid?: string },
+  options: IPaginationOptions & { search?: string; subCategoryUuid?: string; categoryUuid?: string },
   ): Promise<Pagination<Asset>> {
     const queryBuilder = this.assetRepository.createQueryBuilder('asset');
-
+    
     queryBuilder
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.propertyValues', 'propertyValues')
-      .leftJoinAndSelect('propertyValues.property', 'property');
+      .leftJoinAndSelect('subCategory.category', 'category');
 
+    // Apply filters (tanpa join ke propertyValues dulu)
     if (options.search) {
       queryBuilder.andWhere(
         '(asset.name LIKE :search OR asset.code LIKE :search OR asset.description LIKE :search)',
         { search: `%${options.search}%` },
       );
     }
-
     if (options.subCategoryUuid) {
       queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryUuid', {
         subCategoryUuid: options.subCategoryUuid,
       });
     }
-
     if (options.categoryUuid) {
       queryBuilder.andWhere('category.categoryUuid = :categoryUuid', {
         categoryUuid: options.categoryUuid,
       });
     }
 
-    return paginate<Asset>(queryBuilder, options);
+    const paginationResult = await paginate<Asset>(queryBuilder, options);
+
+    // Load propertyValues secara terpisah
+    if (paginationResult.items.length > 0) {
+      const assetsWithProperties = await this.assetRepository.find({
+        where: { 
+          assetUuid: In(paginationResult.items.map(asset => asset.assetUuid)) 
+        },
+        relations: ['propertyValues', 'propertyValues.property']
+      });
+      (paginationResult as any).items = paginationResult.items.map(asset => {
+        const fullAsset = assetsWithProperties.find(a => a.assetUuid === asset.assetUuid);
+        return { ...asset, propertyValues: fullAsset?.propertyValues || [] };
+      });
+    }
+
+    return paginationResult;
   }
+
+
 
   /**
    * Find an asset by UUID

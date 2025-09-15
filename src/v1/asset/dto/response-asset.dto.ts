@@ -54,6 +54,9 @@ export class ResponseAssetDto {
   model: string;
 
   @Expose()
+  status: string;
+
+  @Expose()
   @Type(() => ResponseSubCategoryDto)
   subCategory: ResponseSubCategoryDto;
 
