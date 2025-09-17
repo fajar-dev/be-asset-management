@@ -5,7 +5,6 @@ import { v7 as uuidv7 } from 'uuid';
 
 @Entity('asset_holders')
 export class AssetHolder extends BaseEntity {
-  @Index('IDX_holder_uuid')
   @Column({ name: 'asset_holder_uuid', type: 'char', length: 36, unique: true })
   assetHolderUuid: string;
 

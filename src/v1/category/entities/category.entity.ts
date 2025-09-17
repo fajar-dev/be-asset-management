@@ -11,11 +11,9 @@ import { SubCategory } from '../../sub-category/entities/sub-category.entity';
 
 @Entity('categories')
 export class Category extends BaseEntity {
-  @Index('IDX_category_uuid')
   @Column({ name: 'category_uuid', type: 'char', length: 36, unique: true })
   categoryUuid: string;
 
-  @Index('IDX_category_name')
   @Column({ name:'name', type: 'varchar', length: 255 })
   name: string;
 

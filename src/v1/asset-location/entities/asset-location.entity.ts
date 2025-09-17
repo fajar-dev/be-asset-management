@@ -6,7 +6,6 @@ import { BaseEntity } from "../../../common/entities/base.entity";
 
 @Entity('asset_locations')
 export class AssetLocation extends BaseEntity {
-  @Index('IDX_asset_location_uuid')
   @Column({ name: 'asset_location_uuid', type: 'char', length: 36, unique: true })
   assetLocationUuid: string;
 
