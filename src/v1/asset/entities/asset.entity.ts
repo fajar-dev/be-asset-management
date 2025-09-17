@@ -24,10 +24,6 @@ export class Asset extends BaseEntity {
 
   @Column({ name: 'sub_category_id' })
   subCategoryId: number;
-
-  @Index('IDX_asset_property_code')
-  @Column({ name:'code', type: 'varchar', length: 255 })
-  code: string;
   
   @Index('IDX_asset_property_name')
   @Column({ name:'name', type: 'varchar', length: 255 })

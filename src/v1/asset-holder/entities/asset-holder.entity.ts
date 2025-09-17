@@ -15,6 +15,9 @@ export class AssetHolder extends BaseEntity {
   @Column({ name: 'employee_id', type: 'varchar', length: '255' })
   employeeId: string;
 
+  @Column({ name: 'purpose', type: 'text'})
+  purpose: string;
+
   @Column({ name: 'assigned_at', type: 'date' })
   assignedAt: Date;
 

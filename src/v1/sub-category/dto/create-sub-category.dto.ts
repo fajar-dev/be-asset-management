@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
+import { IsNotEmpty,  IsString, MaxLength, Validate } from 'class-validator';
 import { IsExist } from '../../../common/validators/is-exist.decorator';
 import { Category } from '../../category/entities/category.entity';
 

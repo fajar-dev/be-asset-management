@@ -48,4 +48,16 @@ export class AssetController {
       }),
     );
   }
+
+  @Get(':uuid')
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async findOne(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+  ) {
+    return new ApiResponse(
+    'Note for asset fetched successfully',
+    await this.assetService.findOne(uuid),
+    );
+  }
 }

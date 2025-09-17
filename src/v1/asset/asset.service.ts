@@ -36,7 +36,6 @@ async create(
   const asset = this.assetRepository.create({
     subCategoryId: subCategory.id,
     name: createAssetDto.name,
-    code: createAssetDto.code,
     description: createAssetDto.description,
     brand: createAssetDto.brand,
     model: createAssetDto.model,
@@ -76,65 +75,102 @@ async create(
  * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
-async paginate(
-  options: IPaginationOptions & {
-    search?: string;
-    subCategoryId?: string;
-    categoryId?: string;
-    status?: string;
-  },
-): Promise<Pagination<Asset>> {
-  const { search, subCategoryId, categoryId, status, ...paginationOptions } = options;
+  async paginate(
+    options: IPaginationOptions & {
+      search?: string;
+      subCategoryId?: string;
+      categoryId?: string;
+      status?: string;
+    },
+  ): Promise<Pagination<Asset>> {
+    const { search, subCategoryId, categoryId, status, ...paginationOptions } = options;
 
-  const queryBuilder = this.assetRepository.createQueryBuilder('asset')
-    .leftJoinAndSelect('asset.subCategory', 'subCategory')
-    .leftJoinAndSelect('subCategory.category', 'category');
+    const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category');
 
-  if (search) {
-    queryBuilder.andWhere(
-      '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search)',
-      { search: `%${search}%` },
-    );
-  }
+    if (search) {
+      queryBuilder.andWhere(
+        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
 
-  if (subCategoryId) {
-    queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { 
-      subCategoryId 
-    });
-  }
-
-  if (categoryId) {
-    queryBuilder.andWhere('category.categoryUuid = :categoryId', { 
-      categoryId 
-    });
-  }
-
-  if (status) {
-    queryBuilder.andWhere('asset.status = :status', { status });
-  }
-
-  // 📋 Order by untuk konsistensi hasil
-  queryBuilder.orderBy('asset.createdAt', 'DESC');
-
-  // 📄 Execute pagination
-  const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
-
-  // 🚀 Stage 2: Load propertyValues untuk items yang sudah dipaginate
-  if (paginationResult.items.length > 0) {
-      const assetsWithProperties = await this.assetRepository.find({
-        where: { 
-          assetUuid: In(paginationResult.items.map(asset => asset.assetUuid)) 
-        },
-        relations: ['propertyValues', 'propertyValues.property']
+    if (subCategoryId) {
+      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { 
+        subCategoryId 
       });
-      (paginationResult as any).items = paginationResult.items.map(asset => {
+    }
+
+    if (categoryId) {
+      queryBuilder.andWhere('category.categoryUuid = :categoryId', { 
+        categoryId 
+      });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('asset.status = :status', { status });
+    }
+
+    queryBuilder.orderBy('asset.createdAt', 'DESC');
+
+    const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+
+    if (paginationResult.items.length > 0) {
+      const assetsWithProperties = await this.assetRepository.find({
+        where: {
+          assetUuid: In(paginationResult.items.map(asset => asset.assetUuid)),
+        },
+        relations: [
+          'propertyValues',
+          'propertyValues.property',
+          'holderRecords',
+          'locationRecords',
+          'locationRecords.location',
+          'subCategory',
+          'subCategory.category', 
+        ],
+        order: {
+          holderRecords: { createdAt: 'DESC' },
+          locationRecords: { createdAt: 'DESC' },
+        },
+      });
+
+      (paginationResult as any).items.forEach(asset => {
         const fullAsset = assetsWithProperties.find(a => a.assetUuid === asset.assetUuid);
-        return { ...asset, propertyValues: fullAsset?.propertyValues || [] };
+
+        if (fullAsset) {
+          // filter propertyValues
+          asset.propertyValues = (fullAsset.propertyValues || []).filter(
+            pv => pv.property && !pv.property.deletedAt,
+          );
+
+          // cek kategori
+          const hasHolder = fullAsset.subCategory?.category?.hasHolder;
+          const hasLocation = fullAsset.subCategory?.category?.hasLocation;
+
+          // holder aktif terakhir (jika category punya holder)
+          asset.activeHolder = hasHolder
+            ? (fullAsset.holderRecords || []).find(
+                h => !h.returnedAt && !h.deletedAt,
+              ) ?? null
+            : null;
+
+          // lokasi terakhir (jika category punya location)
+          asset.lastLocation = hasLocation
+            ? (fullAsset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+            : null;
+        } else {
+          asset.propertyValues = [];
+          asset.activeHolder = null;
+          asset.lastLocation = null;
+        }
       });
     }
 
     return paginationResult;
-}
+  }
+
 
 
   /**
