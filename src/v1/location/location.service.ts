@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
@@ -41,6 +41,23 @@ export class LocationService {
       },
     });
   }
+
+  /**
+     * Get all location or search by name
+     * @param search - Optional name search string
+     * @returns Promise<Location[]> - Array of category entities matching the search criteria, if provided
+     */
+    async findAll(search?: string): Promise<Location[]> {
+      if (search) {
+        return this.locationRepository.find({
+          where: {
+            name: Like(`%${search}%`)
+          },
+        });
+      } else {
+        return this.locationRepository.find();
+      }
+    }
 
   /**
    * Paginate locations with optional search

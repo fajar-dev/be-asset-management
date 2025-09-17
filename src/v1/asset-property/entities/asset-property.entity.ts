@@ -14,7 +14,6 @@ import { AssetPropertyValue } from '../../asset-property-value/entities/asset-pr
 
 @Entity('asset_properties')
 export class AssetProperty extends BaseEntity {
-  @Index('IDX_category_uuid')
   @Column({ name: 'asset_property_uuid', type: 'char', length: 36, unique: true })
   assetPropertyUuid: string;
 
@@ -22,7 +21,6 @@ export class AssetProperty extends BaseEntity {
   @Column({ name: 'sub_category_id' })
   subCategoryId: number;
   
-  @Index('IDX_asset_property_name')
   @Column({ name:'name', type: 'varchar', length: 255 })
   name: string;
   

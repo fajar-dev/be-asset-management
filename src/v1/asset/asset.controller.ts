@@ -32,13 +32,32 @@ export class AssetController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
-    // @Query('subCategoryUuid', new DefaultValuePipe(null), ParseUUIDPipe) subCategoryUuid?: string,
-    // @Query('categoryUuid', new DefaultValuePipe(null), ParseUUIDPipe) categoryUuid?: string,
+    @Query('subCategoryId') subCategoryId?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('status') status?: string,
   ) {
     return new ApiResponse(
       'Assets retrieved successfully',
-      await this.assetService.paginate({ page, limit, search,  }),
+      await this.assetService.paginate({
+        page,
+        limit,
+        search,
+        subCategoryId,
+        categoryId,
+        status,
+      }),
     );
   }
 
+  @Get(':uuid')
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async findOne(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+  ) {
+    return new ApiResponse(
+    'Note for asset fetched successfully',
+    await this.assetService.findOne(uuid),
+    );
+  }
 }

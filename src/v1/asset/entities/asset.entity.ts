@@ -18,18 +18,12 @@ import { AssetNote } from 'src/v1/asset-note/entities/asset-note.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
-  @Index('IDX_category_uuid')
   @Column({ name: 'asset_uuid', type: 'char', length: 36, unique: true })
   assetUuid: string;
 
   @Column({ name: 'sub_category_id' })
   subCategoryId: number;
-
-  @Index('IDX_asset_property_code')
-  @Column({ name:'code', type: 'varchar', length: 255 })
-  code: string;
   
-  @Index('IDX_asset_property_name')
   @Column({ name:'name', type: 'varchar', length: 255 })
   name: string;
 

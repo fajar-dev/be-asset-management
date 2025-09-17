@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { SubCategory } from 'src/v1/sub-category/entities/sub-category.entity';
 import { IsExist } from 'src/common/validators/is-exist.decorator';
 import { ValidatePropertiesBySubCategory } from 'src/common/validators/validate-properties-by-subcategory.decorator';
+import { IsOptional } from '../../../common/validators/optional.decorator';
 
 export class CreateAssetPropertyValueDto {
   @IsString()
@@ -22,26 +23,20 @@ export class CreateAssetDto {
   @IsNotEmpty()
   name: string;
 
-  @IsString()
-  @IsNotEmpty()
-  code: string;
-
-  @IsString()
+  @IsOptional()
   description?: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   brand: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   model: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateAssetPropertyValueDto)
   @ValidatePropertiesBySubCategory('subCategoryId', {
-    message: 'Properties tidak sesuai dengan definisi subCategory',
+    message: 'Properties do not match the subCategory definition',
   })
   properties: CreateAssetPropertyValueDto[];
 }

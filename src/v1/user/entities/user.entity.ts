@@ -4,14 +4,12 @@ import { v7 as uuidv7 } from 'uuid';
 
 @Entity('users')
 export class User extends BaseEntity {
-  @Index()
   @Column({ name: 'user_uuid', type: 'char', length: 36, unique: true })
   userUuid: string;
 
   @Column({ name: 'name' })
   name: string;
 
-  @Index()
   @Column({ name: 'email', unique: true })
   email: string;
 

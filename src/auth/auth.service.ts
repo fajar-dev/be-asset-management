@@ -63,7 +63,9 @@ export class AuthService {
    * @param user
    */
   public async refresh(user: UserEntity) {
-    return await this.generateAccessToken(user);
+    const accessToken = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+    return { accessToken, refreshToken };
   }
 
   /**

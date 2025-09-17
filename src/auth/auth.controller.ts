@@ -50,7 +50,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(@User() user: UserEntity) {
     return {
-      accessToken: await this.authService.refresh(user),
+      data: await this.authService.refresh(user),
     };
   }
 }

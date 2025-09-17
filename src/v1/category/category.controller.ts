@@ -60,7 +60,7 @@ export class CategoryController {
       data = await this.categoryService.paginate({ page, limit, search });
     }
     return new ApiResponse(
-      all ? 'All ategories retrieved successfully' : 'Categories retrieved successfully',
+      all ? 'All categories retrieved successfully' : 'Categories retrieved successfully',
       data,
     );
   }

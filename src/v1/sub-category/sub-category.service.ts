@@ -34,34 +34,48 @@ export class SubCategoryService {
       createdBy: userId,
     });
     return this.subCategoryRepository.save(subCategory);
-  }
 
+  }
   /**
     * Paginate sub categories with optional search
     * @param options - Pagination options plus optional search string
     * @returns Promise<Pagination<SubCategory>> - paginated result of sub categories
  */
   async paginate(
-  options: IPaginationOptions & { search?: string;},
+    options: IPaginationOptions & { search?: string },
   ): Promise<Pagination<SubCategory>> {
-    const queryBuilder = this.subCategoryRepository.createQueryBuilder('sub_categories');
-
-    queryBuilder
-      .leftJoinAndSelect('sub_categories.category', 'categories')
-      .leftJoinAndSelect('sub_categories.assetProperties', 'asset_properties'); 
+    const queryBuilder = this.subCategoryRepository
+      .createQueryBuilder('subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .select([
+        'subCategory',
+        'category.id',
+        'category.categoryUuid',
+        'category.name',
+      ])
+      .distinct(true);
 
     if (options.search) {
-      queryBuilder.andWhere('sub_categories.name LIKE :search', {
+      queryBuilder.andWhere('subCategory.name LIKE :search', {
         search: `%${options.search}%`,
       });
     }
 
-    return paginate<SubCategory>(queryBuilder, {
-      limit: options.limit || 10,
-      page: options.page || 1,
+    const pagination = await paginate<SubCategory>(queryBuilder, {
+      limit: options.limit ?? 10,
+      page: options.page ?? 1,
     });
-  }
 
+    for (const sub of pagination.items) {
+      sub.assetProperties = await this.subCategoryRepository
+        .createQueryBuilder()
+        .relation(SubCategory, 'assetProperties')
+        .of(sub)
+        .loadMany();
+    }
+
+    return pagination;
+  }
 
   /**
    * Find all sub categories by category UUID

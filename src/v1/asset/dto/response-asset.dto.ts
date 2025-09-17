@@ -20,9 +20,9 @@ export class ResponseAssetPropertyValueDto {
   @Transform(({ obj }) => {
     switch (obj.property?.dataType) {
       case 'number':
-        return obj.valueInt;
+        return obj.valueInt ?? null;
       case 'string':
-        return obj.valueString;
+        return obj.valueString ?? null;
       default:
         return null;
     }
@@ -34,6 +34,34 @@ export class ResponseAssetPropertyValueDto {
   property: ResponsePropertyDto;
 }
 
+export class ResponseAssetHolderDto {
+  @Expose({ name: 'assetHolderUuid' })
+  id: string;
+
+  @Expose()
+  employeeId: string;
+
+  @Expose()
+  assignedAt: Date;
+
+  @Expose()
+  returnedAt?: Date | null;
+}
+
+export class ResponseAssetLastLocationDto {
+  @Expose({ name: 'assetLocationRecordUuid' })
+  id: string;
+
+  @Expose({ name: 'locationUuid' })
+  locationId: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  branch: string;
+}
+
 export class ResponseAssetDto {
   @Expose({ name: 'assetUuid' })
   id: string;
@@ -42,10 +70,8 @@ export class ResponseAssetDto {
   name: string;
 
   @Expose()
-  code: string;
-
-  @Expose()
-  description?: string;
+  @Transform(({ value }) => value ?? null)
+  description: string | null;
 
   @Expose()
   brand: string;
@@ -54,10 +80,21 @@ export class ResponseAssetDto {
   model: string;
 
   @Expose()
+  status: string;
+
+  @Expose()
   @Type(() => ResponseSubCategoryDto)
   subCategory: ResponseSubCategoryDto;
 
   @Expose({ name: 'propertyValues' })
   @Type(() => ResponseAssetPropertyValueDto)
   properties: ResponseAssetPropertyValueDto[];
+
+  @Expose()
+  @Type(() => ResponseAssetHolderDto)
+  activeHolder?: ResponseAssetHolderDto | null;
+
+  @Expose()
+  @Type(() => ResponseAssetLastLocationDto)
+  lastLocation?: ResponseAssetLastLocationDto | null;
 }

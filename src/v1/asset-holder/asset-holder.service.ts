@@ -49,6 +49,7 @@ export class AssetHolderService {
       assetId: asset.id,
       employeeId: assignAssetHolderDto.employeeId,
       assignedAt: assignAssetHolderDto.assignedAt,
+      purpose: assignAssetHolderDto.purpose,
       createdBy: userId
     });
 

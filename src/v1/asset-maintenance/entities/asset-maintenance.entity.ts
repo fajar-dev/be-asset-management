@@ -13,7 +13,6 @@ import { Asset } from '../../asset/entities/asset.entity';
 
 @Entity('asset_maintenances')
 export class AssetMaintenance extends BaseEntity {
-  @Index('IDX_maintenance_uuid')
   @Column({ name: 'asset_maintenance_uuid', type: 'char', length: 36, unique: true })
   assetMaintenanceUuid: string;
 

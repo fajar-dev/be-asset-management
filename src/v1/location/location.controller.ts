@@ -31,14 +31,21 @@ export class LocationController {
   @UseGuards(JwtAuthGuard)
   @Serialize(ResponseLocationDto)
   async findAll(
+    @Query('all', new DefaultValuePipe(false)) all: boolean,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
   ) {
+    let data;
+    if (all) {
+      data = await this.locationService.findAll( search );
+    } else {
+      data = await this.locationService.paginate({ page, limit, search });
+    }
     return new ApiResponse(
-      'Locations retrieved successfully',
-      await this.locationService.paginate({ page, limit, search }),
-    );
+      all ? 'All locations retrieved successfully' : 'Locations retrieved successfully',
+      data,
+    )
   }
   
   @Get(':uuid')

@@ -14,14 +14,12 @@ import { AssetProperty } from '../../asset-property/entities/asset-property.enti
 
 @Entity('sub_categories')
 export class SubCategory extends BaseEntity {
-  @Index('IDX_sub_category_uuid')
   @Column({ name: 'sub_category_uuid', type: 'char', length: 36, unique: true })
   subCategoryUuid: string;
 
   @Column({ name: 'category_id', type: 'int' })
   categoryId: number;
 
-  @Index('IDX_sub_category_name')
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
 

@@ -8,6 +8,9 @@ export class ResponseAssetHolderDto {
   employeeId: string;
 
   @Expose()
+  purpose: string;
+
+  @Expose()
   assignedAt: Date;
 
   @Expose()
