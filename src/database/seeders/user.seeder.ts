@@ -18,7 +18,6 @@ export class UserSeeder {
       const user = this.userRepository.create({
         name: 'Fajar Rivaldi Chan',
         email: 'fajarchan@nusa.net.id',
-        phoneNumber: '0895611024559',
         password: hashedPassword,
       });
 

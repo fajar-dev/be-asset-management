@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 export class ResponseUserDto {
   @Expose({ name: 'userUuid' }) 
@@ -9,6 +9,9 @@ export class ResponseUserDto {
 
   @Expose()
   email: string;
+
+  @Expose()
+  avatar: string;
 
   @Expose()
   isActive: boolean;
