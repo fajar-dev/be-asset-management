@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../v1/user/user.module';
 import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
 import { User } from '../v1/user/entities/user.entity';
+import { GoogleStrategy } from './strategy/google.strategy';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { User } from '../v1/user/entities/user.entity';
     AuthService,
     JwtStrategy,
     RefreshTokenStrategy,
+    GoogleStrategy
   ],
   exports: [AuthService],
 })

@@ -7,17 +7,20 @@ export class User extends BaseEntity {
   @Column({ name: 'user_uuid', type: 'char', length: 36, unique: true })
   userUuid: string;
 
+  @Column({ nullable: true, unique: true })
+  googleId: string;
+
   @Column({ name: 'name' })
   name: string;
 
   @Column({ name: 'email', unique: true })
   email: string;
 
-  @Column({ name: 'phone_number', nullable: true })
-  phoneNumber: string;
-
-  @Column({ name: 'password' })
+  @Column({ nullable: true })
   password: string;
+
+  @Column({ nullable: true })
+  avatar: string;
 
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;

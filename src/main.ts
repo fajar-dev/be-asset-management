@@ -36,6 +36,9 @@ async function bootstrap() {
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   AppSingleton.setInstance(app);
 
-  await app.listen(4000);
+  const port = process.env.APP_PORT || 4000;
+  await app.listen(port);
+  console.log(`🚀 Server running on port ${port}`);
+
 }
 bootstrap();

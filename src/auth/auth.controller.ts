@@ -45,6 +45,16 @@ export class AuthController {
     );
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin(@Req() req: any) {
+    return new ApiResponse(
+      'User logged in successfully',
+      await this.authService.googleVerify(req.user),
+    );
+  }
+
   @Post('refresh-token')
   @UseGuards(AuthGuard('refresh-token'))
   @HttpCode(HttpStatus.OK)

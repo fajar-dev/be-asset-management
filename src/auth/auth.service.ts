@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User as UserEntity } from '../v1/user/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -54,6 +54,27 @@ export class AuthService {
     user.lastLoginAt = DateTime.now().toJSDate();
     await this.userRepository.save(user);
 
+    return await this.responseWithToken(user);
+  }
+
+  /**
+   * Handle Google login
+   * @param googleUser
+   */
+  public async googleVerify(googleUser: any) {
+    let user = await this.userRepository.findOne({
+      where: { email: googleUser.email },
+    });
+    if (!user) {
+      throw new ForbiddenException('You are not registered');
+    } else {
+      user.name = googleUser.name;
+      user.avatar = googleUser.picture;
+      user.googleId = googleUser.googleId;
+      user.lastLoginAt = DateTime.now().toJSDate();
+      user.lastLoginIp = googleUser.ip
+    }
+    await this.userRepository.save(user);
     return await this.responseWithToken(user);
   }
 
