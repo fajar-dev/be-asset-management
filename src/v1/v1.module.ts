@@ -12,10 +12,12 @@ import { LocationModule } from './location/location.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
 import { CategoryGuard } from '../common/guards/category.guard';
+import { StatisticModule } from './statistic/statistic.module';
 
 @Module({
   imports: [
     UserModule,
+    StatisticModule,
     CategoryModule,
     SubCategoryModule,
     AssetPropertyModule,
@@ -33,6 +35,10 @@ import { CategoryGuard } from '../common/guards/category.guard';
           {
             path: '/',
             module: UserModule,
+          },
+          {
+            path: '/statistic',
+            module: StatisticModule,
           },
           {
             path: '/location',
