@@ -1,5 +1,6 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
+import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
 
 export class ResponsePropertyDto {
   @Expose({ name: 'assetPropertyUuid' })
@@ -39,13 +40,14 @@ export class ResponseAssetHolderDto {
   id: string;
 
   @Expose()
-  employeeId: string;
-
-  @Expose()
   assignedAt: Date;
 
   @Expose()
   returnedAt?: Date | null;
+
+  @Expose()
+  @Type(() => ResponseEmployeeDto)
+  employee: ResponseEmployeeDto;
 }
 
 export class ResponseAssetLastLocationDto {

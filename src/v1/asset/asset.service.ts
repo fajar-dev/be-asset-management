@@ -87,7 +87,11 @@ async create(
 
     const queryBuilder = this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category');
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.holderRecords', 'holderRecords', 'holderRecords.deletedAt IS NULL')
+      .leftJoinAndSelect('holderRecords.employee', 'employee')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords', 'locationRecords.deletedAt IS NULL')
+      .leftJoinAndSelect('locationRecords.location', 'location');
 
     if (search) {
       queryBuilder.andWhere(
@@ -112,7 +116,10 @@ async create(
       queryBuilder.andWhere('asset.status = :status', { status });
     }
 
-    queryBuilder.orderBy('asset.createdAt', 'DESC');
+    queryBuilder
+      .orderBy('asset.createdAt', 'DESC')
+      .addOrderBy('holderRecords.createdAt', 'DESC')
+      .addOrderBy('locationRecords.createdAt', 'DESC');
 
     const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
@@ -124,54 +131,34 @@ async create(
         relations: [
           'propertyValues',
           'propertyValues.property',
-          'holderRecords',
-          'locationRecords',
-          'locationRecords.location',
-          'subCategory',
-          'subCategory.category', 
         ],
-        order: {
-          holderRecords: { createdAt: 'DESC' },
-          locationRecords: { createdAt: 'DESC' },
-        },
       });
 
       (paginationResult as any).items.forEach(asset => {
         const fullAsset = assetsWithProperties.find(a => a.assetUuid === asset.assetUuid);
 
-        if (fullAsset) {
-          // filter propertyValues
-          asset.propertyValues = (fullAsset.propertyValues || []).filter(
-            pv => pv.property && !pv.property.deletedAt,
-          );
+        asset.propertyValues = fullAsset 
+          ? (fullAsset.propertyValues || []).filter(
+              pv => pv.property && !pv.property.deletedAt,
+            )
+          : [];
 
-          // cek kategori
-          const hasHolder = fullAsset.subCategory?.category?.hasHolder;
-          const hasLocation = fullAsset.subCategory?.category?.hasLocation;
+        const hasHolder = asset.subCategory?.category?.hasHolder;
+        const hasLocation = asset.subCategory?.category?.hasLocation;
+        asset.activeHolder = hasHolder && asset.holderRecords
+          ? (asset.holderRecords || []).find(
+              h => !h.returnedAt && !h.deletedAt,
+            ) ?? null
+          : null;
 
-          // holder aktif terakhir (jika category punya holder)
-          asset.activeHolder = hasHolder
-            ? (fullAsset.holderRecords || []).find(
-                h => !h.returnedAt && !h.deletedAt,
-              ) ?? null
-            : null;
-
-          // lokasi terakhir (jika category punya location)
-          asset.lastLocation = hasLocation
-            ? (fullAsset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
-            : null;
-        } else {
-          asset.propertyValues = [];
-          asset.activeHolder = null;
-          asset.lastLocation = null;
-        }
+        asset.lastLocation = hasLocation && asset.locationRecords
+          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+          : null;
       });
     }
 
     return paginationResult;
   }
-
-
 
   /**
    * Find an asset by UUID

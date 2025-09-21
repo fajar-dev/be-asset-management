@@ -1,11 +1,9 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { ResponseEmployeeDto } from 'src/v1/employee/dto/response-employee.dto';
 
 export class ResponseAssetHolderDto {
   @Expose({ name: 'assetHolderUuid' })
   id: string;
-
-  @Expose()
-  employeeId: string;
 
   @Expose()
   purpose: string;
@@ -15,4 +13,8 @@ export class ResponseAssetHolderDto {
 
   @Expose()
   returnedAt: Date | null;
+
+  @Expose()
+  @Type(() => ResponseEmployeeDto)
+  employee: ResponseEmployeeDto
 }

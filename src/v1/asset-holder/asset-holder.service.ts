@@ -97,6 +97,7 @@ export class AssetHolderService {
     const queryBuilder = this.assetHolderRepository
       .createQueryBuilder('ah')
       .leftJoinAndSelect('ah.asset', 'asset')
+      .leftJoinAndSelect('ah.employee', 'employee')
       .where('asset.assetUuid = :assetUuid', { assetUuid: options.assetUuid });
     if (options.search && options.search.trim() !== '') {
       queryBuilder.andWhere('LOWER(ah.employeeId) LIKE :search', {
