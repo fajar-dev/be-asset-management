@@ -210,4 +210,14 @@ async create(
     });
   }
 
+  /**
+   * Find an asset by Asset Code
+   * @param code - code of the asset
+   * @returns Promise<Asset> - the found asset entity
+   * @throws NotFoundException if the asset is not found
+   */
+  async findOneByCode(code: string): Promise<Asset> {
+    return this.assetRepository.findOneByOrFail({ code });
+  }
+
 }

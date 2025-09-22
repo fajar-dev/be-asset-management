@@ -64,4 +64,16 @@ export class AssetController {
     await this.assetService.findOne(uuid),
     );
   }
+
+  @Get(':code/by-code')
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async findOneByCode(
+    @Param('code', new DefaultValuePipe('')) code: string,
+  ) {
+    return new ApiResponse(
+    'Note for asset fetched successfully',
+    await this.assetService.findOneByCode(code),
+    );
+  }
 }
