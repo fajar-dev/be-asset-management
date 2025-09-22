@@ -35,10 +35,12 @@ async create(
 
   const asset = this.assetRepository.create({
     subCategoryId: subCategory.id,
+    code: createAssetDto.code,
     name: createAssetDto.name,
     description: createAssetDto.description,
     brand: createAssetDto.brand,
     model: createAssetDto.model,
+    status: createAssetDto.status,
     createdBy: userId,
   });
   const savedAsset = await this.assetRepository.save(asset);
@@ -81,84 +83,119 @@ async create(
       subCategoryId?: string;
       categoryId?: string;
       status?: string;
+      employeeId?: string;
+      locationId?: string;
     },
   ): Promise<Pagination<Asset>> {
-    const { search, subCategoryId, categoryId, status, ...paginationOptions } = options;
+    const { search, subCategoryId, categoryId, status, employeeId, locationId, ...paginationOptions } = options;
 
-    const queryBuilder = this.assetRepository.createQueryBuilder('asset')
-      .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.holderRecords', 'holderRecords', 'holderRecords.deletedAt IS NULL')
-      .leftJoinAndSelect('holderRecords.employee', 'employee')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords', 'locationRecords.deletedAt IS NULL')
-      .leftJoinAndSelect('locationRecords.location', 'location');
+  const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+    .leftJoinAndSelect('asset.subCategory', 'subCategory')
+    .leftJoinAndSelect('subCategory.category', 'category');
 
-    if (search) {
-      queryBuilder.andWhere(
-        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (subCategoryId) {
-      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { 
-        subCategoryId 
-      });
-    }
-
-    if (categoryId) {
-      queryBuilder.andWhere('category.categoryUuid = :categoryId', { 
-        categoryId 
-      });
-    }
-
-    if (status) {
-      queryBuilder.andWhere('asset.status = :status', { status });
-    }
-
-    queryBuilder
-      .orderBy('asset.createdAt', 'DESC')
-      .addOrderBy('holderRecords.createdAt', 'DESC')
-      .addOrderBy('locationRecords.createdAt', 'DESC');
-
-    const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
-
-    if (paginationResult.items.length > 0) {
-      const assetsWithProperties = await this.assetRepository.find({
-        where: {
-          assetUuid: In(paginationResult.items.map(asset => asset.assetUuid)),
-        },
-        relations: [
-          'propertyValues',
-          'propertyValues.property',
-        ],
-      });
-
-      (paginationResult as any).items.forEach(asset => {
-        const fullAsset = assetsWithProperties.find(a => a.assetUuid === asset.assetUuid);
-
-        asset.propertyValues = fullAsset 
-          ? (fullAsset.propertyValues || []).filter(
-              pv => pv.property && !pv.property.deletedAt,
-            )
-          : [];
-
-        const hasHolder = asset.subCategory?.category?.hasHolder;
-        const hasLocation = asset.subCategory?.category?.hasLocation;
-        asset.activeHolder = hasHolder && asset.holderRecords
-          ? (asset.holderRecords || []).find(
-              h => !h.returnedAt && !h.deletedAt,
-            ) ?? null
-          : null;
-
-        asset.lastLocation = hasLocation && asset.locationRecords
-          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
-          : null;
-      });
-    }
-
-    return paginationResult;
+  if (search) {
+    queryBuilder.andWhere(
+      '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search)',
+      { search: `%${search}%` },
+    );
   }
+
+  if (subCategoryId) {
+    queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
+  }
+
+  if (categoryId) {
+    queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
+  }
+
+  if (status) {
+    queryBuilder.andWhere('asset.status = :status', { status });
+  }
+
+  if (employeeId) {
+    queryBuilder.andWhere(qb => {
+      const subQuery = qb.subQuery()
+        .select('ah.asset_id')
+        .from('asset_holders', 'ah')
+        .where('ah.employee_id = :employeeId')
+        .andWhere('ah.returned_at IS NULL')
+        .andWhere('ah.deleted_at IS NULL')
+        .getQuery();
+      return 'asset.id IN ' + subQuery;
+    }).setParameter('employeeId', employeeId);
+  }
+  
+  if (locationId) {
+    queryBuilder.andWhere(qb => {
+      const subQuery = qb.subQuery()
+        .select('al.asset_id')
+        .from('asset_locations', 'al')
+        .leftJoin('locations', 'l', 'al.location_id = l.id')
+        .where('al.deletedAt IS NULL')
+        .andWhere('l.location_uuid = :locationUuid')
+        .andWhere(qb2 => {
+          const lastLocSub = qb2.subQuery()
+            .select('MAX(al2.createdAt)')
+            .from('asset_locations', 'al2')
+            .where('al2.asset_id = al.asset_id')
+            .andWhere('al2.deletedAt IS NULL')
+            .getQuery()
+          return 'al.createdAt = ' + lastLocSub
+        })
+        .getQuery();
+
+      return 'asset.id IN ' + subQuery;
+    }).setParameter('locationUuid', locationId);
+  }
+
+
+  queryBuilder.orderBy('asset.createdAt', 'DESC');
+
+  const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+
+  if (paginationResult.items.length > 0) {
+    const assetsWithRelations = await this.assetRepository.find({
+      where: {
+        assetUuid: In(paginationResult.items.map(a => a.assetUuid)),
+      },
+      relations: [
+        'subCategory',
+        'subCategory.category',
+        'propertyValues',
+        'propertyValues.property',
+        'holderRecords',
+        'holderRecords.employee',
+        'locationRecords',
+        'locationRecords.location',
+        'locationRecords.location.branch',
+      ],
+      order: {
+        holderRecords: { createdAt: 'DESC' },
+        locationRecords: { createdAt: 'DESC' },
+      },
+    });
+
+    (paginationResult as any).items = assetsWithRelations.map(asset => {
+      const hasHolder = asset.subCategory?.category?.hasHolder;
+      const hasLocation = asset.subCategory?.category?.hasLocation;
+
+      return {
+        ...asset,
+        propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+        activeHolder: hasHolder
+          ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+          : null,
+        lastLocation: hasLocation
+          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+          : null,
+      };
+    });
+  }
+
+  return paginationResult;
+
+  }
+
 
   /**
    * Find an asset by UUID

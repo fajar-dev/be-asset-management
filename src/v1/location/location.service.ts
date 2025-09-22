@@ -22,7 +22,7 @@ export class LocationService {
   async create(userId: number, createLocationDto: CreateLocationDto): Promise<Location> {
     const location = this.locationRepository.create({
       name: createLocationDto.name,
-      branch: createLocationDto.branch,
+      branchId: createLocationDto.branchId,
       createdBy: userId,
     });
     return this.locationRepository.save(location);
@@ -36,9 +36,8 @@ export class LocationService {
    */
   findOne(id: string): Promise<Location> {
     return this.locationRepository.findOneOrFail({
-      where: {
-        locationUuid: id,
-      },
+      where: { locationUuid: id },
+      relations: ['branch'],
     });
   }
 
@@ -50,13 +49,13 @@ export class LocationService {
     async findAll(search?: string): Promise<Location[]> {
       if (search) {
         return this.locationRepository.find({
-          where: {
-            name: Like(`%${search}%`)
-          },
-        });
-      } else {
-        return this.locationRepository.find();
+          where: { name: Like(`%${search}%`) },
+          relations: ['branch'],
+        })
       }
+      return this.locationRepository.find({
+        relations: ['branch'],
+      })
     }
 
   /**
@@ -67,11 +66,14 @@ export class LocationService {
   async paginate(
     options: IPaginationOptions & { search?: string },
   ): Promise<Pagination<Location>> {
-    const queryBuilder = this.locationRepository.createQueryBuilder('locations');
+    const queryBuilder = this.locationRepository
+      .createQueryBuilder('locations')
+      .leftJoinAndSelect('locations.branch', 'branch')
     if (options.search) {
-      queryBuilder.andWhere('locations.name LIKE :search', {
-        search: `%${options.search}%`,
-      });
+      queryBuilder.andWhere(
+        '(locations.name LIKE :search OR branch.name LIKE :search)',
+        { search: `%${options.search}%` },
+      )
     }
     return paginate<Location>(queryBuilder, {
       limit: options.limit || 10,
@@ -98,7 +100,7 @@ export class LocationService {
       },
     });
     location.name = updateLocationDto.name;
-    location.branch = updateLocationDto.branch;
+    location.branchId = updateLocationDto.branchId;
     location.updatedBy = userId;
     return this.locationRepository.save(location);
   }

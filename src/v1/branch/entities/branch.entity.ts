@@ -1,6 +1,7 @@
 import { BaseEntity } from "../../../common/entities/base.entity";
 import { Column, Entity, OneToMany } from "typeorm";
 import { Employee } from "../../../v1/employee/entities/employee.entity";
+import { Location } from "../../../v1/location/entities/location.entity";
 
 @Entity("branch")
 export class Branch extends BaseEntity {
@@ -12,4 +13,7 @@ export class Branch extends BaseEntity {
 
   @OneToMany(() => Employee, (employee) => employee.branch)
   employees: Employee[];
+
+  @OneToMany(() => Location, (location) => location.branch)
+  locations: Location[];
 }

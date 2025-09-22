@@ -23,6 +23,9 @@ export class Asset extends BaseEntity {
 
   @Column({ name: 'sub_category_id' })
   subCategoryId: number;
+
+  @Column({ name:'code', type: 'varchar', length: 255 })
+  code: string;
   
   @Column({ name:'name', type: 'varchar', length: 255 })
   name: string;

@@ -35,6 +35,8 @@ export class AssetController {
     @Query('subCategoryId') subCategoryId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
+    @Query('employeeId') employeeId?: string,
+    @Query('locationId') locationId?: string,
   ) {
     return new ApiResponse(
       'Assets retrieved successfully',
@@ -45,6 +47,8 @@ export class AssetController {
         subCategoryId,
         categoryId,
         status,
+        employeeId,
+        locationId
       }),
     );
   }
