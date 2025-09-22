@@ -13,6 +13,8 @@ import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
 import { CategoryGuard } from '../common/guards/category.guard';
 import { StatisticModule } from './statistic/statistic.module';
+import { EmployeeModule } from './employee/employee.module';
+import { BranchModule } from './branch/branch.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { StatisticModule } from './statistic/statistic.module';
     AssetHolderModule,
     AssetLocationModule,
     AssetNoteModule,
+    EmployeeModule,
+    BranchModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -47,6 +51,14 @@ import { StatisticModule } from './statistic/statistic.module';
           {
             path: '/category',
             module: CategoryModule
+          },
+          {
+            path: '/branch',
+            module: BranchModule
+          },
+          {
+            path: '/employee',
+            module: EmployeeModule
           },
           {
             path: '/sub-category',

@@ -4,9 +4,10 @@ import { AssetHolder } from './entities/asset-holder.entity';
 import { Asset } from '../asset/entities/asset.entity';
 import { AssetHolderController } from './asset-holder.controller';
 import { AssetHolderService } from './asset-holder.service';
+import { Employee } from '../employee/entities/employee.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AssetHolder, Asset])], 
+  imports: [TypeOrmModule.forFeature([AssetHolder, Asset, Employee])], 
   controllers: [AssetHolderController],
   providers: [AssetHolderService],
 

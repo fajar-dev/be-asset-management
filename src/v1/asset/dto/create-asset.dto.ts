@@ -1,9 +1,15 @@
-import { IsString, IsNotEmpty, ValidateNested, IsArray, Validate } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateNested, IsArray, Validate, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
-import { SubCategory } from 'src/v1/sub-category/entities/sub-category.entity';
-import { IsExist } from 'src/common/validators/is-exist.decorator';
-import { ValidatePropertiesBySubCategory } from 'src/common/validators/validate-properties-by-subcategory.decorator';
+import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
+import { IsExist } from '../../..//common/validators/is-exist.decorator';
+import { ValidatePropertiesBySubCategory } from '../../../common/validators/validate-properties-by-subcategory.decorator';
 import { IsOptional } from '../../../common/validators/optional.decorator';
+
+export enum AssetStatus {
+  ACTIVE = 'active',
+  IN_REPAIR = 'in repair',
+  DISPOSED = 'disposed',
+}
 
 export class CreateAssetPropertyValueDto {
   @IsString()
@@ -21,6 +27,10 @@ export class CreateAssetDto {
 
   @IsString()
   @IsNotEmpty()
+  code: string;
+
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsOptional()
@@ -31,6 +41,12 @@ export class CreateAssetDto {
 
   @IsOptional()
   model: string;
+
+  @IsEnum(AssetStatus, {
+    message: 'status must be one of: active, in repair, disposed',
+  })
+  @IsNotEmpty()
+  status: AssetStatus;
 
   @IsArray()
   @ValidateNested({ each: true })

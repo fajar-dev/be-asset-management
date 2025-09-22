@@ -57,6 +57,7 @@ export class AssetLocationService {
       .createQueryBuilder('al')
       .leftJoinAndSelect('al.asset', 'asset')
       .leftJoinAndSelect('al.location', 'location')
+      .leftJoinAndSelect('location.branch', 'branch')
       .where('asset.assetUuid = :assetUuid', { assetUuid: options.assetUuid });
 
     if (options.search && options.search.trim() !== '') {
