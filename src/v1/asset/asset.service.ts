@@ -123,8 +123,10 @@ async create(
         .getQuery();
       return 'asset.id IN ' + subQuery;
     }).setParameter('employeeId', employeeId);
+
+    queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
   }
-  
+
   if (locationId) {
     queryBuilder.andWhere(qb => {
       const subQuery = qb.subQuery()
@@ -139,14 +141,17 @@ async create(
             .from('asset_locations', 'al2')
             .where('al2.asset_id = al.asset_id')
             .andWhere('al2.deletedAt IS NULL')
-            .getQuery()
-          return 'al.createdAt = ' + lastLocSub
+            .getQuery();
+          return 'al.createdAt = ' + lastLocSub;
         })
         .getQuery();
 
       return 'asset.id IN ' + subQuery;
     }).setParameter('locationUuid', locationId);
+
+    queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
   }
+
 
 
   queryBuilder.orderBy('asset.createdAt', 'DESC');
