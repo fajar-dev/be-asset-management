@@ -31,13 +31,13 @@ export class Asset extends BaseEntity {
   name: string;
 
   @Column({ name:'description', type: 'text', nullable: true})
-  description: string;
+  description: string | null;
 
-  @Column({ name:'brand', type: 'varchar', length: 255 })
-  brand: string;
+  @Column({ name:'brand', type: 'varchar', length: 255, nullable: true })
+  brand: string | null;
 
-  @Column({ name:'model', type: 'varchar', length: 255 })
-  model: string;
+  @Column({ name:'model', type: 'varchar', length: 255, nullable: true })
+  model: string | null;
   
   @Column({
     name: 'status',

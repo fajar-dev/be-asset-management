@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
@@ -7,6 +7,7 @@ import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetDto } from './dto/response-asset.dto';
+import { UpdateAssetDto } from './dto/update-asset.dto';
 
 @Controller()
 export class AssetController {
@@ -22,6 +23,20 @@ export class AssetController {
     return new ApiResponse(
       'Asset Property created successfully',
       await this.assetService.create(user.id, createAssetDto),
+    );
+  }
+
+  @Put(':uuid')
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async update(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @Body() updateAssetDto: UpdateAssetDto,
+    @User() user: UserEntity,
+  ) {
+    return new ApiResponse(
+      'Asset Property updated successfully',
+      await this.assetService.update(uuid, user.id, updateAssetDto),
     );
   }
 
@@ -62,6 +77,18 @@ export class AssetController {
     return new ApiResponse(
     'Note for asset fetched successfully',
     await this.assetService.findOne(uuid),
+    );
+  }
+
+  @Get(':code/by-code')
+  @UseGuards(JwtAuthGuard)
+  @Serialize(ResponseAssetDto)
+  async findOneByCode(
+    @Param('code', new DefaultValuePipe('')) code: string,
+  ) {
+    return new ApiResponse(
+    'Note for asset fetched successfully',
+    await this.assetService.findOneByCode(code),
     );
   }
 }
