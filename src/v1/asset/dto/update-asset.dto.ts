@@ -4,6 +4,8 @@ import { SubCategory } from '../../../v1/sub-category/entities/sub-category.enti
 import { IsExist } from '../../..//common/validators/is-exist.decorator';
 import { ValidatePropertiesBySubCategory } from '../../../common/validators/validate-properties-by-subcategory.decorator';
 import { IsOptional } from '../../../common/validators/optional.decorator';
+import { IsUniqueExceptSelf } from '../../../common/validators/is-unique-except-self.decorator';
+import { Asset } from '../entities/asset.entity';
 
 export enum AssetStatus {
   ACTIVE = 'active',
@@ -20,6 +22,7 @@ export class CreateAssetPropertyValueDto {
 }
 
 export class UpdateAssetDto {
+
   @IsString()
   @IsNotEmpty()
   @Validate(IsExist, [SubCategory, 'subCategoryUuid'])
@@ -27,6 +30,7 @@ export class UpdateAssetDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsUniqueExceptSelf('assets', 'code', 'asset_uuid')
   code: string;
 
   @IsString()

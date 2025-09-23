@@ -7,6 +7,7 @@ import { IsNotExist } from './common/validators/is-not-exist.decorator';
 import { IsExist } from './common/validators/is-exist.decorator';
 import { AuthModule } from './auth/auth.module';
 import { ValidatePropertiesBySubCategoryConstraint } from './common/validators/validate-properties-by-subcategory.decorator';
+import { IsUniqueExceptSelfConstraint } from './common/validators/is-unique-except-self.decorator';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ValidatePropertiesBySubCategoryConstraint } from './common/validators/v
     IsNotExist,
     IsExist,
     ValidatePropertiesBySubCategoryConstraint,
+    IsUniqueExceptSelfConstraint,
   ],
 })
 export class AppModule {}

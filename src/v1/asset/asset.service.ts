@@ -84,12 +84,19 @@ export class AssetService {
     userId: number,
     updateAssetDto: UpdateAssetDto,
   ): Promise<Asset> {
-    const asset = await this.assetRepository.findOneOrFail({
-      where: { assetUuid: assetId },
-      relations: ['subCategory', 'subCategory.assetProperties'],
+    // Ambil subCategory baru
+    const subCategory = await this.subCategoryRepository.findOneOrFail({
+      where: { subCategoryUuid: updateAssetDto.subCategoryId },
+      relations: ['assetProperties'],
     });
 
-    // update field asset utama
+    // Ambil asset lama
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { assetUuid: assetId },
+    });
+
+    // Update field dasar
+    asset.subCategoryId = subCategory.id;
     asset.code = updateAssetDto.code;
     asset.name = updateAssetDto.name;
     asset.description = updateAssetDto.description;
@@ -103,19 +110,23 @@ export class AssetService {
     await this.assetPropertyValueRepository.delete({ assetId: asset.id });
 
     const propertyValues = updateAssetDto.properties.map((p) => {
-      const propertyDef = asset.subCategory.assetProperties.find(
+      const propertyDef = subCategory.assetProperties.find(
         (def) => def.assetPropertyUuid === p.id,
       );
 
       if (!propertyDef) {
-        throw new Error(`Property dengan id ${p.id} tidak ditemukan di SubCategory`);
+        throw new Error(
+          `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
+        );
       }
 
       return this.assetPropertyValueRepository.create({
         assetId: asset.id,
         propertyId: propertyDef.id,
-        valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
-        valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+        valueString:
+          propertyDef.dataType === 'string' ? String(p.value) : null,
+        valueInt:
+          propertyDef.dataType === 'number' ? Number(p.value) : null,
         createdBy: userId,
       });
     });
@@ -132,7 +143,6 @@ export class AssetService {
       ],
     });
   }
-
 
   /**
  * Paginate assets with optional search and filters by category or sub-category
@@ -285,6 +295,22 @@ export class AssetService {
    */
   async findOneByCode(code: string): Promise<Asset> {
     return this.assetRepository.findOneByOrFail({ code });
+  }
+
+    /**
+   * Soft delete a asset by UUID
+   * @param uuid - UUID of the asset to delete
+   * @param userId - ID of the user performing the deletion
+   * @returns Promise<Asset> - the soft-deleted asset entity
+   * @throws NotFoundException if asset is not found
+   */
+  async remove(uuid: string, userId: number) {
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { assetUuid: uuid },
+    });
+    asset.deletedBy = userId;
+    await this.assetRepository.save(asset);
+    return await this.assetRepository.softRemove(asset);
   }
 
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
@@ -90,5 +90,15 @@ export class AssetController {
     'Note for asset fetched successfully',
     await this.assetService.findOneByCode(code),
     );
+  }
+
+  @Delete(':uuid')
+  @UseGuards(JwtAuthGuard)
+  async remove(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @User() user: UserEntity,
+  ) {
+    await this.assetService.remove(uuid, user.id);
+    return new ApiResponse('Location removed successfully');
   }
 }
