@@ -7,6 +7,7 @@ import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { StorageService } from '../../storage/storage.service';
 
 @Injectable()
 export class AssetService {
@@ -17,6 +18,7 @@ export class AssetService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AssetPropertyValue)
     private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
+    private storageService: StorageService,
   ) {}
   
   /**
@@ -25,14 +27,16 @@ export class AssetService {
    * @param createAssetDto - DTO containing data to create an asset
    * @returns Promise<Asset> - the created asset entity
    */
-  async create(
-    userId: number,
-    createAssetDto: CreateAssetDto,
-  ): Promise<Asset> {
+  async create(userId: number, createAssetDto: CreateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: createAssetDto.subCategoryId },
       relations: ['assetProperties'],
     });
+
+    let imagePath: string | undefined;
+    if (createAssetDto.image) {
+      imagePath = await this.storageService.uploadFile('image', createAssetDto.image);
+    }
 
     const asset = this.assetRepository.create({
       subCategoryId: subCategory.id,
@@ -43,7 +47,9 @@ export class AssetService {
       model: createAssetDto.model,
       status: createAssetDto.status,
       createdBy: userId,
+      imagePath,
     });
+
     const savedAsset = await this.assetRepository.save(asset);
 
     const propertyValues = createAssetDto.properties.map((p) => {
@@ -64,11 +70,18 @@ export class AssetService {
       });
     });
 
-    await this.assetPropertyValueRepository.save(propertyValues);
+    if (propertyValues.length) {
+      await this.assetPropertyValueRepository.save(propertyValues);
+    }
 
     return this.assetRepository.findOneOrFail({
       where: { id: savedAsset.id },
-      relations: ['propertyValues', 'propertyValues.property', 'subCategory', 'subCategory.category'],
+      relations: [
+        'propertyValues',
+        'propertyValues.property',
+        'subCategory',
+        'subCategory.category',
+      ],
     });
   }
 
@@ -84,12 +97,21 @@ export class AssetService {
     userId: number,
     updateAssetDto: UpdateAssetDto,
   ): Promise<Asset> {
-    const asset = await this.assetRepository.findOneOrFail({
-      where: { assetUuid: assetId },
-      relations: ['subCategory', 'subCategory.assetProperties'],
+    const subCategory = await this.subCategoryRepository.findOneOrFail({
+      where: { subCategoryUuid: updateAssetDto.subCategoryId },
+      relations: ['assetProperties'],
     });
 
-    // update field asset utama
+    let imagePath: string | undefined;
+    if (updateAssetDto.image) {
+      imagePath = await this.storageService.uploadFile('image', updateAssetDto.image);
+    }
+
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { assetUuid: assetId },
+    });
+
+    asset.subCategoryId = subCategory.id;
     asset.code = updateAssetDto.code;
     asset.name = updateAssetDto.name;
     asset.description = updateAssetDto.description;
@@ -97,25 +119,29 @@ export class AssetService {
     asset.model = updateAssetDto.model;
     asset.status = updateAssetDto.status;
     asset.updatedBy = userId;
-
+    asset.imagePath = imagePath || asset.imagePath;
     await this.assetRepository.save(asset);
 
     await this.assetPropertyValueRepository.delete({ assetId: asset.id });
 
     const propertyValues = updateAssetDto.properties.map((p) => {
-      const propertyDef = asset.subCategory.assetProperties.find(
+      const propertyDef = subCategory.assetProperties.find(
         (def) => def.assetPropertyUuid === p.id,
       );
 
       if (!propertyDef) {
-        throw new Error(`Property dengan id ${p.id} tidak ditemukan di SubCategory`);
+        throw new Error(
+          `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
+        );
       }
 
       return this.assetPropertyValueRepository.create({
         assetId: asset.id,
         propertyId: propertyDef.id,
-        valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
-        valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+        valueString:
+          propertyDef.dataType === 'string' ? String(p.value) : null,
+        valueInt:
+          propertyDef.dataType === 'number' ? Number(p.value) : null,
         createdBy: userId,
       });
     });
@@ -133,23 +159,30 @@ export class AssetService {
     });
   }
 
-
   /**
  * Paginate assets with optional search and filters by category or sub-category
  * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
   async paginate(
-    options: IPaginationOptions & {
-      search?: string;
-      subCategoryId?: string;
-      categoryId?: string;
-      status?: string;
-      employeeId?: string;
-      locationId?: string;
-    },
-  ): Promise<Pagination<Asset>> {
-    const { search, subCategoryId, categoryId, status, employeeId, locationId, ...paginationOptions } = options;
+  options: IPaginationOptions & {
+    search?: string;
+    subCategoryId?: string;
+    categoryId?: string;
+    status?: string;
+    employeeId?: string;
+    locationId?: string;
+  },
+): Promise<Pagination<Asset>> {
+  const {
+    search,
+    subCategoryId,
+    categoryId,
+    status,
+    employeeId,
+    locationId,
+    ...paginationOptions
+  } = options;
 
   const queryBuilder = this.assetRepository.createQueryBuilder('asset')
     .leftJoinAndSelect('asset.subCategory', 'subCategory')
@@ -214,8 +247,6 @@ export class AssetService {
     queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
   }
 
-
-
   queryBuilder.orderBy('asset.createdAt', 'DESC');
 
   const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
@@ -242,26 +273,26 @@ export class AssetService {
       },
     });
 
-    (paginationResult as any).items = assetsWithRelations.map(asset => {
-      const hasHolder = asset.subCategory?.category?.hasHolder;
-      const hasLocation = asset.subCategory?.category?.hasLocation;
-
-      return {
-        ...asset,
-        propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
-        activeHolder: hasHolder
-          ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
-          : null,
-        lastLocation: hasLocation
-          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
-          : null,
-      };
-    });
+    (paginationResult as any).items = await Promise.all(
+      assetsWithRelations.map(async (asset) => {
+        const hasHolder = asset.subCategory?.category?.hasHolder;
+        const hasLocation = asset.subCategory?.category?.hasLocation;
+        return {
+          ...asset,
+          propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+          activeHolder: hasHolder
+            ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+            : null,
+          lastLocation: hasLocation
+            ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+            : null,
+        };
+      }),
+    );
   }
-
   return paginationResult;
+}
 
-  }
 
 
   /**
@@ -285,6 +316,22 @@ export class AssetService {
    */
   async findOneByCode(code: string): Promise<Asset> {
     return this.assetRepository.findOneByOrFail({ code });
+  }
+
+    /**
+   * Soft delete a asset by UUID
+   * @param uuid - UUID of the asset to delete
+   * @param userId - ID of the user performing the deletion
+   * @returns Promise<Asset> - the soft-deleted asset entity
+   * @throws NotFoundException if asset is not found
+   */
+  async remove(uuid: string, userId: number) {
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { assetUuid: uuid },
+    });
+    asset.deletedBy = userId;
+    await this.assetRepository.save(asset);
+    return await this.assetRepository.softRemove(asset);
   }
 
 }

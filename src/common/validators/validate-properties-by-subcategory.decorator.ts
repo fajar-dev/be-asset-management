@@ -31,39 +31,27 @@ export class ValidatePropertiesBySubCategoryConstraint
 
     if (!subCategory) return false;
 
-    // jumlah harus sama
+    // number of properties must match
     if (subCategory.assetProperties.length !== value.length) {
-      console.error(
-        `❌ Jumlah properties tidak sesuai. Diharapkan: ${subCategory.assetProperties.length}, diterima: ${value.length}`,
-      );
       return false;
     }
 
     for (const prop of subCategory.assetProperties) {
       const incoming = value.find((p) => p.id === prop.assetPropertyUuid);
       if (!incoming) {
-        console.error(
-          `❌ Property "${prop.name}" (UUID: ${prop.assetPropertyUuid}) tidak ditemukan di request`,
-        );
         return false;
       }
 
-      // validasi tipe data
+      // validate data type
       const v = incoming.value;
       switch (prop.dataType) {
         case 'number':
           if (typeof v !== 'number') {
-            console.error(
-              `❌ Property "${prop.name}" harus number, dapat: ${typeof v}`,
-            );
             return false;
           }
           break;
         case 'string':
           if (typeof v !== 'string') {
-            console.error(
-              `❌ Property "${prop.name}" harus string, dapat: ${typeof v}`,
-            );
             return false;
           }
           break;
@@ -74,11 +62,10 @@ export class ValidatePropertiesBySubCategoryConstraint
   }
 
   defaultMessage(args: ValidationArguments) {
-    return `Properties tidak sesuai dengan definisi subCategory.`;
+    return `Properties do not match the definition of the selected subCategory.`;
   }
 }
 
-// decorator factory
 export function ValidatePropertiesBySubCategory(
   subCategoryField: string,
   validationOptions?: ValidationOptions,
