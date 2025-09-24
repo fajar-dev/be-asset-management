@@ -11,13 +11,14 @@ import { UpdateAssetDto } from './dto/update-asset.dto';
 import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageUploadValidator } from '../../common/validators/image-upload.validator';
+import { parseProperties } from '../../common/helpers/parse-properties.helper';
 
 @Controller()
 export class AssetController {
   constructor(private readonly assetService: AssetService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetDto)
   @UseInterceptors(FileInterceptor('image'))
   async create(
@@ -27,7 +28,7 @@ export class AssetController {
   ) {
     const createAssetDto: CreateAssetDto = {
       ...body,
-      properties: JSON.parse(body.properties || '[]'),
+      properties: parseProperties(body.properties),
       image,
     };
 
@@ -40,11 +41,19 @@ export class AssetController {
   @Put(':uuid')
   @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetDto)
+  @UseInterceptors(FileInterceptor('image'))
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @Body() updateAssetDto: UpdateAssetDto,
+    @Body() body: any,
     @User() user: UserEntity,
+    @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const updateAssetDto: UpdateAssetDto = {
+      ...body,
+      properties: parseProperties(body.properties),
+      image,
+    };
+
     return new ApiResponse(
       'Asset Property updated successfully',
       await this.assetService.update(uuid, user.id, updateAssetDto),

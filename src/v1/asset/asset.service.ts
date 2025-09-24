@@ -97,18 +97,20 @@ export class AssetService {
     userId: number,
     updateAssetDto: UpdateAssetDto,
   ): Promise<Asset> {
-    // Ambil subCategory baru
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: updateAssetDto.subCategoryId },
       relations: ['assetProperties'],
     });
 
-    // Ambil asset lama
+    let imagePath: string | undefined;
+    if (updateAssetDto.image) {
+      imagePath = await this.storageService.uploadFile('image', updateAssetDto.image);
+    }
+
     const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: assetId },
     });
 
-    // Update field dasar
     asset.subCategoryId = subCategory.id;
     asset.code = updateAssetDto.code;
     asset.name = updateAssetDto.name;
@@ -117,7 +119,7 @@ export class AssetService {
     asset.model = updateAssetDto.model;
     asset.status = updateAssetDto.status;
     asset.updatedBy = userId;
-
+    asset.imagePath = imagePath || asset.imagePath;
     await this.assetRepository.save(asset);
 
     await this.assetPropertyValueRepository.delete({ assetId: asset.id });
