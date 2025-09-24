@@ -1,11 +1,13 @@
-import { SetMetadata } from '@nestjs/common';
+import { Transform } from 'class-transformer';
+import { StorageService } from '../../storage/storage.service'; // sesuaikan path
+import { ConfigService } from '@nestjs/config';
 
-export const PRESIGNED_URL_METADATA = 'preSignedUrl';
+// kita cache StorageService biar gak new berkali-kali
+const storageService = new StorageService(new ConfigService());
 
-export type PreSignedUrlObject = {
-  originalKey: string;
-  urlKey: string;
-};
-
-export const PreSignedUrl = (message: PreSignedUrlObject[]) =>
-  SetMetadata(PRESIGNED_URL_METADATA, message);
+export function PreSignedUrl(pathKey: string) {
+  return Transform(({ obj }) => {
+    if (!obj[pathKey]) return null;
+    return storageService.getPreSignedUrl(obj[pathKey]);
+  });
+}

@@ -61,9 +61,6 @@ export class AssetController {
   }
 
   @Get()
-  @PreSignedUrl([
-    { originalKey: 'profilePicturePath', urlKey: 'profilePictureUrl' },
-  ])
   @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetDto)
   async findAll(

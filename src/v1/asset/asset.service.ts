@@ -165,16 +165,24 @@ export class AssetService {
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
   async paginate(
-    options: IPaginationOptions & {
-      search?: string;
-      subCategoryId?: string;
-      categoryId?: string;
-      status?: string;
-      employeeId?: string;
-      locationId?: string;
-    },
-  ): Promise<Pagination<Asset>> {
-    const { search, subCategoryId, categoryId, status, employeeId, locationId, ...paginationOptions } = options;
+  options: IPaginationOptions & {
+    search?: string;
+    subCategoryId?: string;
+    categoryId?: string;
+    status?: string;
+    employeeId?: string;
+    locationId?: string;
+  },
+): Promise<Pagination<Asset>> {
+  const {
+    search,
+    subCategoryId,
+    categoryId,
+    status,
+    employeeId,
+    locationId,
+    ...paginationOptions
+  } = options;
 
   const queryBuilder = this.assetRepository.createQueryBuilder('asset')
     .leftJoinAndSelect('asset.subCategory', 'subCategory')
@@ -239,8 +247,6 @@ export class AssetService {
     queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
   }
 
-
-
   queryBuilder.orderBy('asset.createdAt', 'DESC');
 
   const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
@@ -267,26 +273,33 @@ export class AssetService {
       },
     });
 
-    (paginationResult as any).items = assetsWithRelations.map(asset => {
-      const hasHolder = asset.subCategory?.category?.hasHolder;
-      const hasLocation = asset.subCategory?.category?.hasLocation;
+    (paginationResult as any).items = await Promise.all(
+      assetsWithRelations.map(async (asset) => {
+        const hasHolder = asset.subCategory?.category?.hasHolder;
+        const hasLocation = asset.subCategory?.category?.hasLocation;
 
-      return {
-        ...asset,
-        propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
-        activeHolder: hasHolder
-          ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
-          : null,
-        lastLocation: hasLocation
-          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
-          : null,
-      };
-    });
+        let imageUrl: string | null = null;
+        if (asset.imagePath) {
+          imageUrl = await this.storageService.getPreSignedUrl(asset.imagePath);
+        }
+
+        return {
+          ...asset,
+          imageUrl,
+          propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+          activeHolder: hasHolder
+            ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+            : null,
+          lastLocation: hasLocation
+            ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+            : null,
+        };
+      }),
+    );
   }
-
   return paginationResult;
+}
 
-  }
 
 
   /**
