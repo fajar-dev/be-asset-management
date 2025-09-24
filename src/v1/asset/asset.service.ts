@@ -277,15 +277,8 @@ export class AssetService {
       assetsWithRelations.map(async (asset) => {
         const hasHolder = asset.subCategory?.category?.hasHolder;
         const hasLocation = asset.subCategory?.category?.hasLocation;
-
-        let imageUrl: string | null = null;
-        if (asset.imagePath) {
-          imageUrl = await this.storageService.getPreSignedUrl(asset.imagePath);
-        }
-
         return {
           ...asset,
-          imageUrl,
           propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
           activeHolder: hasHolder
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null

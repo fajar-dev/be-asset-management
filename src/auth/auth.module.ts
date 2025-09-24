@@ -9,6 +9,7 @@ import { UserModule } from '../v1/user/user.module';
 import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
 import { User } from '../v1/user/entities/user.entity';
 import { GoogleStrategy } from './strategy/google.strategy';
+import { StorageModule } from 'src/storage/storage.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GoogleStrategy } from './strategy/google.strategy';
     PassportModule,
     JwtModule.register({}),
     UserModule,
+    StorageModule,
   ],
   controllers: [AuthController],
   providers: [

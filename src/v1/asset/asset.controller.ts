@@ -12,6 +12,7 @@ import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageUploadValidator } from '../../common/validators/image-upload.validator';
 import { parseProperties } from '../../common/helpers/parse-properties.helper';
+import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 
 @Controller()
 export class AssetController {
@@ -62,7 +63,11 @@ export class AssetController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @PreSignedUrl([
+    { originalKey: 'imagePath', urlKey: 'imageUrl' },
+  ])
   @Serialize(ResponseAssetDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
@@ -73,20 +78,20 @@ export class AssetController {
     @Query('employeeId') employeeId?: string,
     @Query('locationId') locationId?: string,
   ) {
-    return new ApiResponse(
-      'Assets retrieved successfully',
-      await this.assetService.paginate({
-        page,
-        limit,
-        search,
-        subCategoryId,
-        categoryId,
-        status,
-        employeeId,
-        locationId
-      }),
-    );
+    const paginated = await this.assetService.paginate({
+      page,
+      limit,
+      search,
+      subCategoryId,
+      categoryId,
+      status,
+      employeeId,
+      locationId,
+    });
+
+    return new ApiResponse('Assets retrieved successfully', paginated);
   }
+
 
   @Get(':uuid')
   @UseGuards(JwtAuthGuard)
