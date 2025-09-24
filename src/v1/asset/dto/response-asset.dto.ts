@@ -1,4 +1,4 @@
-import { Expose, Transform, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
 import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
 import { ResponseBranchDto } from 'src/v1/branch/dto/response-branch.dto';
@@ -75,6 +75,12 @@ export class ResponseAssetDto {
 
   @Expose()
   name: string;
+
+  @Expose()
+  imageUrl: string | null;
+
+  @Exclude()
+  imagePath: string | null;
 
   @Expose()
   @Transform(({ value }) => value ?? null)

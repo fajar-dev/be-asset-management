@@ -58,4 +58,6 @@ export class CreateAssetDto {
     message: 'Properties do not match the subCategory definition',
   })
   properties: CreateAssetPropertyValueDto[];
+
+  image?: Express.Multer.File;
 }

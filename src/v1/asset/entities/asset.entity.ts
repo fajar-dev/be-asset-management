@@ -26,6 +26,9 @@ export class Asset extends BaseEntity {
 
   @Column({ name:'code', type: 'varchar', length: 255 })
   code: string;
+
+  @Column({ name:'image_path', type: 'varchar', length: 255 })
+  imagePath: string;
   
   @Column({ name:'name', type: 'varchar', length: 255 })
   name: string;

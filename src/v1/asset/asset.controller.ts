@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
@@ -8,6 +8,9 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetDto } from './dto/response-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageUploadValidator } from '../../common/validators/image-upload.validator';
 
 @Controller()
 export class AssetController {
@@ -16,13 +19,21 @@ export class AssetController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @Serialize(ResponseAssetDto)
+  @UseInterceptors(FileInterceptor('image'))
   async create(
-    @Body() createAssetDto: CreateAssetDto,
+    @Body() body: any,
     @User() user: UserEntity,
+    @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const createAssetDto: CreateAssetDto = {
+      ...body,
+      properties: JSON.parse(body.properties || '[]'),
+      image,
+    };
+
     return new ApiResponse(
-      'Asset Property created successfully',
-      await this.assetService.create(user.id, createAssetDto),
+      'Asset Property created successfully',  
+      await this.assetService.create(user.id, createAssetDto)
     );
   }
 
@@ -41,6 +52,9 @@ export class AssetController {
   }
 
   @Get()
+  @PreSignedUrl([
+    { originalKey: 'profilePicturePath', urlKey: 'profilePictureUrl' },
+  ])
   @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetDto)
   async findAll(

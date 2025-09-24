@@ -7,6 +7,7 @@ import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { UpdateAssetDto } from './dto/update-asset.dto';
+import { StorageService } from '../../storage/storage.service';
 
 @Injectable()
 export class AssetService {
@@ -17,6 +18,7 @@ export class AssetService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AssetPropertyValue)
     private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
+    private storageService: StorageService,
   ) {}
   
   /**
@@ -25,14 +27,16 @@ export class AssetService {
    * @param createAssetDto - DTO containing data to create an asset
    * @returns Promise<Asset> - the created asset entity
    */
-  async create(
-    userId: number,
-    createAssetDto: CreateAssetDto,
-  ): Promise<Asset> {
+  async create(userId: number, createAssetDto: CreateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: createAssetDto.subCategoryId },
       relations: ['assetProperties'],
     });
+
+    let imagePath: string | undefined;
+    if (createAssetDto.image) {
+      imagePath = await this.storageService.uploadFile('image', createAssetDto.image);
+    }
 
     const asset = this.assetRepository.create({
       subCategoryId: subCategory.id,
@@ -43,7 +47,9 @@ export class AssetService {
       model: createAssetDto.model,
       status: createAssetDto.status,
       createdBy: userId,
+      imagePath,
     });
+
     const savedAsset = await this.assetRepository.save(asset);
 
     const propertyValues = createAssetDto.properties.map((p) => {
@@ -64,11 +70,18 @@ export class AssetService {
       });
     });
 
-    await this.assetPropertyValueRepository.save(propertyValues);
+    if (propertyValues.length) {
+      await this.assetPropertyValueRepository.save(propertyValues);
+    }
 
     return this.assetRepository.findOneOrFail({
       where: { id: savedAsset.id },
-      relations: ['propertyValues', 'propertyValues.property', 'subCategory', 'subCategory.category'],
+      relations: [
+        'propertyValues',
+        'propertyValues.property',
+        'subCategory',
+        'subCategory.category',
+      ],
     });
   }
 

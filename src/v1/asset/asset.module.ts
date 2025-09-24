@@ -6,11 +6,13 @@ import { Asset } from './entities/asset.entity';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValueModule } from '../asset-property-value/asset-property-value.module';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
+import { StorageModule } from '../../storage/storage.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue]),
-    AssetPropertyValueModule
+    AssetPropertyValueModule,
+    StorageModule
   ],
   controllers: [AssetController],
   providers: [AssetService],

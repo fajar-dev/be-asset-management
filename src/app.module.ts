@@ -8,12 +8,19 @@ import { IsExist } from './common/validators/is-exist.decorator';
 import { AuthModule } from './auth/auth.module';
 import { ValidatePropertiesBySubCategoryConstraint } from './common/validators/validate-properties-by-subcategory.decorator';
 import { IsUniqueExceptSelfConstraint } from './common/validators/is-unique-except-self.decorator';
+import { StorageModule } from './storage/storage.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Module({
   imports: [
     DatabaseModule, 
     AuthModule,
-    V1Module
+    V1Module,
+    StorageModule,
+    MulterModule.register({
+      storage: memoryStorage(),
+    }),
   ],
     providers: [
     {
