@@ -95,7 +95,11 @@ export class AssetController {
 
   @Get(':uuid')
   @UseGuards(JwtAuthGuard)
+  @PreSignedUrl([
+    { originalKey: 'imagePath', urlKey: 'imageUrl' },
+  ])
   @Serialize(ResponseAssetDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findOne(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
   ) {
@@ -107,7 +111,11 @@ export class AssetController {
 
   @Get(':code/by-code')
   @UseGuards(JwtAuthGuard)
+  @PreSignedUrl([
+    { originalKey: 'imagePath', urlKey: 'imageUrl' },
+  ])
   @Serialize(ResponseAssetDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findOneByCode(
     @Param('code', new DefaultValuePipe('')) code: string,
   ) {
