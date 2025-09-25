@@ -1,9 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-
-export enum AssetPropertyDataType {
-  STRING = 'string',
-  NUMBER = 'number',
-}
+import { DataType } from '../asset-property.enum';
 
 export class UpdateAssetPropertyDto {
   @IsNotEmpty()
@@ -12,6 +8,6 @@ export class UpdateAssetPropertyDto {
   name: string;
 
   @IsNotEmpty()
-  @IsEnum(AssetPropertyDataType)
-  dataType: AssetPropertyDataType;
+  @IsEnum(DataType)
+  dataType: DataType;
 }
