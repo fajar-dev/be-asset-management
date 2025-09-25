@@ -10,7 +10,6 @@ export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
   
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseEmployeeDto)
   async findAll(
     @Query('search', new DefaultValuePipe('')) search: string,

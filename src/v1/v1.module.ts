@@ -11,10 +11,11 @@ import { AssetHolderModule } from './asset-holder/asset-holder.module';
 import { LocationModule } from './location/location.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
-import { CategoryGuard } from '../common/guards/category.guard';
 import { StatisticModule } from './statistic/statistic.module';
 import { EmployeeModule } from './employee/employee.module';
 import { BranchModule } from './branch/branch.module';
+import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
+import { RolesGuard } from 'src/auth/guards/role.guard';
 
 @Module({
   imports: [
@@ -36,10 +37,6 @@ import { BranchModule } from './branch/branch.module';
       {
         path: 'v1',
         children: [
-          {
-            path: '/',
-            module: UserModule,
-          },
           {
             path: '/statistic',
             module: StatisticModule,
@@ -95,7 +92,11 @@ import { BranchModule } from './branch/branch.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: CategoryGuard,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

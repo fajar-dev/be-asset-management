@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Asset } from '../../v1/asset/entities/asset.entity';
+import { Asset } from '../../asset/entities/asset.entity';
 
 @Injectable()
 export class CategoryGuard implements CanActivate {

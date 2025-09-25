@@ -13,13 +13,16 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageUploadValidator } from '../../common/validators/image-upload.validator';
 import { parseProperties } from '../../common/helpers/parse-properties.helper';
 import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
+import { RolesGuard } from '../../auth/guards/role.guard';
 
 @Controller()
 export class AssetController {
   constructor(private readonly assetService: AssetService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetDto)
   @UseInterceptors(FileInterceptor('image'))
   async create(
@@ -40,7 +43,7 @@ export class AssetController {
   }
 
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetDto)
   @UseInterceptors(FileInterceptor('image'))
   async update(
@@ -62,7 +65,6 @@ export class AssetController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @PreSignedUrl([
     { originalKey: 'imagePath', urlKey: 'imageUrl' },
   ])
@@ -94,7 +96,6 @@ export class AssetController {
 
 
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @PreSignedUrl([
     { originalKey: 'imagePath', urlKey: 'imageUrl' },
   ])
@@ -110,7 +111,6 @@ export class AssetController {
   }
 
   @Get(':code/by-code')
-  @UseGuards(JwtAuthGuard)
   @PreSignedUrl([
     { originalKey: 'imagePath', urlKey: 'imageUrl' },
   ])
@@ -126,7 +126,7 @@ export class AssetController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @User() user: UserEntity,

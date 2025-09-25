@@ -19,6 +19,7 @@ import { ApiResponse } from '../common/utils/ApiResponse';
 import { JwtAuthGuard } from './guards/JwtAuthGuard';
 import { ResponseDto } from '../common/decorator/response-dto.decorator';
 import { SerializeV2Interceptor } from '../common/interceptor/serialize-v2.interceptor';
+import { Public } from 'src/common/decorator/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -38,6 +39,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
+  @Public() 
   async login(@Body() loginRequestDto: LoginRequestDto, @Req() req: any) {
     return new ApiResponse(
       'User logged in successfully',
@@ -47,6 +49,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('google')
+  @Public() 
   @UseGuards(AuthGuard('google'))
   async googleLogin(@Req() req: any) {
     return new ApiResponse(
@@ -56,6 +59,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
+  @Public() 
   @UseGuards(AuthGuard('refresh-token'))
   @HttpCode(HttpStatus.OK)
   async refresh(@User() user: UserEntity) {

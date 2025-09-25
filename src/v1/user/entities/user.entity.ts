@@ -1,6 +1,7 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { BeforeInsert, Column, Entity, Index } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
+import { Role } from '../role.enum';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -30,6 +31,14 @@ export class User extends BaseEntity {
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
+
+  @Column({
+    name: 'role',
+    type: 'enum',
+    enum: Role,
+    default: Role.USER,
+  })
+  role: Role;
 
   @BeforeInsert()
   async generateUuid() {

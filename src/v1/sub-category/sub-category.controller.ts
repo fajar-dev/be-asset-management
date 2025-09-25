@@ -3,18 +3,19 @@ import { SubCategoryService } from './sub-category.service';
 import { CreateSubCategoryDto } from './dto/create-sub-category.dto';
 import { UpdateSubCategoryDto } from './dto/update-sub-category.dto';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseSubCategoryDto } from './dto/response-sub-category.dto';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 export class SubCategoryController {
   constructor(private readonly subCategoryService: SubCategoryService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseSubCategoryDto)
   async create(
     @Body() createSubCategoryDto: CreateSubCategoryDto,
@@ -27,7 +28,6 @@ export class SubCategoryController {
   }
   
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseSubCategoryDto)
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
@@ -41,7 +41,6 @@ export class SubCategoryController {
   }
 
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseSubCategoryDto)
   async findOne(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -53,7 +52,7 @@ export class SubCategoryController {
   }
 
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseSubCategoryDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -67,7 +66,7 @@ export class SubCategoryController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @User() user: UserEntity,

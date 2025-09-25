@@ -110,7 +110,7 @@ export class AuthService {
    * @private
    */
   private async generateRefreshToken(user: UserEntity) {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, id: user.userUuid, email: user.email, role: user.role };
     return this.jwtService.signAsync(payload, {
       expiresIn: '7d',
       secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
@@ -124,7 +124,7 @@ export class AuthService {
    * @private
    */
   private async generateAccessToken(user: UserEntity) {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, id: user.userUuid, email: user.email, role: user.role };
     return this.jwtService.signAsync(payload, {
       expiresIn: '2d',
       secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),

@@ -1,4 +1,5 @@
 import { Expose } from 'class-transformer';
+import { Role } from '../role.enum';
 
 export class ResponseUserDto {
   @Expose({ name: 'userUuid' }) 
@@ -24,4 +25,7 @@ export class ResponseUserDto {
 
   @Expose()
   phoneNumber: string | null;
+
+  @Expose()
+  role: Role;
 }
