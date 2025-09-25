@@ -2,19 +2,20 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUID
 import { AssetPropertyService } from './asset-property.service';
 import { CreateAssetPropertyDto } from './dto/create-asset-property.dto';
 import { UpdateAssetPropertyDto } from './dto/update-asset-property.dto';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ResponseAssetPropertyDto } from './dto/response-asset-property.dto';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User as UserEntity } from '../user/entities/user.entity';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 export class AssetPropertyController {
   constructor(private readonly assetPropertyService: AssetPropertyService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetPropertyDto)
   async create(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
@@ -28,7 +29,6 @@ export class AssetPropertyController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetPropertyDto)
   async findAll(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
@@ -43,7 +43,6 @@ export class AssetPropertyController {
   }
 
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetPropertyDto)
   async findOne(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
@@ -56,7 +55,7 @@ export class AssetPropertyController {
   }
 
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetPropertyDto)
   async update(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
@@ -71,7 +70,7 @@ export class AssetPropertyController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,

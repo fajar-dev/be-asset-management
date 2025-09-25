@@ -1,21 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete,  Query, DefaultValuePipe, ParseIntPipe, ParseUUIDPipe, Put } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseLocationDto } from './dto/response-location.dto';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ApiResponse } from '../../common/utils/ApiResponse';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
-  
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseLocationDto)
   async create(
     @User() user: UserEntity,
@@ -28,7 +28,6 @@ export class LocationController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseLocationDto)
   async findAll(
     @Query('all', new DefaultValuePipe(false)) all: boolean,
@@ -49,7 +48,6 @@ export class LocationController {
   }
   
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseLocationDto)
   async findOne(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -61,7 +59,7 @@ export class LocationController {
   }
 
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseLocationDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -75,7 +73,7 @@ export class LocationController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @User() user: UserEntity,

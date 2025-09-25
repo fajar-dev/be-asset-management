@@ -1,6 +1,5 @@
 import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { AssetHolderService } from './asset-holder.service';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ResponseAssetHolderDto } from './dto/response-asset-holder.dto';
 import { assignedAssetHolderDto } from './dto/assigned-asset-holder.dto';
@@ -8,7 +7,9 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
-import { CategoryGuard } from '../../common/guards/category.guard';
+import { CategoryGuard } from '../category/guards/category.guard';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 @UseGuards(CategoryGuard)
@@ -18,7 +19,6 @@ export class AssetHolderController {
   ) {}
   
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetHolderDto)
   async findAll(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -32,8 +32,8 @@ export class AssetHolderController {
     );
   }
       
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   async assigned(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Body() assignedAssetHolderDto: assignedAssetHolderDto,
@@ -49,8 +49,8 @@ export class AssetHolderController {
   }
   
 
-  @UseGuards(JwtAuthGuard)
   @Post(':uuid')
+  @Roles(Role.ADMIN)
   async returned(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,

@@ -3,18 +3,19 @@ import { AssetNoteService } from './asset-note.service';
 import { CreateAssetNoteDto } from './dto/create-asset-note.dto';
 import { UpdateAssetNoteDto } from './dto/update-asset-note.dto';
 import { User as UserEntity } from '../user/entities/user.entity';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { ResponseAssetNoteDto } from './dto/response-asset-note.dto';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 export class AssetNoteController {
   constructor(private readonly assetNoteService: AssetNoteService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetNoteDto)
   async create(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -28,7 +29,6 @@ export class AssetNoteController {
   }
   
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetNoteDto)
   async findAll(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -43,7 +43,6 @@ export class AssetNoteController {
   }
   
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetNoteDto)
   async findOne(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -56,7 +55,7 @@ export class AssetNoteController {
   }
   
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetNoteDto)
   async update(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -71,7 +70,7 @@ export class AssetNoteController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,

@@ -10,7 +10,6 @@ export class BranchController {
   constructor(private readonly branchService: BranchService) {}
   
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseBranchDto)
   async findAll(
     @Query('search', new DefaultValuePipe('')) search: string,

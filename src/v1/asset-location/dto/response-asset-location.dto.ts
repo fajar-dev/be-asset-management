@@ -6,6 +6,9 @@ export class ResponseAssetLocationDto {
   id: string;
 
   @Expose()
+  createdAt: Date;
+
+  @Expose()
   @Type(() => ResponseLocationDto)
   location: ResponseLocationDto;
 }

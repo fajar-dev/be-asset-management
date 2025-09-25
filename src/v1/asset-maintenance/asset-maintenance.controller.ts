@@ -2,13 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseUUID
 import { AssetMaintenanceService } from './asset-maintenance.service';
 import { CreateAssetMaintenanceDto } from './dto/create-asset-maintenance.dto';
 import { UpdateAssetMaintenanceDto } from './dto/update-asset-maintenance.dto';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetMaintenanceDto } from './dto/response-asset-maintenance.dto';
-import { CategoryGuard } from '../../common/guards/category.guard';
+import { CategoryGuard } from '../category/guards/category.guard';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 @UseGuards(CategoryGuard)
@@ -17,8 +18,8 @@ export class AssetMaintenanceController {
     private readonly assetMaintenanceService: AssetMaintenanceService
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetMaintenanceDto)
   async create(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -32,7 +33,6 @@ export class AssetMaintenanceController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseAssetMaintenanceDto)
   async findAll(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -47,7 +47,7 @@ export class AssetMaintenanceController {
   }
 
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetMaintenanceDto)
   async findOne(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -60,7 +60,7 @@ export class AssetMaintenanceController {
   }
   
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseAssetMaintenanceDto)
   async update(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
@@ -75,7 +75,7 @@ export class AssetMaintenanceController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,

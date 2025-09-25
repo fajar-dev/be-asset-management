@@ -1,4 +1,5 @@
 import { Expose } from 'class-transformer';
+import { DataType } from '../asset-property.enum';
 
 export class ResponseAssetPropertyDto {
   @Expose({ name: 'assetPropertyUuid' })
@@ -8,5 +9,5 @@ export class ResponseAssetPropertyDto {
   name: string;
 
   @Expose()
-  dataType: 'string' | 'int';
+  dataType: DataType;
 }

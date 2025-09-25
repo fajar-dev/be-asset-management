@@ -19,8 +19,8 @@ import { StorageService } from 'src/storage/storage.service';
   ],
   controllers: [AssetController],
   providers: [AssetService,
-    SerializeV2Interceptor,   // provider interceptor
-    Reflector,                // provider Reflector
+    SerializeV2Interceptor, 
+    Reflector
   ],
   exports: [TypeOrmModule.forFeature([Asset])],
 })

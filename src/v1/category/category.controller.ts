@@ -7,7 +7,6 @@ import {
   Param,
   Body,
   ParseIntPipe,
-  UseGuards,
   Query,
   DefaultValuePipe,
   ParseUUIDPipe,
@@ -15,7 +14,6 @@ import {
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { ResponseCategoryDto } from './dto/response-category.dto';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
@@ -23,6 +21,8 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { SubCategoryService } from '../sub-category/sub-category.service';
 import { ResponseSubCategoryDto } from '../sub-category/dto/response-sub-category.dto';
+import { Roles } from '../../common/decorator/role.decorator';
+import { Role } from '../user/role.enum';
 
 @Controller()
 export class CategoryController {
@@ -31,8 +31,8 @@ export class CategoryController {
     private readonly subCategoryService: SubCategoryService
   ) {}
   
-  @UseGuards(JwtAuthGuard)
   @Post()
+  @Roles(Role.ADMIN)
   @Serialize(ResponseCategoryDto)
   async create(
     @User() user: UserEntity,
@@ -45,7 +45,6 @@ export class CategoryController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseCategoryDto)
   async findAll(
     @Query('all', new DefaultValuePipe(false)) all: boolean,
@@ -66,7 +65,6 @@ export class CategoryController {
   }
 
   @Get(':uuid')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseCategoryDto)
   async findOne(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -78,7 +76,6 @@ export class CategoryController {
   }
 
   @Get(':uuid/sub-category')
-  @UseGuards(JwtAuthGuard)
   @Serialize(ResponseSubCategoryDto)
   async findSubCategory(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -90,7 +87,7 @@ export class CategoryController {
   }
 
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   @Serialize(ResponseCategoryDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
@@ -104,7 +101,7 @@ export class CategoryController {
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @User() user: UserEntity,

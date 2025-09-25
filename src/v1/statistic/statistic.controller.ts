@@ -8,7 +8,6 @@ export class StatisticController {
   constructor(private readonly statisticService: StatisticService) {}
 
   @Get('count')
-  @UseGuards(JwtAuthGuard)
   async getAllCounts() {
     return new ApiResponse(
       'Counts retrieved successfully',
@@ -17,7 +16,6 @@ export class StatisticController {
   }
 
   @Get('assets-by-category')
-  @UseGuards(JwtAuthGuard)
   async getAssetsByCategory() {
     return new ApiResponse(
       'Assets by category retrieved successfully',
@@ -26,7 +24,6 @@ export class StatisticController {
   }
 
   @Get('assets-by-sub-category')
-  @UseGuards(JwtAuthGuard)
   async getAssetsBySubCategory() {
     return new ApiResponse(
       'Assets by sub-category retrieved successfully',
@@ -35,7 +32,6 @@ export class StatisticController {
   }
 
   @Get('assets-by-location')
-  @UseGuards(JwtAuthGuard)
   async getAssetsByLocation() {
     return new ApiResponse(
       'Assets by location retrieved successfully',
