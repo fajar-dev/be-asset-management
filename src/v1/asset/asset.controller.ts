@@ -1,21 +1,19 @@
 import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetDto } from './dto/response-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
-import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
+import { PreSignedUrl } from '../../common/decorator/presigned-url.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageUploadValidator } from '../../common/validators/image-upload.validator';
 import { parseProperties } from '../../common/helpers/parse-properties.helper';
 import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 import { Roles } from '../../common/decorator/role.decorator';
 import { Role } from '../user/role.enum';
-import { RolesGuard } from '../../auth/guards/role.guard';
 
 @Controller()
 export class AssetController {

@@ -8,8 +8,7 @@ import { AssetPropertyValueModule } from '../asset-property-value/asset-property
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { StorageModule } from '../../storage/storage.module';
 import { Reflector } from '@nestjs/core';
-import { SerializeV2Interceptor } from 'src/common/interceptor/serialize-v2.interceptor';
-import { StorageService } from 'src/storage/storage.service';
+import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 
 @Module({
   imports: [

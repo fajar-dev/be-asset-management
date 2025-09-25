@@ -13,7 +13,7 @@ export class BranchService {
     private configService: ConfigService,
   ) {}
 
-  async crawlAndSave() {
+  async crawl() {
       const branchRes = await axios.get(this.configService.getOrThrow('NUSAWORK_URL') + '/branch', {
         headers: {
           Authorization: ' Bearer ' + this.configService.getOrThrow('NUSAWORK_TOKEN'),

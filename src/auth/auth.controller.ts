@@ -19,7 +19,7 @@ import { ApiResponse } from '../common/utils/ApiResponse';
 import { JwtAuthGuard } from './guards/JwtAuthGuard';
 import { ResponseDto } from '../common/decorator/response-dto.decorator';
 import { SerializeV2Interceptor } from '../common/interceptor/serialize-v2.interceptor';
-import { Public } from 'src/common/decorator/public.decorator';
+import { Public } from '../common/decorator/public.decorator';
 
 @Controller('auth')
 export class AuthController {
