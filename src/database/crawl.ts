@@ -11,7 +11,7 @@ async function bootstrap() {
     const employeeService = appContext.get(EmployeeService);
 
     console.log('Crawling branches...');
-    await branchService.crawlAndSave();
+    await branchService.crawl();
 
     console.log('Crawling employees...');
     await employeeService.crawl();

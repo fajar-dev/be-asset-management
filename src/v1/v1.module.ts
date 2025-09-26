@@ -14,8 +14,8 @@ import { AssetNoteModule } from './asset-note/asset-note.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { EmployeeModule } from './employee/employee.module';
 import { BranchModule } from './branch/branch.module';
-import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
+import { JwtAuthGuard } from '../auth/guards/JwtAuthGuard';
+import { RolesGuard } from '../auth/guards/role.guard';
 
 @Module({
   imports: [

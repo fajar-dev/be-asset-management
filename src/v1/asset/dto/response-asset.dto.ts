@@ -1,7 +1,7 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
 import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
-import { ResponseBranchDto } from 'src/v1/branch/dto/response-branch.dto';
+import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
 
 export class ResponsePropertyDto {
   @Expose({ name: 'assetPropertyUuid' })

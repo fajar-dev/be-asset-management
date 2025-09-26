@@ -2,7 +2,7 @@ import { Asset } from "../../asset/entities/asset.entity";
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
-import { Employee } from "src/v1/employee/entities/employee.entity";
+import { Employee } from "../../../v1/employee/entities/employee.entity";
 
 @Entity('asset_holders')
 export class AssetHolder extends BaseEntity {

@@ -2,7 +2,6 @@ import {
   Entity,
   Column,
   BeforeInsert,
-  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -14,7 +13,7 @@ import { AssetPropertyValue } from '../../asset-property-value/entities/asset-pr
 import { AssetMaintenance } from '../../asset-maintenance/entities/asset-maintenance.entity';
 import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
 import { AssetLocation } from '../../asset-location/entities/asset-location.entity';
-import { AssetNote } from 'src/v1/asset-note/entities/asset-note.entity';
+import { AssetNote } from '../../../v1/asset-note/entities/asset-note.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {

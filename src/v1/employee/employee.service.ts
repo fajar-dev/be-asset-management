@@ -4,13 +4,7 @@ import { Like, Repository } from 'typeorm';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { Employee } from './entities/employee.entity';
-
-function sanitizeText(value: any): string {
-  if (!value) return '';
-  return String(value)
-    .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '')
-    .trim();
-}
+import { sanitizeText } from '../../common/helpers/sanitize.helper';
 
 @Injectable()
 export class EmployeeService {

@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { SubCategory } from 'src/v1/sub-category/entities/sub-category.entity';
+import { SubCategory } from '../../v1/sub-category/entities/sub-category.entity';
 
 @Injectable()
 @ValidatorConstraint({ async: true })
