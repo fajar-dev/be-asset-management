@@ -1,7 +1,8 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { BeforeInsert, Column, Entity, Index } from "typeorm";
+import { BeforeInsert, Column, Entity, Index, OneToMany } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
 import { Role } from '../role.enum';
+import { Feedback } from 'src/feedback/entities/feedback.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -39,6 +40,9 @@ export class User extends BaseEntity {
     default: Role.USER,
   })
   role: Role;
+
+  @OneToMany(() => Feedback, (feedback) => feedback.user)
+  feedbacks: Feedback[];
 
   @BeforeInsert()
   async generateUuid() {

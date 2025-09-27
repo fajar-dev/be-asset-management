@@ -11,6 +11,7 @@ import { IsUniqueExceptSelfConstraint } from './common/validators/is-unique-exce
 import { StorageModule } from './storage/storage.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { memoryStorage } from 'multer';
     MulterModule.register({
       storage: memoryStorage(),
     }),
+    FeedbackModule,
   ],
     providers: [
     {
