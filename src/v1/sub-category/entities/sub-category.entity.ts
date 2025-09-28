@@ -23,9 +23,24 @@ export class SubCategory extends BaseEntity {
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ name: 'parent_id', type: 'int', nullable: true })
+  parentId: number | null;
+
+  @Column({ name: 'level', type: 'int', default: 0 })
+  level: number;
+
   @ManyToOne(() => Category, (category) => category.subCategories)
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  @ManyToOne(() => SubCategory, (subCategory) => subCategory.children, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'parent_id' })
+  parent: SubCategory;
+
+  @OneToMany(() => SubCategory, (subCategory) => subCategory.parent)
+  children: SubCategory[];
 
   @OneToMany(() => AssetProperty, (assetProperty) => assetProperty.subCategory)
   assetProperties: AssetProperty[];
