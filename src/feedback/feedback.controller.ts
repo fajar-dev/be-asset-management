@@ -19,8 +19,8 @@ import { User as UserEntity } from '../v1/user/entities/user.entity';
 import { ApiResponse } from '../common/utils/ApiResponse';
 import { ResponseFeedbackDto } from './dto/response-feedback.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
-import { SerializeV2Interceptor } from 'src/common/interceptor/serialize-v2.interceptor';
+import { PreSignedUrl } from '../common/decorator/presigned-url.decorator';
+import { SerializeV2Interceptor } from '..//common/interceptor/serialize-v2.interceptor';
 
 @Controller('feedback')
 export class FeedbackController {
