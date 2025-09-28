@@ -8,6 +8,8 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
@@ -16,18 +18,27 @@ import { User } from '../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../v1/user/entities/user.entity';
 import { ApiResponse } from '../common/utils/ApiResponse';
 import { ResponseFeedbackDto } from './dto/response-feedback.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { PreSignedUrl } from 'src/common/decorator/presigned-url.decorator';
+import { SerializeV2Interceptor } from 'src/common/interceptor/serialize-v2.interceptor';
 
-@Controller('feedbacks')
+@Controller('feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post()
   @Serialize(ResponseFeedbackDto)
-    @UseInterceptors(FilesInterceptor('files', 3)) // min 1, max 3 files
+  @UseInterceptors(FilesInterceptor('image', 3))
   async create(
-    @Body() createFeedbackDto: CreateFeedbackDto,
+    @Body() body: any,
     @User() user: UserEntity,
+    @UploadedFiles() images: Express.Multer.File[],
   ) {
+    const createFeedbackDto: CreateFeedbackDto = {
+      ...body,
+      images,
+    };
+
     return new ApiResponse(
       'Feedback created successfully',
       await this.feedbackService.create(user.id, createFeedbackDto),
@@ -35,7 +46,11 @@ export class FeedbackController {
   }
 
   @Get()
+  @PreSignedUrl([
+    { originalKey: 'imagePaths', urlKey: 'imageUrls' },
+  ])
   @Serialize(ResponseFeedbackDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
@@ -48,7 +63,11 @@ export class FeedbackController {
   }
 
   @Get(':uuid')
+  @PreSignedUrl([
+    { originalKey: 'imagePaths', urlKey: 'imageUrls' },
+  ])
   @Serialize(ResponseFeedbackDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return new ApiResponse(
       'Feedback fetched successfully',

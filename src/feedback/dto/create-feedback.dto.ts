@@ -9,9 +9,5 @@ export class CreateFeedbackDto {
   @IsNotEmpty({ message: 'Description must not be empty' })
   description: string;
 
-  @IsArray()
-  @ArrayMinSize(1, { message: 'At least 1 image is required' })
-  @ArrayMaxSize(3, { message: 'A maximum of 3 images is allowed' })
-  @IsString({ each: true, message: 'Each image must be a string (MinIO key)' })
-  imageKeys: string[];
+  images?: Express.Multer.File[];
 }

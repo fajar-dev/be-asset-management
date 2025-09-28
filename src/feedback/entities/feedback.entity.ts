@@ -30,7 +30,7 @@ export class Feedback extends BaseEntity {
   status: Status;
 
   @Column({ type: 'json', nullable: false })
-  images: string[];
+  imagePaths: string[];
 
   @ManyToOne(() => User, (user) => user.feedbacks)
   @JoinColumn({ name: 'user_id' })

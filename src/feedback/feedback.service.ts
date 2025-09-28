@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -12,7 +12,7 @@ export class FeedbackService {
   constructor(
     @InjectRepository(Feedback)
     private readonly feedbackRepository: Repository<Feedback>,
-    private readonly storageService: StorageService, // for signed URLs
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -22,16 +22,29 @@ export class FeedbackService {
    * @returns Promise<Feedback> - the created feedback entity
    */
   async create(userId: number, dto: CreateFeedbackDto): Promise<Feedback> {
-    const feedback = this.feedbackRepository.create({
-      type: dto.type,
-      description: dto.description,
-      images: dto.imageKeys,
-      userId: userId,
-      createdBy: userId,
-    });
-
-    return this.feedbackRepository.save(feedback);
+  if (!dto.images || dto.images.length < 1 || dto.images.length > 3) {
+    throw new BadRequestException('Images must be between 1 and 3 files');
   }
+
+  const uploadedPaths: string[] = [];
+  for (const file of dto.images) {
+    const objectPath = await this.storageService.uploadFile('feedback', file);
+    if (objectPath){
+      uploadedPaths.push(objectPath);
+    }
+  }
+
+  const feedback = this.feedbackRepository.create({
+    type: dto.type,
+    description: dto.description,
+    createdBy: userId,
+    imagePaths: uploadedPaths,
+    userId: userId,
+  });
+
+  return this.feedbackRepository.save(feedback);
+}
+
 
   /**
    * Paginate feedbacks with optional search
@@ -43,15 +56,7 @@ export class FeedbackService {
   ): Promise<Pagination<Feedback>> {
     const queryBuilder = this.feedbackRepository
       .createQueryBuilder('feedback')
-      .leftJoinAndSelect('feedback.user', 'user')
-      .select([
-        'feedback',
-        'user.id',
-        'user.userUuid',
-        'user.name',
-        'user.email',
-      ])
-      .distinct(true);
+      .leftJoinAndSelect('feedback.user', 'user');
 
     if (options.search) {
       queryBuilder.andWhere('feedback.description LIKE :search', {
@@ -59,24 +64,12 @@ export class FeedbackService {
       });
     }
 
-    const pagination = await paginate<Feedback>(queryBuilder, {
+    return paginate<Feedback>(queryBuilder, {
       limit: options.limit ?? 10,
       page: options.page ?? 1,
     });
-
-    // map signed URLs
-    for (const fb of pagination.items) {
-      if (fb.images && fb.images.length > 0) {
-        fb.images = await Promise.all(
-          fb.images.map(async (key) => {
-            const signedUrl = await this.storageService.getPreSignedUrl(key);
-            return signedUrl;
-          }),
-        );
-      }
-    }
-    return pagination;
   }
+
 
   /**
    * Find one feedback by UUID
@@ -84,23 +77,10 @@ export class FeedbackService {
    * @returns Promise<Feedback>
    */
   async findOne(uuid: string): Promise<Feedback> {
-    const feedback = await this.feedbackRepository.findOne({
+    return await this.feedbackRepository.findOneOrFail({
       where: { feedbackUuid: uuid },
       relations: ['user'],
     });
-
-    if (!feedback) {
-      throw new NotFoundException(`Feedback with uuid ${uuid} not found`);
-    }
-
-    if (feedback.images && feedback.images.length > 0) {
-    feedback.images = await Promise.all(
-      feedback.images.map(async (key) => {
-        return await this.storageService.getPreSignedUrl(key);
-      }),
-    );
   }
 
-    return feedback;
-  }
 }

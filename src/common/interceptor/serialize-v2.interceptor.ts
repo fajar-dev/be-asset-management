@@ -74,18 +74,49 @@ export class SerializeV2Interceptor implements NestInterceptor {
   }
 
   private async processPreSignedUrl(
-    item: any,
-    preSignedUrlObject: PreSignedUrlObject[],
-  ) {
-    await Promise.all(
-      preSignedUrlObject.map(async (preSignedUrl) => {
-        const path = item[preSignedUrl.originalKey] || null;
-        item[preSignedUrl.urlKey] = path
-          ? await this.storageService.getPreSignedUrl(path)
-          : null;
-      }),
-    );
-  }
+  item: any,
+  preSignedUrlObject: PreSignedUrlObject[],
+) {
+  await Promise.all(
+    preSignedUrlObject.map(async (preSignedUrl) => {
+      const path = item[preSignedUrl.originalKey];
+
+      if (!path) {
+        item[preSignedUrl.urlKey] = null;
+        return;
+      }
+
+      // case: array
+      if (Array.isArray(path)) {
+        item[preSignedUrl.urlKey] = await Promise.all(
+          path.map((key) => this.storageService.getPreSignedUrl(key)),
+        );
+        return;
+      }
+
+      // case: comma separated string
+      if (typeof path === 'string' && path.includes(',')) {
+        const parts = path.split(',').map((p) => p.trim());
+        item[preSignedUrl.urlKey] = await Promise.all(
+          parts.map((key) => this.storageService.getPreSignedUrl(key)),
+        );
+        return;
+      }
+
+      // case: single string
+      if (typeof path === 'string') {
+        item[preSignedUrl.urlKey] = await this.storageService.getPreSignedUrl(
+          path,
+        );
+        return;
+      }
+
+      // fallback
+      item[preSignedUrl.urlKey] = null;
+    }),
+  );
+}
+
 
   private async dtoHandler(data: any, context: ExecutionContext) {
     const dto = this.reflector.get(DTO_METADATA, context.getHandler());
