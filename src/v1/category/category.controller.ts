@@ -22,7 +22,7 @@ import { User as UserEntity } from '../user/entities/user.entity';
 import { SubCategoryService } from '../sub-category/sub-category.service';
 import { ResponseSubCategoryDto } from '../sub-category/dto/response-sub-category.dto';
 import { Roles } from '../../common/decorator/role.decorator';
-import { Role } from '../user/role.enum';
+import { Role } from '../user/enum/role.enum';
 
 @Controller()
 export class CategoryController {

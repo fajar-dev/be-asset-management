@@ -1,7 +1,7 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { BeforeInsert, Column, Entity, Index, OneToMany } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
-import { Role } from '../role.enum';
+import { Role } from '../enum/role.enum';
 import { Feedback } from 'src/feedback/entities/feedback.entity';
 
 @Entity('users')

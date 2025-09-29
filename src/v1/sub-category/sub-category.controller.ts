@@ -8,7 +8,7 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseSubCategoryDto } from './dto/response-sub-category.dto';
 import { Roles } from '../../common/decorator/role.decorator';
-import { Role } from '../user/role.enum';
+import { Role } from '../user/enum/role.enum';
 
 @Controller()
 export class SubCategoryController {
