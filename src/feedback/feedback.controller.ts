@@ -28,7 +28,7 @@ export class FeedbackController {
 
   @Post()
   @Serialize(ResponseFeedbackDto)
-  @UseInterceptors(FilesInterceptor('image', 3))
+  @UseInterceptors(FilesInterceptor('images', 3))
   async create(
     @Body() body: any,
     @User() user: UserEntity,
