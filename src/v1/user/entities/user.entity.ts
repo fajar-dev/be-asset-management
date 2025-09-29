@@ -1,8 +1,9 @@
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { BeforeInsert, Column, Entity, Index, OneToMany } from "typeorm";
+import { BeforeInsert, Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
 import { Role } from '../enum/role.enum';
-import { Feedback } from 'src/feedback/entities/feedback.entity';
+import { Feedback } from '../../../feedback/entities/feedback.entity';
+import { Employee } from '../../../v1/employee/entities/employee.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -33,6 +34,9 @@ export class User extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ name: 'employee_id', type: 'char', length: 36, nullable: true })
+  employeeId: string;
+
   @Column({
     name: 'role',
     type: 'enum',
@@ -43,6 +47,10 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Feedback, (feedback) => feedback.user)
   feedbacks: Feedback[];
+
+  @ManyToOne(() => Employee, (employee) => employee.users, { nullable: true })
+  @JoinColumn({ name: 'employee_id',  referencedColumnName: "idEmployee" })
+  employee: Employee;
 
   @BeforeInsert()
   async generateUuid() {

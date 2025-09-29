@@ -7,12 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { DateTime } from 'luxon';
+import { Employee } from '../v1/employee/entities/employee.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
     private configService: ConfigService,
     private jwtService: JwtService,
   ) {}
@@ -62,20 +65,48 @@ export class AuthService {
    * @param googleUser
    */
   public async googleVerify(googleUser: any) {
-    let user = await this.userRepository.findOne({
+  // cek employee
+    const employee = await this.employeeRepository.findOne({
       where: { email: googleUser.email },
     });
-    if (!user) {
-      throw new ForbiddenException('You are not registered');
-    } else {
-      user.name = googleUser.name;
-      user.avatar = googleUser.picture;
+
+      // cek user
+      let user = await this.userRepository.findOne({
+      where: { email: googleUser.email },
+    });
+
+    if (!user && !employee) {
+      throw new ForbiddenException('You are not registered as employee or user');
+    }
+
+    if (!user && employee) {
+      user = this.userRepository.create({
+        email: employee.email,
+        name: employee.fullName,
+        avatar: employee.photoProfile,
+        googleId: googleUser.googleId,
+        lastLoginAt: DateTime.now().toJSDate(),
+        lastLoginIp: googleUser.ip,
+        employeeId: employee.idEmployee,
+      });
+    }
+
+    if (user) {
+      if (employee) {
+        user.name = employee.fullName;
+        user.avatar = employee.photoProfile;
+        user.employeeId = employee.idEmployee;
+      }else{
+        user.name = googleUser.name;
+        user.avatar = googleUser.picture;
+      }
       user.googleId = googleUser.googleId;
       user.lastLoginAt = DateTime.now().toJSDate();
-      user.lastLoginIp = googleUser.ip
+      user.lastLoginIp = googleUser.ip;
+
+      await this.userRepository.save(user);
+      return this.responseWithToken(user);
     }
-    await this.userRepository.save(user);
-    return await this.responseWithToken(user);
   }
 
   /**

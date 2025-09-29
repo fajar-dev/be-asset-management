@@ -2,8 +2,9 @@ import { BaseEntity } from "../../../common/entities/base.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { Branch } from "../../../v1/branch/entities/branch.entity";
 import { AssetHolder } from "../../../v1/asset-holder/entities/asset-holder.entity";
+import { User } from "src/v1/user/entities/user.entity";
 
-@Entity("employee")
+@Entity("employees")
 export class Employee extends BaseEntity {
   @Column({ name: "id_employee", type: "char", length: 36, unique: true })
   idEmployee: string;
@@ -32,4 +33,7 @@ export class Employee extends BaseEntity {
 
   @OneToMany(() => AssetHolder, (holder) => holder.employee)
   assetHolders: AssetHolder[];
+
+  @OneToMany(() => User, (user) => user.employee)
+  users: User[];
 }
