@@ -53,10 +53,11 @@ export class FeedbackService {
    */
   async paginate(
     options: IPaginationOptions & { search?: string },
+    userId: number,
   ): Promise<Pagination<Feedback>> {
     const queryBuilder = this.feedbackRepository
       .createQueryBuilder('feedback')
-      .leftJoinAndSelect('feedback.user', 'user');
+      .where('feedback.userId = :userId', { userId })
 
     if (options.search) {
       queryBuilder.andWhere('feedback.description LIKE :search', {

@@ -16,6 +16,9 @@ export class ResponseFeedbackDto {
   status: Status;
 
   @Expose()
+  reply: string;
+
+  @Expose()
   createdAt: Date;
 
   @Expose()
