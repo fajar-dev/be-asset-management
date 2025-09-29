@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString, MaxLength} from 'class-validator';
-import { DataType } from '../asset-property.enum';
+import { DataType } from '../enum/asset-property.enum';
 export class CreateAssetPropertyDto {
   @IsNotEmpty()
   @IsString()

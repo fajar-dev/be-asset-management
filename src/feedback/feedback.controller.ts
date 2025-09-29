@@ -55,10 +55,11 @@ export class FeedbackController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
+    @User() user: UserEntity,
   ) {
     return new ApiResponse(
       'Feedbacks retrieved successfully',
-      await this.feedbackService.paginate({ page, limit, search }),
+      await this.feedbackService.paginate({ page, limit, search }, user.id),
     );
   }
 

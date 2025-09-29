@@ -11,7 +11,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { v7 as uuidv7 } from 'uuid';
 import { SubCategory } from '../../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../../asset-property-value/entities/asset-property-value.entity';
-import { DataType } from '../asset-property.enum';
+import { DataType } from '../enum/asset-property.enum';
 
 @Entity('asset_properties')
 export class AssetProperty extends BaseEntity {

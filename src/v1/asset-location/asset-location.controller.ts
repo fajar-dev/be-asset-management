@@ -8,7 +8,7 @@ import { User as UserEntity } from '../user/entities/user.entity';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { CategoryGuard } from '../category/guards/category.guard';
 import { Roles } from '../../common/decorator/role.decorator';
-import { Role } from '../user/role.enum';
+import { Role } from '../user/enum/role.enum';
 
 @Controller()
 @UseGuards(CategoryGuard)

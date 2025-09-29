@@ -9,7 +9,7 @@ import { User as UserEntity } from '../user/entities/user.entity';
 import { ResponseAssetMaintenanceDto } from './dto/response-asset-maintenance.dto';
 import { CategoryGuard } from '../category/guards/category.guard';
 import { Roles } from '../../common/decorator/role.decorator';
-import { Role } from '../user/role.enum';
+import { Role } from '../user/enum/role.enum';
 
 @Controller()
 @UseGuards(CategoryGuard)

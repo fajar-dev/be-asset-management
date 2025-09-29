@@ -14,6 +14,7 @@ import { AssetMaintenance } from '../../asset-maintenance/entities/asset-mainten
 import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
 import { AssetLocation } from '../../asset-location/entities/asset-location.entity';
 import { AssetNote } from '../../../v1/asset-note/entities/asset-note.entity';
+import { Status } from '../enum/asset.enum';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
@@ -44,9 +45,10 @@ export class Asset extends BaseEntity {
   @Column({
     name: 'status',
     type: 'enum',
-    enum: ['active', 'in repair', 'disposed'],
+    enum: Status,
+    default: Status.ACTIVE,
   })
-  status: 'active' | 'in repair' | 'disposed';
+  status: Status;
   
   @ManyToOne(() => SubCategory, (subCategory) => subCategory.assetProperties)
   @JoinColumn({ name: 'sub_category_id' })

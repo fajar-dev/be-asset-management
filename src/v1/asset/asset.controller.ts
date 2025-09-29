@@ -13,7 +13,7 @@ import { ImageUploadValidator } from '../../common/validators/image-upload.valid
 import { parseProperties } from '../../common/helpers/parse-properties.helper';
 import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 import { Roles } from '../../common/decorator/role.decorator';
-import { Role } from '../user/role.enum';
+import { Role } from '../user/enum/role.enum';
 
 @Controller()
 export class AssetController {

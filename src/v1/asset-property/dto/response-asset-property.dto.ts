@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { DataType } from '../asset-property.enum';
+import { DataType } from '../enum/asset-property.enum';
 
 export class ResponseAssetPropertyDto {
   @Expose({ name: 'assetPropertyUuid' })

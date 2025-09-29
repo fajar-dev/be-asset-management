@@ -6,12 +6,7 @@ import { ValidatePropertiesBySubCategory } from '../../../common/validators/vali
 import { IsOptional } from '../../../common/validators/optional.decorator';
 import { IsNotExist } from '../../../common/validators/is-not-exist.decorator';
 import { Asset } from '../entities/asset.entity';
-
-export enum AssetStatus {
-  ACTIVE = 'active',
-  IN_REPAIR = 'in repair',
-  DISPOSED = 'disposed',
-}
+import { Status } from '../enum/asset.enum';
 
 export class CreateAssetPropertyValueDto {
   @IsString()
@@ -45,11 +40,11 @@ export class CreateAssetDto {
   @IsOptional()
   model: string;
 
-  @IsEnum(AssetStatus, {
+  @IsEnum(Status, {
     message: 'status must be one of: active, in repair, disposed',
   })
   @IsNotEmpty()
-  status: AssetStatus;
+  status: Status;
 
   @IsArray()
   @ValidateNested({ each: true })
