@@ -10,10 +10,11 @@ import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
 import { User } from '../v1/user/entities/user.entity';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { StorageModule } from '../storage/storage.module';
+import { Employee } from '../v1/employee/entities/employee.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Employee]),
     PassportModule,
     JwtModule.register({}),
     UserModule,
