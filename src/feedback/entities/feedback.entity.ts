@@ -1,7 +1,7 @@
 import { BaseEntity } from "../../common/entities/base.entity";
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 import { Status, Type } from "../enum/feedback.enum";
-import { User } from "src/v1/user/entities/user.entity";
+import { User } from "../../v1/user/entities/user.entity";
 import { v7 as uuidv7 } from 'uuid';
 
 @Entity('feedbacks')
