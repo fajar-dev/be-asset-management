@@ -65,21 +65,19 @@ export class AuthService {
    * @param googleUser
    */
   public async googleVerify(googleUser: any) {
-  // cek employee
     const employee = await this.employeeRepository.findOne({
       where: { email: googleUser.email },
     });
 
-      // cek user
-      let user = await this.userRepository.findOne({
-      where: { email: googleUser.email },
-    });
-
-    if (!user && !employee) {
-      throw new ForbiddenException('You are not registered as employee or user');
+    if (!employee) {
+      throw new ForbiddenException('You are not registered as employee');
     }
 
-    if (!user && employee) {
+    let user = await this.userRepository.findOne({
+      where: { email: employee.email },
+    });
+
+    if (!user) {
       user = this.userRepository.create({
         email: employee.email,
         name: employee.fullName,
@@ -89,25 +87,19 @@ export class AuthService {
         lastLoginIp: googleUser.ip,
         employeeId: employee.idEmployee,
       });
-    }
-
-    if (user) {
-      if (employee) {
-        user.name = employee.fullName;
-        user.avatar = employee.photoProfile;
-        user.employeeId = employee.idEmployee;
-      }else{
-        user.name = googleUser.name;
-        user.avatar = googleUser.picture;
-      }
+    } else {
+      user.name = employee.fullName;
+      user.avatar = employee.photoProfile;
+      user.employeeId = employee.idEmployee;
       user.googleId = googleUser.googleId;
       user.lastLoginAt = DateTime.now().toJSDate();
       user.lastLoginIp = googleUser.ip;
-
-      await this.userRepository.save(user);
-      return this.responseWithToken(user);
     }
+
+    await this.userRepository.save(user);
+    return this.responseWithToken(user);
   }
+
 
   /**
    * Refresh the access token.
