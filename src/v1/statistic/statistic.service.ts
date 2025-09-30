@@ -4,8 +4,6 @@ import { Repository } from 'typeorm';
 import { Asset } from '../asset/entities/asset.entity';
 import { Category } from '../category/entities/category.entity';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
-import { Location } from '../location/entities/location.entity';
-import { AssetLocation } from '../asset-location/entities/asset-location.entity';
 
 @Injectable()
 export class StatisticService {
@@ -16,25 +14,19 @@ export class StatisticService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(SubCategory)
     private readonly subCategoryRepository: Repository<SubCategory>,
-    @InjectRepository(Location)
-    private readonly locationRepository: Repository<Location>,
-    @InjectRepository(AssetLocation)
-    private readonly assetLocationRepository: Repository<AssetLocation>,
   ) {}
 
   async getAllCounts() {
-    const [assets, categories, subCategories, locations] = await Promise.all([
+    const [assets, categories, subCategories] = await Promise.all([
       this.assetRepository.count(),
       this.categoryRepository.count(),
       this.subCategoryRepository.count(),
-      this.locationRepository.count(),
     ]);
 
     return {
       assets,
       categories,
       subCategories,
-      locations,
     };
   }
 
@@ -70,39 +62,6 @@ export class StatisticService {
 
     return result.map(item => ({
       name: item.name || 'Uncategorized',
-      value: parseInt(item.value),
-    }));
-  }
-
-  async getAssetsByLocation() {
-    const subQuery = this.assetLocationRepository
-      .createQueryBuilder('al_sub')
-      .select('al_sub.asset_id')
-      .addSelect('MAX(al_sub.createdAt)', 'maxCreatedAt')
-      .where('al_sub.deletedAt IS NULL')
-      .groupBy('al_sub.asset_id');
-
-    const result = await this.assetLocationRepository
-      .createQueryBuilder('al')
-      .leftJoin('al.location', 'location')
-      .leftJoin('al.asset', 'asset')
-      .leftJoin(
-        '(' + subQuery.getQuery() + ')',
-        'latest',
-        'al.asset_id = latest.asset_id AND al.createdAt = latest.maxCreatedAt',
-      )
-      .select('location.name', 'name')
-      .addSelect('COUNT(DISTINCT al.asset_id)', 'value')
-      .where('latest.asset_id IS NOT NULL')
-      .andWhere('al.deletedAt IS NULL')
-      .andWhere('location.deletedAt IS NULL')
-      .andWhere('asset.deletedAt IS NULL')
-      .groupBy('location.id, location.name')
-      .setParameters(subQuery.getParameters())
-      .getRawMany();
-
-    return result.map(item => ({
-      name: item.name || 'No Location',
       value: parseInt(item.value),
     }));
   }

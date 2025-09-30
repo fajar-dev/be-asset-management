@@ -35,9 +35,7 @@ export class CategoryGuard implements CanActivate {
     if (url.includes('maintenance') && !category.hasMaintenance) {
       throw new ForbiddenException('Maintenance disabled for this category');
     }
-    if (url.includes('location') && !category.hasLocation) {
-      throw new ForbiddenException('Location disabled for this category');
-    }
+    
     if (url.includes('holder') && !category.hasHolder) {
       throw new ForbiddenException('Holder disabled for this category');
     }
