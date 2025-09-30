@@ -1,7 +1,7 @@
 import { BaseEntity } from "../../../common/entities/base.entity";
 import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
 import { AssetHolder } from "../../../v1/asset-holder/entities/asset-holder.entity";
-import { User } from "src/v1/user/entities/user.entity";
+import { User } from "../../../v1/user/entities/user.entity";
 
 @Entity("employees")
 export class Employee extends BaseEntity {
