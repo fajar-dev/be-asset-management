@@ -6,9 +6,6 @@ export class CreateCategoryDto {
   name: string;
 
   @IsBoolean()
-  hasLocation: boolean;
-
-  @IsBoolean()
   hasMaintenance: boolean;
 
   @IsBoolean()

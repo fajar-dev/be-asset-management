@@ -8,12 +8,9 @@ import { AssetModule } from './asset/asset.module';
 import { AssetPropertyValueModule } from './asset-property-value/asset-property-value.module';
 import { AssetMaintenanceModule } from './asset-maintenance/asset-maintenance.module';
 import { AssetHolderModule } from './asset-holder/asset-holder.module';
-import { LocationModule } from './location/location.module';
-import { AssetLocationModule } from './asset-location/asset-location.module';
 import { AssetNoteModule } from './asset-note/asset-note.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { EmployeeModule } from './employee/employee.module';
-import { BranchModule } from './branch/branch.module';
 import { JwtAuthGuard } from '../auth/guards/JwtAuthGuard';
 import { RolesGuard } from '../auth/guards/role.guard';
 
@@ -24,15 +21,12 @@ import { RolesGuard } from '../auth/guards/role.guard';
     CategoryModule,
     SubCategoryModule,
     AssetPropertyModule,
-    LocationModule,
     AssetModule,
     AssetPropertyValueModule,
     AssetMaintenanceModule,
     AssetHolderModule,
-    AssetLocationModule,
     AssetNoteModule,
     EmployeeModule,
-    BranchModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -42,16 +36,8 @@ import { RolesGuard } from '../auth/guards/role.guard';
             module: StatisticModule,
           },
           {
-            path: '/location',
-            module: LocationModule
-          },
-          {
             path: '/category',
             module: CategoryModule
-          },
-          {
-            path: '/branch',
-            module: BranchModule
           },
           {
             path: '/employee',
@@ -76,10 +62,6 @@ import { RolesGuard } from '../auth/guards/role.guard';
           {
             path: '/asset/:assetUuid/maintenance',
             module: AssetMaintenanceModule,
-          },
-          {
-            path: '/asset/:assetUuid/location',
-            module: AssetLocationModule
           },
           {
             path: '/asset/:assetUuid/note',

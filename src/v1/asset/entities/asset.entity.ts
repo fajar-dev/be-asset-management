@@ -12,7 +12,6 @@ import { SubCategory } from '../../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../../asset-property-value/entities/asset-property-value.entity';
 import { AssetMaintenance } from '../../asset-maintenance/entities/asset-maintenance.entity';
 import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
-import { AssetLocation } from '../../asset-location/entities/asset-location.entity';
 import { AssetNote } from '../../../v1/asset-note/entities/asset-note.entity';
 import { Status } from '../enum/asset.enum';
 
@@ -62,9 +61,6 @@ export class Asset extends BaseEntity {
 
   @OneToMany(() => AssetHolder, (holder) => holder.asset)
   holderRecords: AssetHolder[];
-
-  @OneToMany(() => AssetLocation, (location) => location.asset)
-  locationRecords: AssetLocation[];
 
   @OneToMany(() => AssetNote, (note) => note.asset)
   noteRecords: AssetNote[];

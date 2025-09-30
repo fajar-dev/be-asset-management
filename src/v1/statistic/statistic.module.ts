@@ -5,11 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Asset } from '../asset/entities/asset.entity';
 import { Category } from '../category/entities/category.entity';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
-import { Location } from '../location/entities/location.entity';
-import { AssetLocation } from '../asset-location/entities/asset-location.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Asset, Category, SubCategory, Location, AssetLocation])],
+  imports: [TypeOrmModule.forFeature([Asset, Category, SubCategory])],
   controllers: [StatisticController],
   providers: [StatisticService],
 })

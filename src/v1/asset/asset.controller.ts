@@ -76,7 +76,6 @@ export class AssetController {
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
     @Query('employeeId') employeeId?: string,
-    @Query('locationId') locationId?: string,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -86,7 +85,6 @@ export class AssetController {
       categoryId,
       status,
       employeeId,
-      locationId,
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);
@@ -103,7 +101,7 @@ export class AssetController {
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
   ) {
     return new ApiResponse(
-    'Note for asset fetched successfully',
+    'Asset for asset fetched successfully',
     await this.assetService.findOne(uuid),
     );
   }
@@ -118,7 +116,7 @@ export class AssetController {
     @Param('code', new DefaultValuePipe('')) code: string,
   ) {
     return new ApiResponse(
-    'Note for asset fetched successfully',
+    'Asset for asset fetched successfully',
     await this.assetService.findOneByCode(code),
     );
   }
@@ -130,6 +128,6 @@ export class AssetController {
     @User() user: UserEntity,
   ) {
     await this.assetService.remove(uuid, user.id);
-    return new ApiResponse('Location removed successfully');
+    return new ApiResponse('Asset removed successfully');
   }
 }
