@@ -38,6 +38,16 @@ export class AssetService {
       imagePath = await this.storageService.uploadFile('image', createAssetDto.image);
     }
 
+    let customValues = createAssetDto.customValues || [];
+    if (typeof customValues === 'string') {
+      try {
+        customValues = JSON.parse(customValues);
+      } catch (e) {
+        console.error('Gagal parse customValues saat create:', e);
+        customValues = [];
+      }
+    }
+
     const asset = this.assetRepository.create({
       subCategoryId: subCategory.id,
       code: createAssetDto.code,
@@ -48,12 +58,11 @@ export class AssetService {
       status: createAssetDto.status,
       createdBy: userId,
       imagePath,
-      customValues: createAssetDto.customValues || [],
+      customValues,
     });
 
     const savedAsset = await this.assetRepository.save(asset);
 
-    // save property values
     if (createAssetDto.properties?.length) {
       const propertyValues = createAssetDto.properties.map((p) => {
         const propertyDef = subCategory.assetProperties.find(
@@ -110,6 +119,16 @@ export class AssetService {
       where: { assetUuid: assetId },
     });
 
+    let customValues = updateAssetDto.customValues || [];
+    if (typeof customValues === 'string') {
+      try {
+        customValues = JSON.parse(customValues);
+      } catch (e) {
+        console.error('Gagal parse customValues saat update:', e);
+        customValues = [];
+      }
+    }
+
     asset.subCategoryId = subCategory.id;
     asset.code = updateAssetDto.code;
     asset.name = updateAssetDto.name;
@@ -119,11 +138,10 @@ export class AssetService {
     asset.status = updateAssetDto.status;
     asset.updatedBy = userId;
     asset.imagePath = imagePath || asset.imagePath;
-    asset.customValues = updateAssetDto.customValues || [];
+    asset.customValues = customValues;
 
     await this.assetRepository.save(asset);
 
-    // replace property values
     await this.assetPropertyValueRepository.delete({ assetId: asset.id });
 
     if (updateAssetDto.properties?.length) {
