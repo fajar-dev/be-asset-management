@@ -6,7 +6,7 @@ import {
   Validate,
   IsEnum,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
 import { IsExist } from '../../../common/validators/is-exist.decorator';
 import { ValidatePropertiesBySubCategory } from '../../../common/validators/validate-properties-by-subcategory.decorator';
@@ -56,7 +56,7 @@ export class CreateAssetDto {
 
   @IsOptional()
   model: string;
-  
+
   @IsEnum(Status, {
     message: 'status must be one of: active, in repair, disposed',
   })
@@ -65,34 +65,17 @@ export class CreateAssetDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCustomValueDto)
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return [];
-      }
-    }
-    return value;
+  @Type(() => CreateAssetPropertyValueDto)
+  @ValidatePropertiesBySubCategory('subCategoryId', {
+    message: 'Properties do not match the subCategory definition',
   })
-  @IsOptional()
-  customValues?: CreateCustomValueDto[];
+  properties: CreateAssetPropertyValueDto[];
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateAssetPropertyValueDto)
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value);
-      } catch {
-        return [];
-      }
-    }
-    return value;
-  })
-  properties: CreateAssetPropertyValueDto[];
+  @Type(() => CreateCustomValueDto)
+  @IsOptional()
+  customValues?: CreateCustomValueDto[];
 
   image?: Express.Multer.File;
 }
