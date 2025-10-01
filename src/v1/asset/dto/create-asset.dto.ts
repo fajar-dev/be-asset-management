@@ -1,7 +1,14 @@
-import { IsString, IsNotEmpty, ValidateNested, IsArray, Validate, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsString,
+  IsNotEmpty,
+  ValidateNested,
+  IsArray,
+  Validate,
+  IsEnum,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
-import { IsExist } from '../../..//common/validators/is-exist.decorator';
+import { IsExist } from '../../../common/validators/is-exist.decorator';
 import { ValidatePropertiesBySubCategory } from '../../../common/validators/validate-properties-by-subcategory.decorator';
 import { IsOptional } from '../../../common/validators/optional.decorator';
 import { IsNotExist } from '../../../common/validators/is-not-exist.decorator';
@@ -14,6 +21,16 @@ export class CreateAssetPropertyValueDto {
   id: string;
 
   value: string | number;
+}
+
+export class CreateCustomValueDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  value: string;
 }
 
 export class CreateAssetDto {
@@ -39,7 +56,7 @@ export class CreateAssetDto {
 
   @IsOptional()
   model: string;
-
+  
   @IsEnum(Status, {
     message: 'status must be one of: active, in repair, disposed',
   })
@@ -48,9 +65,32 @@ export class CreateAssetDto {
 
   @IsArray()
   @ValidateNested({ each: true })
+  @Type(() => CreateCustomValueDto)
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
+  })
+  @IsOptional()
+  customValues?: CreateCustomValueDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => CreateAssetPropertyValueDto)
-  @ValidatePropertiesBySubCategory('subCategoryId', {
-    message: 'Properties do not match the subCategory definition',
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
   })
   properties: CreateAssetPropertyValueDto[];
 

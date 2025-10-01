@@ -51,6 +51,14 @@ export class ResponseAssetHolderDto {
   employee: ResponseEmployeeDto;
 }
 
+export class ResponseCustomValueDto {
+  @Expose()
+  name: string;
+
+  @Expose()
+  value: string;
+}
+
 export class ResponseAssetDto {
   @Expose({ name: 'assetUuid' })
   id: string;
@@ -92,4 +100,7 @@ export class ResponseAssetDto {
   @Type(() => ResponseAssetHolderDto)
   activeHolder?: ResponseAssetHolderDto | null;
 
+  @Expose({ name: 'customValues' })
+  @Type(() => ResponseCustomValueDto)
+  customValues: ResponseCustomValueDto[];
 }

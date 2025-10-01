@@ -48,29 +48,31 @@ export class AssetService {
       status: createAssetDto.status,
       createdBy: userId,
       imagePath,
+      customValues: createAssetDto.customValues || [],
     });
 
     const savedAsset = await this.assetRepository.save(asset);
 
-    const propertyValues = createAssetDto.properties.map((p) => {
-      const propertyDef = subCategory.assetProperties.find(
-        (def) => def.assetPropertyUuid === p.id,
-      );
+    // save property values
+    if (createAssetDto.properties?.length) {
+      const propertyValues = createAssetDto.properties.map((p) => {
+        const propertyDef = subCategory.assetProperties.find(
+          (def) => def.assetPropertyUuid === p.id,
+        );
 
-      if (!propertyDef) {
-        throw new Error(`Property dengan id ${p.id} tidak ditemukan di SubCategory`);
-      }
+        if (!propertyDef) {
+          throw new Error(`Property dengan id ${p.id} tidak ditemukan di SubCategory`);
+        }
 
-      return this.assetPropertyValueRepository.create({
-        assetId: savedAsset.id,
-        propertyId: propertyDef.id,
-        valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
-        valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
-        createdBy: userId,
+        return this.assetPropertyValueRepository.create({
+          assetId: savedAsset.id,
+          propertyId: propertyDef.id,
+          valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
+          valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+          createdBy: userId,
+        });
       });
-    });
 
-    if (propertyValues.length) {
       await this.assetPropertyValueRepository.save(propertyValues);
     }
 
@@ -85,6 +87,7 @@ export class AssetService {
     });
   }
 
+
   /**
    * Update an asset
    * @param assetId - ID asset yang akan diupdate
@@ -92,11 +95,7 @@ export class AssetService {
    * @param updateAssetDto - DTO containing data to update an asset
    * @returns Promise<Asset> - the updated asset entity
    */
-  async update(
-    assetId: string,
-    userId: number,
-    updateAssetDto: UpdateAssetDto,
-  ): Promise<Asset> {
+  async update(assetId: string, userId: number, updateAssetDto: UpdateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: updateAssetDto.subCategoryId },
       relations: ['assetProperties'],
@@ -120,33 +119,34 @@ export class AssetService {
     asset.status = updateAssetDto.status;
     asset.updatedBy = userId;
     asset.imagePath = imagePath || asset.imagePath;
+    asset.customValues = updateAssetDto.customValues || [];
+
     await this.assetRepository.save(asset);
 
+    // replace property values
     await this.assetPropertyValueRepository.delete({ assetId: asset.id });
 
-    const propertyValues = updateAssetDto.properties.map((p) => {
-      const propertyDef = subCategory.assetProperties.find(
-        (def) => def.assetPropertyUuid === p.id,
-      );
-
-      if (!propertyDef) {
-        throw new Error(
-          `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
+    if (updateAssetDto.properties?.length) {
+      const propertyValues = updateAssetDto.properties.map((p) => {
+        const propertyDef = subCategory.assetProperties.find(
+          (def) => def.assetPropertyUuid === p.id,
         );
-      }
+        if (!propertyDef) {
+          throw new Error(
+            `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
+          );
+        }
 
-      return this.assetPropertyValueRepository.create({
-        assetId: asset.id,
-        propertyId: propertyDef.id,
-        valueString:
-          propertyDef.dataType === 'string' ? String(p.value) : null,
-        valueInt:
-          propertyDef.dataType === 'number' ? Number(p.value) : null,
-        createdBy: userId,
+        return this.assetPropertyValueRepository.create({
+          assetId: asset.id,
+          propertyId: propertyDef.id,
+          valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
+          valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+          createdBy: userId,
+        });
       });
-    });
-
-    await this.assetPropertyValueRepository.save(propertyValues);
+      await this.assetPropertyValueRepository.save(propertyValues);
+    }
 
     return this.assetRepository.findOneOrFail({
       where: { id: asset.id },
@@ -165,85 +165,84 @@ export class AssetService {
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
   async paginate(
-  options: IPaginationOptions & {
-    search?: string;
-    subCategoryId?: string;
-    categoryId?: string;
-    status?: string;
-    employeeId?: string;
-  },
-): Promise<Pagination<Asset>> {
-  const {
-    search,
-    subCategoryId,
-    categoryId,
-    status,
-    employeeId,
-    ...paginationOptions
-  } = options;
+    options: IPaginationOptions & {
+      search?: string;
+      subCategoryId?: string;
+      categoryId?: string;
+      status?: string;
+      employeeId?: string;
+    },
+  ): Promise<Pagination<Asset>> {
+    const {
+      search,
+      subCategoryId,
+      categoryId,
+      status,
+      employeeId,
+      ...paginationOptions
+    } = options;
 
-  const queryBuilder = this.assetRepository.createQueryBuilder('asset')
-    .leftJoinAndSelect('asset.subCategory', 'subCategory')
-    .leftJoinAndSelect('subCategory.category', 'category');
+    const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category');
 
-  if (search) {
-    queryBuilder.andWhere(
-      '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search)',
-      { search: `%${search}%` },
-    );
-  }
+    if (search) {
+      queryBuilder.andWhere(
+        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
 
-  if (subCategoryId) {
-    queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
-  }
+    if (subCategoryId) {
+      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
+    }
 
-  if (categoryId) {
-    queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
-  }
+    if (categoryId) {
+      queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
+    }
 
-  if (status) {
-    queryBuilder.andWhere('asset.status = :status', { status });
-  }
+    if (status) {
+      queryBuilder.andWhere('asset.status = :status', { status });
+    }
 
-  if (employeeId) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('ah.asset_id')
-        .from('asset_holders', 'ah')
-        .where('ah.employee_id = :employeeId')
-        .andWhere('ah.returned_at IS NULL')
-        .andWhere('ah.deleted_at IS NULL')
-        .getQuery();
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('employeeId', employeeId);
+    if (employeeId) {
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('ah.asset_id')
+          .from('asset_holders', 'ah')
+          .where('ah.employee_id = :employeeId')
+          .andWhere('ah.returned_at IS NULL')
+          .andWhere('ah.deleted_at IS NULL')
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('employeeId', employeeId);
 
-    queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
-  }
+      queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
+    }
 
-  queryBuilder.orderBy('asset.createdAt', 'DESC');
+    queryBuilder.orderBy('asset.createdAt', 'DESC');
 
-  const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+    const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
-  if (paginationResult.items.length > 0) {
-    const assetsWithRelations = await this.assetRepository.find({
-      where: {
-        assetUuid: In(paginationResult.items.map(a => a.assetUuid)),
-      },
-      relations: [
-        'subCategory',
-        'subCategory.category',
-        'propertyValues',
-        'propertyValues.property',
-        'holderRecords',
-        'holderRecords.employee',
-      ],
-      order: {
-        holderRecords: { createdAt: 'DESC' },
-      },
-    });
+    if (paginationResult.items.length > 0) {
+      const assetsWithRelations = await this.assetRepository.find({
+        where: {
+          assetUuid: In(paginationResult.items.map(a => a.assetUuid)),
+        },
+        relations: [
+          'subCategory',
+          'subCategory.category',
+          'propertyValues',
+          'propertyValues.property',
+          'holderRecords',
+          'holderRecords.employee',
+        ],
+        order: {
+          holderRecords: { createdAt: 'DESC' },
+        },
+      });
 
-    (paginationResult as any).items = await Promise.all(
-      assetsWithRelations.map(async (asset) => {
+      (paginationResult as any).items = assetsWithRelations.map((asset) => {
         const hasHolder = asset.subCategory?.category?.hasHolder;
         return {
           ...asset,
@@ -251,13 +250,14 @@ export class AssetService {
           activeHolder: hasHolder
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
             : null,
+          // customValues langsung ada di entity (JSON), tidak perlu join
+          customValues: asset.customValues || [],
         };
-      }),
-    );
-  }
-  return paginationResult;
-}
+      });
+    }
 
+    return paginationResult;
+  }
 
 
   /**
@@ -266,12 +266,18 @@ export class AssetService {
    * @returns Promise<Asset> - the found asset entity
    * @throws NotFoundException if the asset is not found
    */
-    findOne(id: string): Promise<Asset> {
-      return this.assetRepository.findOneOrFail({
+  findOne(id: string): Promise<Asset> {
+    return this.assetRepository.findOneOrFail({
       where: { assetUuid: id },
-      relations: ['propertyValues', 'propertyValues.property', 'subCategory', 'subCategory.category'],
+      relations: [
+        'propertyValues',
+        'propertyValues.property',
+        'subCategory',
+        'subCategory.category',
+      ],
     });
   }
+
 
   /**
    * Find an asset by Asset Code

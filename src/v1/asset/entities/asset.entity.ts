@@ -40,6 +40,9 @@ export class Asset extends BaseEntity {
 
   @Column({ name:'model', type: 'varchar', length: 255, nullable: true })
   model: string | null;
+
+  @Column({ name:'custom_value', type: 'json', nullable: true })
+  customValues?: { name: string; value: string | number }[];
   
   @Column({
     name: 'status',
