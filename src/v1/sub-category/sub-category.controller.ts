@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe, ParseUUIDPipe, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Put,
+} from '@nestjs/common';
 import { SubCategoryService } from './sub-category.service';
 import { CreateSubCategoryDto } from './dto/create-sub-category.dto';
 import { UpdateSubCategoryDto } from './dto/update-sub-category.dto';
@@ -26,28 +38,63 @@ export class SubCategoryController {
       await this.subCategoryService.create(user.id, createSubCategoryDto),
     );
   }
-  
+
   @Get()
   @Serialize(ResponseSubCategoryDto)
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
+    @Query('categoryUuid') categoryUuid?: string,
   ) {
     return new ApiResponse(
       'Sub categories retrieved successfully',
-      await this.subCategoryService.paginate({ page, limit, search }),
+      await this.subCategoryService.paginate({ 
+        page, 
+        limit, 
+        search,
+        categoryUuid 
+      }),
+    );
+  }
+
+  @Get('category/:categoryUuid/hierarchy')
+  @Serialize(ResponseSubCategoryDto)
+  async getHierarchy(
+    @Param('categoryUuid', new ParseUUIDPipe()) categoryUuid: string,
+  ) {
+    return new ApiResponse(
+      'Sub category hierarchy retrieved successfully',
+      await this.subCategoryService.getHierarchyTree(categoryUuid),
+    );
+  }
+
+  @Get('category/:categoryUuid')
+  @Serialize(ResponseSubCategoryDto)
+  async findByCategory(
+    @Param('categoryUuid', new ParseUUIDPipe()) categoryUuid: string,
+  ) {
+    return new ApiResponse(
+      'Sub categories retrieved successfully',
+      await this.subCategoryService.findAllByCategory(categoryUuid),
     );
   }
 
   @Get(':uuid')
   @Serialize(ResponseSubCategoryDto)
-  async findOne(
-    @Param('uuid', new ParseUUIDPipe()) uuid: string,
-  ) {
+  async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return new ApiResponse(
       'Sub category fetched successfully',
       await this.subCategoryService.findOne(uuid),
+    );
+  }
+
+  @Get(':uuid/path')
+  @Serialize(ResponseSubCategoryDto)
+  async getPath(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return new ApiResponse(
+      'Sub category path retrieved successfully',
+      await this.subCategoryService.getPath(uuid),
     );
   }
 

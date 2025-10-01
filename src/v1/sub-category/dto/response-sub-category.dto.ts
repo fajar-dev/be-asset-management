@@ -10,8 +10,19 @@ export class ResponseSubCategoryDto {
   name: string;
 
   @Expose()
+  level: number;
+
+  @Expose()
   @Type(() => ResponseCategoryDto)
   category: ResponseCategoryDto;
+
+  @Expose()
+  @Type(() => ResponseSubCategoryDto)
+  parent: ResponseSubCategoryDto | null;
+
+  @Expose()
+  @Type(() => ResponseSubCategoryDto)
+  children: ResponseSubCategoryDto[];
 
   @Expose()
   @Type(() => ResponseAssetPropertyDto)

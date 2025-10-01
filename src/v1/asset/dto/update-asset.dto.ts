@@ -16,6 +16,16 @@ export class CreateAssetPropertyValueDto {
   value: string | number;
 }
 
+export class CreateCustomValueDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  value: string;
+}
+
 export class UpdateAssetDto {
 
   @IsString()
@@ -54,6 +64,12 @@ export class UpdateAssetDto {
     message: 'Properties do not match the subCategory definition',
   })
   properties: CreateAssetPropertyValueDto[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateCustomValueDto)
+  @IsOptional()
+  customValues?: CreateCustomValueDto[];
 
   image?: Express.Multer.File;
 }

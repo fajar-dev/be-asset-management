@@ -13,6 +13,8 @@ import { Category } from '../../category/entities/category.entity';
 import { AssetProperty } from '../../asset-property/entities/asset-property.entity';
 
 @Entity('sub_categories')
+@Index(['categoryId', 'parentId'])
+@Index(['level'])
 export class SubCategory extends BaseEntity {
   @Column({ name: 'sub_category_uuid', type: 'char', length: 36, unique: true })
   subCategoryUuid: string;
@@ -35,9 +37,10 @@ export class SubCategory extends BaseEntity {
 
   @ManyToOne(() => SubCategory, (subCategory) => subCategory.children, {
     onDelete: 'CASCADE',
+    nullable: true,
   })
   @JoinColumn({ name: 'parent_id' })
-  parent: SubCategory;
+  parent: SubCategory | null;
 
   @OneToMany(() => SubCategory, (subCategory) => subCategory.parent)
   children: SubCategory[];
