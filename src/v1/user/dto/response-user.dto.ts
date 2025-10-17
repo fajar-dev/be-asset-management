@@ -6,6 +6,9 @@ export class ResponseUserDto {
   id: number;
 
   @Expose()
+  employeeId: string;
+
+  @Expose()
   name: string;
 
   @Expose()

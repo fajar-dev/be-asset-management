@@ -6,6 +6,7 @@ import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginat
 import { Feedback } from './entities/feedback.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { StorageService } from '../storage/storage.service';
+import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 
 @Injectable()
 export class FeedbackService {
@@ -53,23 +54,33 @@ export class FeedbackService {
    */
   async paginate(
     options: IPaginationOptions & { search?: string },
-    userId: number,
+    userId?: number, // optional
   ): Promise<Pagination<Feedback>> {
     const queryBuilder = this.feedbackRepository
       .createQueryBuilder('feedback')
-      .where('feedback.userId = :userId', { userId })
+      .leftJoinAndSelect('feedback.user', 'user'); // join user
 
-    if (options.search) {
-      queryBuilder.andWhere('feedback.description LIKE :search', {
-        search: `%${options.search}%`,
-      });
+    if (userId) {
+      queryBuilder.where('feedback.userId = :userId', { userId });
     }
 
-    return paginate<Feedback>(queryBuilder, {
+    if (options.search) {
+      const searchCondition = 'feedback.description LIKE :search';
+      if (userId) {
+        queryBuilder.andWhere(searchCondition, { search: `%${options.search}%` });
+      } else {
+        queryBuilder.where(searchCondition, { search: `%${options.search}%` });
+      }
+    }
+
+    queryBuilder.orderBy('feedback.createdAt', 'DESC');
+
+    return paginate(queryBuilder, {
       limit: options.limit ?? 10,
       page: options.page ?? 1,
     });
   }
+
 
 
   /**
@@ -83,5 +94,28 @@ export class FeedbackService {
       relations: ['user'],
     });
   }
+  
+  /**
+   * Update a feedback by UUID
+   * @param uuid - UUID of the feedback to update
+   * @param updateFeedbackDto - DTO containing updated feedback data
+   * @returns Promise<Feedback> - the updated feedback entity
+   * @throws NotFoundException if feedback is not found
+   */
+  async update(
+    uuid: string,
+    userId: number,
+    updateFeedbackDto: UpdateFeedbackDto,
+  ): Promise<Feedback> {
+    const feedback = await this.feedbackRepository.findOneOrFail({
+      where: {
+        feedbackUuid: uuid,
+      },
+    });
 
+    feedback.status = updateFeedbackDto.status;
+    feedback.reply = updateFeedbackDto.reply;
+    feedback.updatedBy = userId;
+    return this.feedbackRepository.save(feedback);
+  }
 }
