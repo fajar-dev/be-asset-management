@@ -56,23 +56,24 @@ export class FeedbackService {
     options: IPaginationOptions & { search?: string },
     userId?: number, // optional
   ): Promise<Pagination<Feedback>> {
-    const queryBuilder = this.feedbackRepository.createQueryBuilder('feedback');
+    const queryBuilder = this.feedbackRepository
+      .createQueryBuilder('feedback')
+      .leftJoinAndSelect('feedback.user', 'user'); // join user
 
     if (userId) {
       queryBuilder.where('feedback.userId = :userId', { userId });
     }
 
     if (options.search) {
+      const searchCondition = 'feedback.description LIKE :search';
       if (userId) {
-        queryBuilder.andWhere('feedback.description LIKE :search', {
-          search: `%${options.search}%`,
-        });
+        queryBuilder.andWhere(searchCondition, { search: `%${options.search}%` });
       } else {
-        queryBuilder.where('feedback.description LIKE :search', {
-          search: `%${options.search}%`,
-        });
+        queryBuilder.where(searchCondition, { search: `%${options.search}%` });
       }
     }
+
+    queryBuilder.orderBy('feedback.createdAt', 'DESC');
 
     return paginate(queryBuilder, {
       limit: options.limit ?? 10,
