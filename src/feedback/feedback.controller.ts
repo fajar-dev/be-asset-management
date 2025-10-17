@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   UseInterceptors,
   UploadedFiles,
+  Put,
 } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
@@ -21,6 +22,7 @@ import { ResponseFeedbackDto } from './dto/response-feedback.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PreSignedUrl } from '../common/decorator/presigned-url.decorator';
 import { SerializeV2Interceptor } from '..//common/interceptor/serialize-v2.interceptor';
+import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 
 @Controller('feedback')
 export class FeedbackController {
@@ -55,12 +57,15 @@ export class FeedbackController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
+    @Query('by-user') byUser: string = 'true',
     @User() user: UserEntity,
   ) {
-    return new ApiResponse(
-      'Feedbacks retrieved successfully',
-      await this.feedbackService.paginate({ page, limit, search }, user.id),
+    const isByUser = byUser === 'true';
+    const feedbacks = await this.feedbackService.paginate(
+      { page: +page, limit: +limit, search },
+      isByUser ? user.id : undefined
     );
+    return new ApiResponse('Feedback list fetched successfully', feedbacks);
   }
 
   @Get(':uuid')
@@ -73,6 +78,19 @@ export class FeedbackController {
     return new ApiResponse(
       'Feedback fetched successfully',
       await this.feedbackService.findOne(uuid),
+    );
+  }
+  
+  @Put(':uuid')
+  @Serialize(ResponseFeedbackDto)
+  async update(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @User() user: UserEntity,
+    @Body() updateFeedbackDto: UpdateFeedbackDto,
+  ) {
+    return new ApiResponse(
+      'Feedback updated successfully',
+      await this.feedbackService.update(uuid, user.id, updateFeedbackDto),
     );
   }
 }
