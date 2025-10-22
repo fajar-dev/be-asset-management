@@ -41,6 +41,7 @@ export class EmployeeService {
         {
           id: e.user_id,
           idEmployee: sanitizeText(e.employee_id),
+          branchId: sanitizeText(e.branch_id),
           fullName: sanitizeText(e.full_name),
           jobPosition: sanitizeText(e.job_position),
           email: sanitizeText(e.email),

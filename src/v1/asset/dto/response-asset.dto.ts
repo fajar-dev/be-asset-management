@@ -2,6 +2,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
 import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
 import { Status } from '../enum/asset.enum';
+import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
 
 export class ResponsePropertyDto {
   @Expose({ name: 'assetPropertyUuid' })
@@ -49,6 +50,21 @@ export class ResponseAssetHolderDto {
   @Expose()
   @Type(() => ResponseEmployeeDto)
   employee: ResponseEmployeeDto;
+}
+
+export class ResponseAssetLastLocationDto {
+  @Expose({ name: 'assetLocationUuid' })
+  id: string;
+
+  @Expose({ name: 'locationUuid' })
+  locationId: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  @Type(() => ResponseBranchDto)
+  branch: ResponseBranchDto;
 }
 
 export class ResponseCustomValueDto {
@@ -99,6 +115,10 @@ export class ResponseAssetDto {
   @Expose()
   @Type(() => ResponseAssetHolderDto)
   activeHolder?: ResponseAssetHolderDto | null;
+
+  @Expose()
+  @Type(() => ResponseAssetLastLocationDto)
+  lastLocation?: ResponseAssetLastLocationDto | null;
 
   @Expose({ name: 'customValues' })
   @Type(() => ResponseCustomValueDto)

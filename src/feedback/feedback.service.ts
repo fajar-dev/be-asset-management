@@ -23,29 +23,28 @@ export class FeedbackService {
    * @returns Promise<Feedback> - the created feedback entity
    */
   async create(userId: number, dto: CreateFeedbackDto): Promise<Feedback> {
-  if (!dto.images || dto.images.length < 1 || dto.images.length > 3) {
-    throw new BadRequestException('Images must be between 1 and 3 files');
-  }
-
-  const uploadedPaths: string[] = [];
-  for (const file of dto.images) {
-    const objectPath = await this.storageService.uploadFile('feedback', file);
-    if (objectPath){
-      uploadedPaths.push(objectPath);
+    if (!dto.images || dto.images.length < 1 || dto.images.length > 3) {
+      throw new BadRequestException('Images must be between 1 and 3 files');
     }
+
+    const uploadedPaths: string[] = [];
+    for (const file of dto.images) {
+      const objectPath = await this.storageService.uploadFile('feedback', file);
+      if (objectPath){
+        uploadedPaths.push(objectPath);
+      }
+    }
+
+    const feedback = this.feedbackRepository.create({
+      type: dto.type,
+      description: dto.description,
+      createdBy: userId,
+      imagePaths: uploadedPaths,
+      userId: userId,
+    });
+
+    return this.feedbackRepository.save(feedback);
   }
-
-  const feedback = this.feedbackRepository.create({
-    type: dto.type,
-    description: dto.description,
-    createdBy: userId,
-    imagePaths: uploadedPaths,
-    userId: userId,
-  });
-
-  return this.feedbackRepository.save(feedback);
-}
-
 
   /**
    * Paginate feedbacks with optional search
@@ -80,8 +79,6 @@ export class FeedbackService {
       page: options.page ?? 1,
     });
   }
-
-
 
   /**
    * Find one feedback by UUID

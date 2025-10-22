@@ -20,6 +20,7 @@ import { JwtAuthGuard } from './guards/JwtAuthGuard';
 import { ResponseDto } from '../common/decorator/response-dto.decorator';
 import { SerializeV2Interceptor } from '../common/interceptor/serialize-v2.interceptor';
 import { Public } from '../common/decorator/public.decorator';
+import { Is5Guard } from './guards/is5.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -57,6 +58,18 @@ export class AuthController {
       await this.authService.googleVerify(req.user),
     );
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('is5')
+  @Public()
+  @UseGuards(Is5Guard, AuthGuard('is5'))
+  async is5Login(@Req() req: any) {
+    return new ApiResponse(
+      'User logged in successfully',
+      await this.authService.is5Verify(req.user),
+    );
+  }
+
 
   @Post('refresh-token')
   @Public() 

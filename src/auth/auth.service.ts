@@ -95,6 +95,43 @@ export class AuthService {
       user.lastLoginAt = DateTime.now().toJSDate();
       user.lastLoginIp = googleUser.ip;
     }
+    await this.userRepository.save(user);
+    return this.responseWithToken(user);
+  }
+
+  /**
+   * Login with IS5 (via legacy API)
+   * @param is5User
+   */
+  public async is5Verify(is5User: any) {
+    let employee = await this.employeeRepository.findOne({
+      where: { idEmployee: is5User.employeeId },
+    });
+
+    if (!employee) {
+      throw new ForbiddenException('You are not registered as employee');
+    }
+
+    let user = await this.userRepository.findOne({
+      where: { employeeId: is5User.employeeId },
+    });
+
+    if (!user) {
+      user = this.userRepository.create({
+        email: employee.email,
+        name: employee.fullName,
+        avatar: employee.photoProfile,
+        lastLoginAt: DateTime.now().toJSDate(),
+        lastLoginIp: is5User.ip,
+        employeeId: employee.idEmployee,
+      });
+    } else {
+      user.name = employee.fullName;
+      user.avatar = employee.photoProfile;
+      user.employeeId = employee.idEmployee;
+      user.lastLoginAt = DateTime.now().toJSDate();
+      user.lastLoginIp = is5User.ip;
+    }
 
     await this.userRepository.save(user);
     return this.responseWithToken(user);

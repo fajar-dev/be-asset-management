@@ -8,6 +8,9 @@ export class ResponseCategoryDto {
   name: string;
 
   @Expose()
+  hasLocation: boolean;
+
+  @Expose()
   hasMaintenance: boolean;
 
   @Expose()

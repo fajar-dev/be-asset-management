@@ -11,6 +11,7 @@ import { User } from '../v1/user/entities/user.entity';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { StorageModule } from '../storage/storage.module';
 import { Employee } from '../v1/employee/entities/employee.entity';
+import { Is5Strategy } from './strategy/is5.strategy';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { Employee } from '../v1/employee/entities/employee.entity';
     AuthService,
     JwtStrategy,
     RefreshTokenStrategy,
-    GoogleStrategy
+    GoogleStrategy,
+    Is5Strategy
   ],
   exports: [AuthService],
 })
