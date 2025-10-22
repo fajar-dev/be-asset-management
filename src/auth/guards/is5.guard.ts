@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { customValidationPipe } from 'src/common/pipes/validation.pipe';
+import { customValidationPipe } from '../../common/pipes/validation.pipe';
 import { Is5LoginRequestDto } from '../dto/is5-login-request.dto';
 import { plainToInstance } from 'class-transformer';
 

@@ -76,6 +76,7 @@ export class AssetController {
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
     @Query('employeeId') employeeId?: string,
+    @Query('locationId') locationId?: string,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -85,6 +86,7 @@ export class AssetController {
       categoryId,
       status,
       employeeId,
+      locationId,
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);

@@ -6,6 +6,9 @@ export class UpdateCategoryDto {
   name: string;
 
   @IsBoolean()
+  hasLocation: boolean;
+
+  @IsBoolean()
   hasMaintenance: boolean;
 
   @IsBoolean()

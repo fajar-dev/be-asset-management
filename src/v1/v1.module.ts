@@ -13,6 +13,9 @@ import { StatisticModule } from './statistic/statistic.module';
 import { EmployeeModule } from './employee/employee.module';
 import { JwtAuthGuard } from '../auth/guards/JwtAuthGuard';
 import { RolesGuard } from '../auth/guards/role.guard';
+import { BranchModule } from './branch/branch.module';
+import { AssetLocationModule } from './asset-location/asset-location.module';
+import { LocationModule } from './location/location.module';
 
 @Module({
   imports: [
@@ -21,12 +24,15 @@ import { RolesGuard } from '../auth/guards/role.guard';
     CategoryModule,
     SubCategoryModule,
     AssetPropertyModule,
+    LocationModule,
     AssetModule,
     AssetPropertyValueModule,
     AssetMaintenanceModule,
     AssetHolderModule,
+    AssetLocationModule,
     AssetNoteModule,
     EmployeeModule,
+    BranchModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -36,8 +42,16 @@ import { RolesGuard } from '../auth/guards/role.guard';
             module: StatisticModule,
           },
           {
+            path: '/location',
+            module: LocationModule
+          },
+          {
             path: '/category',
             module: CategoryModule
+          },
+          {
+            path: '/branch',
+            module: BranchModule
           },
           {
             path: '/employee',
@@ -64,12 +78,19 @@ import { RolesGuard } from '../auth/guards/role.guard';
             module: AssetMaintenanceModule,
           },
           {
+            path: '/asset/:assetUuid/location',
+            module: AssetLocationModule
+          },
+          {
             path: '/asset/:assetUuid/note',
             module: AssetNoteModule
           },
         ],
       },
     ]),
+    BranchModule,
+    AssetLocationModule,
+    LocationModule,
   ],
   providers: [
     {

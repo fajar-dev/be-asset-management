@@ -189,6 +189,7 @@ export class AssetService {
       categoryId?: string;
       status?: string;
       employeeId?: string;
+      locationId?: string;
     },
   ): Promise<Pagination<Asset>> {
     const {
@@ -197,6 +198,7 @@ export class AssetService {
       categoryId,
       status,
       employeeId,
+      locationId,
       ...paginationOptions
     } = options;
 
@@ -238,6 +240,31 @@ export class AssetService {
       queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
     }
 
+    if (locationId) {
+    queryBuilder.andWhere(qb => {
+      const subQuery = qb.subQuery()
+        .select('al.asset_id')
+        .from('asset_locations', 'al')
+        .leftJoin('locations', 'l', 'al.location_id = l.id')
+        .where('al.deletedAt IS NULL')
+        .andWhere('l.location_uuid = :locationUuid')
+        .andWhere(qb2 => {
+          const lastLocSub = qb2.subQuery()
+            .select('MAX(al2.createdAt)')
+            .from('asset_locations', 'al2')
+            .where('al2.asset_id = al.asset_id')
+            .andWhere('al2.deletedAt IS NULL')
+            .getQuery();
+          return 'al.createdAt = ' + lastLocSub;
+        })
+        .getQuery();
+
+      return 'asset.id IN ' + subQuery;
+    }).setParameter('locationUuid', locationId);
+
+    queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
+  }
+
     queryBuilder.orderBy('asset.createdAt', 'DESC');
 
     const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
@@ -254,19 +281,27 @@ export class AssetService {
           'propertyValues.property',
           'holderRecords',
           'holderRecords.employee',
+          'locationRecords',
+          'locationRecords.location',
+          'locationRecords.location.branch',
         ],
         order: {
           holderRecords: { createdAt: 'DESC' },
+          locationRecords: { createdAt: 'DESC' },
         },
       });
 
       (paginationResult as any).items = assetsWithRelations.map((asset) => {
         const hasHolder = asset.subCategory?.category?.hasHolder;
+        const hasLocation = asset.subCategory?.category?.hasLocation;
         return {
           ...asset,
           propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
           activeHolder: hasHolder
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+            : null,
+            lastLocation: hasLocation
+            ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
             : null,
           // customValues langsung ada di entity (JSON), tidak perlu join
           customValues: asset.customValues || [],

@@ -21,6 +21,7 @@ export class CategoryService {
   async create(userId: number, createCategorydto: CreateCategoryDto): Promise<Category> {
     const category = this.categoryRepository.create({
       name: createCategorydto.name,
+      hasLocation: createCategorydto.hasLocation,
       hasMaintenance: createCategorydto.hasMaintenance,
       hasHolder: createCategorydto.hasHolder,
       createdBy: userId,
@@ -99,6 +100,7 @@ export class CategoryService {
     });
 
     category.name = updateCategoryDto.name;
+    category.hasLocation = updateCategoryDto.hasLocation;
     category.hasMaintenance = updateCategoryDto.hasMaintenance;
     category.hasHolder = updateCategoryDto.hasHolder;
     category.updatedBy = userId;
