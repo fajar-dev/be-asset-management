@@ -100,6 +100,15 @@ export class ResponseAssetDto {
 
   @Expose()
   model: string;
+  
+  @Expose()
+  user: string;
+
+  @Expose()
+  price: string | null;
+
+  @Expose()
+  purchaseDate: Date | null;
 
   @Expose()
   status: Status;

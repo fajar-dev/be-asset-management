@@ -42,6 +42,15 @@ export class Asset extends BaseEntity {
   @Column({ name:'model', type: 'varchar', length: 255, nullable: true })
   model: string | null;
 
+  @Column({ name: 'price', type: 'decimal', precision: 15, scale: 2, nullable: true })
+  price: number | null;
+
+  @Column({ name:'user', type: 'varchar', length: 255 })
+  user: string;
+
+  @Column({ name: 'purchase_date', type: 'date', nullable: true })
+  purchaseDate: Date | null;
+
   @Column({ name:'custom_value', type: 'json', nullable: true })
   customValues?: { name: string; value: string | number }[];
   
