@@ -29,4 +29,12 @@ export class StatisticController {
       await this.statisticService.getAssetsBySubCategory(),
     );
   }
+
+  @Get('assets-by-location')
+  async getAssetsByLocation() {
+    return new ApiResponse(
+      'Assets by location retrieved successfully',
+      await this.statisticService.getAssetsByLocation(),
+    );
+  }
 }
