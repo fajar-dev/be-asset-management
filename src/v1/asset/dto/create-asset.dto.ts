@@ -63,7 +63,7 @@ export class CreateAssetDto {
   user: string;
 
   @IsOptional()
-  price: string;
+  price: number | null;
 
   @IsOptional()
   @IsDate()

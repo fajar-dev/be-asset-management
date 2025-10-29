@@ -53,7 +53,7 @@ export class UpdateAssetDto {
   user: string;
 
   @IsOptional()
-  price: string;
+  price: number | null;
 
   @IsOptional()
   @IsDate()

@@ -55,6 +55,9 @@ export class AssetService {
       description: createAssetDto.description,
       brand: createAssetDto.brand,
       model: createAssetDto.model,
+      user: createAssetDto.user,
+      price: createAssetDto.price,
+      purchaseDate: createAssetDto.purchaseDate,
       status: createAssetDto.status,
       createdBy: userId,
       imagePath,
@@ -136,6 +139,9 @@ export class AssetService {
     asset.brand = updateAssetDto.brand;
     asset.model = updateAssetDto.model;
     asset.status = updateAssetDto.status;
+    asset.user = updateAssetDto.user;
+    asset.price = updateAssetDto.price;
+    asset.purchaseDate = updateAssetDto.purchaseDate;
     asset.updatedBy = userId;
     asset.imagePath = imagePath || asset.imagePath;
     asset.customValues = customValues;
