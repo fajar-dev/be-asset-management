@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -107,17 +107,29 @@ export class LocationService {
 
   /**
    * Soft delete a location by UUID
+   * Prevent deletion if it is currently used by asset locations
    * @param uuid - UUID of the location to delete
    * @param userId - ID of the user performing the deletion
    * @returns Promise<Location> - the soft-deleted location entity
    * @throws NotFoundException if location is not found
+   * @throws BadRequestException if location is in use by assets
    */
-  async remove(uuid: string, userId: number) {
+  async remove(uuid: string, userId: number): Promise<Location> {
     const location = await this.locationRepository.findOneOrFail({
       where: { locationUuid: uuid },
+      relations: ['assetLocations'],
     });
+
+    // Check if this location is still used by any asset
+    if (location.assetLocations && location.assetLocations.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete location because it is currently in use by assets.',
+      );
+    }
+
     location.deletedBy = userId;
     await this.locationRepository.save(location);
     return await this.locationRepository.softRemove(location);
   }
+
 }

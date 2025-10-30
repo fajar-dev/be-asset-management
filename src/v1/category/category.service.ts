@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -112,11 +112,20 @@ export class CategoryService {
    * Soft delete a category by UUID
    * @param uuid - UUID of the category to delete
    * @returns Promise<import("typeorm").UpdateResult> - result of soft delete operation
+   * @throws BadRequestException if category is in use by subcategories
    */
   async remove(uuid: string, userId: number) {
     const category = await this.categoryRepository.findOneOrFail({
       where: { categoryUuid: uuid },
+      relations: ['subCategories'],
     });
+
+    if (category.subCategories && category.subCategories.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete because it is currently in use.',
+      );
+    }
+
     category.deletedBy = userId;
     await this.categoryRepository.save(category);
     return await this.categoryRepository.softRemove(category);

@@ -5,6 +5,7 @@ import {
   IsArray,
   Validate,
   IsEnum,
+  IsDate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
@@ -56,6 +57,18 @@ export class CreateAssetDto {
 
   @IsOptional()
   model: string;
+
+  @IsString()
+  @IsNotEmpty()
+  user: string;
+
+  @IsOptional()
+  price: number | null;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  purchaseDate: Date;
 
   @IsEnum(Status, {
     message: 'status must be one of: active, in repair, disposed',

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, ValidateNested, IsArray, Validate, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateNested, IsArray, Validate, IsEnum, IsDate } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
 import { IsExist } from '../../..//common/validators/is-exist.decorator';
@@ -47,6 +47,18 @@ export class UpdateAssetDto {
 
   @IsOptional()
   model: string | null;
+  
+  @IsString()
+  @IsNotEmpty()
+  user: string;
+
+  @IsOptional()
+  price: number | null;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  purchaseDate: Date;
 
   @IsEnum(Status, {
     message: 'status must be one of: active, in repair, disposed',

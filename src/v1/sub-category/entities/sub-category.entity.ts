@@ -11,6 +11,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { v7 as uuidv7 } from 'uuid';
 import { Category } from '../../category/entities/category.entity';
 import { AssetProperty } from '../../asset-property/entities/asset-property.entity';
+import { Asset } from '../../../v1/asset/entities/asset.entity';
 
 /**
  * SubCategory Entity
@@ -67,6 +68,10 @@ export class SubCategory extends BaseEntity {
    */
   @OneToMany(() => AssetProperty, (assetProperty) => assetProperty.subCategory)
   assetProperties: AssetProperty[];
+
+   /** Relation to Assets */
+  @OneToMany(() => Asset, (asset) => asset.subCategory)
+  assets: Asset[];
 
   @BeforeInsert()
   async generateUuid() {

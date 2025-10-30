@@ -55,6 +55,9 @@ export class AssetService {
       description: createAssetDto.description,
       brand: createAssetDto.brand,
       model: createAssetDto.model,
+      user: createAssetDto.user,
+      price: createAssetDto.price,
+      purchaseDate: createAssetDto.purchaseDate,
       status: createAssetDto.status,
       createdBy: userId,
       imagePath,
@@ -136,6 +139,9 @@ export class AssetService {
     asset.brand = updateAssetDto.brand;
     asset.model = updateAssetDto.model;
     asset.status = updateAssetDto.status;
+    asset.user = updateAssetDto.user;
+    asset.price = updateAssetDto.price;
+    asset.purchaseDate = updateAssetDto.purchaseDate;
     asset.updatedBy = userId;
     asset.imagePath = imagePath || asset.imagePath;
     asset.customValues = customValues;
@@ -180,6 +186,14 @@ export class AssetService {
   /**
  * Paginate assets with optional search and filters by category or sub-category
  * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
+ * @param filters - Optional filter object to narrow down the query.
+ * @param filters.subCategoryId - Subcategory UUID (optional)
+ * @param filters.categoryId - Category UUID (optional)
+ * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
+ * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
+ * @param filters.locationId - Location UUID where the asset is currently placed (optional)
+ * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
+ * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
   async paginate(
@@ -190,6 +204,8 @@ export class AssetService {
       status?: string;
       employeeId?: string;
       locationId?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ): Promise<Pagination<Asset>> {
     const {
@@ -199,6 +215,8 @@ export class AssetService {
       status,
       employeeId,
       locationId,
+      startDate,
+      endDate,
       ...paginationOptions
     } = options;
 
@@ -208,7 +226,9 @@ export class AssetService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search)',
+        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search 
+          OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+          OR asset.price LIKE :search)`,
         { search: `%${search}%` },
       );
     }
@@ -241,29 +261,40 @@ export class AssetService {
     }
 
     if (locationId) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('al.asset_id')
-        .from('asset_locations', 'al')
-        .leftJoin('locations', 'l', 'al.location_id = l.id')
-        .where('al.deletedAt IS NULL')
-        .andWhere('l.location_uuid = :locationUuid')
-        .andWhere(qb2 => {
-          const lastLocSub = qb2.subQuery()
-            .select('MAX(al2.createdAt)')
-            .from('asset_locations', 'al2')
-            .where('al2.asset_id = al.asset_id')
-            .andWhere('al2.deletedAt IS NULL')
-            .getQuery();
-          return 'al.createdAt = ' + lastLocSub;
-        })
-        .getQuery();
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('al.asset_id')
+          .from('asset_locations', 'al')
+          .leftJoin('locations', 'l', 'al.location_id = l.id')
+          .where('al.deletedAt IS NULL')
+          .andWhere('l.location_uuid = :locationUuid')
+          .andWhere(qb2 => {
+            const lastLocSub = qb2.subQuery()
+              .select('MAX(al2.createdAt)')
+              .from('asset_locations', 'al2')
+              .where('al2.asset_id = al.asset_id')
+              .andWhere('al2.deletedAt IS NULL')
+              .getQuery();
+            return 'al.createdAt = ' + lastLocSub;
+          })
+          .getQuery();
 
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('locationUuid', locationId);
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('locationUuid', locationId);
 
-    queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
-  }
+      queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
+    }
+
+    if (startDate && endDate) {
+      queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    } else if (startDate) {
+      queryBuilder.andWhere('asset.purchaseDate >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
+    }
 
     queryBuilder.orderBy('asset.createdAt', 'DESC');
 
@@ -300,10 +331,9 @@ export class AssetService {
           activeHolder: hasHolder
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
             : null,
-            lastLocation: hasLocation
+          lastLocation: hasLocation
             ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
             : null,
-          // customValues langsung ada di entity (JSON), tidak perlu join
           customValues: asset.customValues || [],
         };
       });
@@ -312,6 +342,112 @@ export class AssetService {
     return paginationResult;
   }
 
+  /**
+   * Retrieves all assets that match the given filters for Excel export.
+   *
+   * @param filters - Optional filter object to narrow down the query.
+   * @param filters.subCategoryId - Subcategory UUID (optional)
+   * @param filters.categoryId - Category UUID (optional)
+   * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
+   * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
+   * @param filters.locationId - Location UUID where the asset is currently placed (optional)
+   * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
+   * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
+   *
+   * @returns Promise<Asset[]> - Returns an array of fully loaded `Asset` entities including relations
+   * such as subCategory, category, propertyValues, holderRecords, and locationRecords.
+   */
+  async getAssetsForExport(filters: {
+    subCategoryId?: string;
+    categoryId?: string;
+    status?: string;
+    employeeId?: string;
+    locationId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<Asset[]> {
+    const {
+      subCategoryId,
+      categoryId,
+      status,
+      employeeId,
+      locationId,
+      startDate,
+      endDate,
+    } = filters;
+
+    const qb = this.assetRepository.createQueryBuilder('asset')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.propertyValues', 'propertyValues')
+      .leftJoinAndSelect('propertyValues.property', 'property')
+      .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
+      .leftJoinAndSelect('holderRecords.employee', 'employee')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+      .leftJoinAndSelect('locationRecords.location', 'location')
+      .leftJoinAndSelect('location.branch', 'branch')
+      .where('asset.deletedAt IS NULL');
+
+    if (categoryId) {
+      qb.andWhere('category.categoryUuid = :categoryId', { categoryId });
+    }
+
+    if (subCategoryId) {
+      qb.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
+    }
+
+    if (status) {
+      qb.andWhere('asset.status = :status', { status });
+    }
+
+    if (employeeId) {
+      qb.andWhere(qb2 => {
+        const subQuery = qb2.subQuery()
+          .select('ah.asset_id')
+          .from('asset_holders', 'ah')
+          .where('ah.employee_id = :employeeId')
+          .andWhere('ah.returned_at IS NULL')
+          .andWhere('ah.deleted_at IS NULL')
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('employeeId', employeeId);
+    }
+
+    if (locationId) {
+      qb.andWhere(qb2 => {
+        const subQuery = qb2.subQuery()
+          .select('al.asset_id')
+          .from('asset_locations', 'al')
+          .leftJoin('locations', 'l', 'al.location_id = l.id')
+          .where('al.deletedAt IS NULL')
+          .andWhere('l.location_uuid = :locationUuid')
+          .andWhere(qb3 => {
+            const lastLocSub = qb3.subQuery()
+              .select('MAX(al2.createdAt)')
+              .from('asset_locations', 'al2')
+              .where('al2.asset_id = al.asset_id')
+              .andWhere('al2.deletedAt IS NULL')
+              .getQuery();
+            return 'al.createdAt = ' + lastLocSub;
+          })
+          .getQuery();
+
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('locationUuid', locationId);
+    }
+
+    if (startDate && endDate) {
+      qb.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+    } else if (startDate) {
+      qb.andWhere('asset.purchaseDate >= :startDate', { startDate });
+    } else if (endDate) {
+      qb.andWhere('asset.purchaseDate <= :endDate', { endDate });
+    }
+
+    qb.orderBy('asset.createdAt', 'DESC');
+
+    return qb.getMany();
+  }
 
   /**
    * Find an asset by UUID
