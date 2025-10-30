@@ -214,7 +214,7 @@ export class AssetService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search)',
+        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search OR asset.price LIKE :search)',
         { search: `%${search}%` },
       );
     }

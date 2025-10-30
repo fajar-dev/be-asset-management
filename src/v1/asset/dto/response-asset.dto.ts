@@ -100,7 +100,7 @@ export class ResponseAssetDto {
 
   @Expose()
   model: string;
-  
+
   @Expose()
   user: string;
 
@@ -132,4 +132,30 @@ export class ResponseAssetDto {
   @Expose({ name: 'customValues' })
   @Type(() => ResponseCustomValueDto)
   customValues: ResponseCustomValueDto[];
+
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.purchaseDate) return null;
+
+    const purchaseDate = new Date(obj.purchaseDate);
+    const now = new Date();
+
+    let years = now.getFullYear() - purchaseDate.getFullYear();
+    let months = now.getMonth() - purchaseDate.getMonth();
+    let days = now.getDate() - purchaseDate.getDate();
+
+    if (days < 0) {
+      months -= 1;
+      const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      days += prevMonth;
+    }
+
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''} ${days} day${days !== 1 ? 's' : ''}`;
+  })
+  age: string | null;
 }
