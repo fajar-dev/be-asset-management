@@ -196,6 +196,8 @@ export class AssetService {
       status?: string;
       employeeId?: string;
       locationId?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ): Promise<Pagination<Asset>> {
     const {
@@ -205,6 +207,8 @@ export class AssetService {
       status,
       employeeId,
       locationId,
+      startDate,
+      endDate,
       ...paginationOptions
     } = options;
 
@@ -212,13 +216,17 @@ export class AssetService {
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category');
 
+    // --- Filter pencarian umum ---
     if (search) {
       queryBuilder.andWhere(
-        '(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search OR asset.price LIKE :search)',
+        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search 
+          OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+          OR asset.price LIKE :search)`,
         { search: `%${search}%` },
       );
     }
 
+    // --- Filter kategori / subkategori / status ---
     if (subCategoryId) {
       queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
     }
@@ -231,6 +239,7 @@ export class AssetService {
       queryBuilder.andWhere('asset.status = :status', { status });
     }
 
+    // --- Filter employee aktif ---
     if (employeeId) {
       queryBuilder.andWhere(qb => {
         const subQuery = qb.subQuery()
@@ -246,35 +255,50 @@ export class AssetService {
       queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
     }
 
+    // --- Filter lokasi terakhir ---
     if (locationId) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('al.asset_id')
-        .from('asset_locations', 'al')
-        .leftJoin('locations', 'l', 'al.location_id = l.id')
-        .where('al.deletedAt IS NULL')
-        .andWhere('l.location_uuid = :locationUuid')
-        .andWhere(qb2 => {
-          const lastLocSub = qb2.subQuery()
-            .select('MAX(al2.createdAt)')
-            .from('asset_locations', 'al2')
-            .where('al2.asset_id = al.asset_id')
-            .andWhere('al2.deletedAt IS NULL')
-            .getQuery();
-          return 'al.createdAt = ' + lastLocSub;
-        })
-        .getQuery();
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('al.asset_id')
+          .from('asset_locations', 'al')
+          .leftJoin('locations', 'l', 'al.location_id = l.id')
+          .where('al.deletedAt IS NULL')
+          .andWhere('l.location_uuid = :locationUuid')
+          .andWhere(qb2 => {
+            const lastLocSub = qb2.subQuery()
+              .select('MAX(al2.createdAt)')
+              .from('asset_locations', 'al2')
+              .where('al2.asset_id = al.asset_id')
+              .andWhere('al2.deletedAt IS NULL')
+              .getQuery();
+            return 'al.createdAt = ' + lastLocSub;
+          })
+          .getQuery();
 
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('locationUuid', locationId);
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('locationUuid', locationId);
 
-    queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
-  }
+      queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
+    }
+
+    // --- 🔹 Filter tanggal pembelian ---
+    if (startDate && endDate) {
+      queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    } else if (startDate) {
+      queryBuilder.andWhere('asset.purchaseDate >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
+    }
 
     queryBuilder.orderBy('asset.createdAt', 'DESC');
 
+    // --- Pagination ---
     const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
+    // --- Muat relasi penuh jika ada hasil ---
     if (paginationResult.items.length > 0) {
       const assetsWithRelations = await this.assetRepository.find({
         where: {
@@ -306,10 +330,9 @@ export class AssetService {
           activeHolder: hasHolder
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
             : null,
-            lastLocation: hasLocation
+          lastLocation: hasLocation
             ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
             : null,
-          // customValues langsung ada di entity (JSON), tidak perlu join
           customValues: asset.customValues || [],
         };
       });

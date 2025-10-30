@@ -17,7 +17,10 @@ export class SubCategoryService {
   ) {}
 
   /**
-   * Calculate level based on parent
+   * Calculate hierarchy level based on parent ID.
+   * 
+   * @param parentId - Parent sub-category database ID (nullable)
+   * @returns The calculated level number
    */
   private async calculateLevel(parentId: number | null): Promise<number> {
     if (!parentId) return 0;
@@ -30,7 +33,11 @@ export class SubCategoryService {
   }
 
   /**
-   * Check for circular reference
+   * Check if assigning a new parent creates a circular reference in hierarchy.
+   * 
+   * @param currentId - Current sub-category ID
+   * @param newParentId - New parent sub-category ID
+   * @throws {BadRequestException} - If a circular reference or self-parenting is detected
    */
   private async checkCircularReference(
     currentId: number,
@@ -68,7 +75,9 @@ export class SubCategoryService {
   }
 
   /**
-   * Update levels of all descendants
+   * Recursively update the `level` of all descendant sub-categories.
+   * 
+   * @param parentId - Parent sub-category database ID
    */
   private async updateDescendantsLevels(parentId: number): Promise<void> {
     const children = await this.subCategoryRepository.find({
@@ -78,14 +87,17 @@ export class SubCategoryService {
     for (const child of children) {
       child.level = await this.calculateLevel(child.parentId);
       await this.subCategoryRepository.save(child);
-      
-      // Recursively update descendants
       await this.updateDescendantsLevels(child.id);
     }
   }
 
   /**
-   * Create a new sub category
+   * Create a new sub-category.
+   * 
+   * @param userId - ID of the user creating the sub-category
+   * @param createSubCategoryDto - DTO containing creation data
+   * @returns The created SubCategory entity
+   * @throws {BadRequestException} - If parent does not belong to same category
    */
   async create(
     userId: number,
@@ -102,7 +114,7 @@ export class SubCategoryService {
       const parent = await this.subCategoryRepository.findOneOrFail({
         where: { 
           subCategoryUuid: createSubCategoryDto.parentId,
-          categoryId: category.id // Ensure parent is in same category
+          categoryId: category.id
         },
       });
       
@@ -122,7 +134,10 @@ export class SubCategoryService {
   }
 
   /**
-   * Paginate sub categories with optional search
+   * Paginate sub-categories with optional search and category filter.
+   * 
+   * @param options - Pagination options with optional `search` and `categoryUuid`
+   * @returns Paginated result of SubCategory
    */
   async paginate(
     options: IPaginationOptions & { search?: string; categoryUuid?: string },
@@ -174,14 +189,16 @@ export class SubCategoryService {
   }
 
   /**
-   * Get hierarchy tree for a category
+   * Get hierarchical tree of sub-categories for a specific category.
+   * 
+   * @param categoryUuid - UUID of the category
+   * @returns Root sub-categories with nested children
    */
   async getHierarchyTree(categoryUuid: string): Promise<SubCategory[]> {
     const category = await this.categoryRepository.findOneOrFail({
       where: { categoryUuid }
     });
 
-    // Get all root subcategories (no parent)
     const roots = await this.subCategoryRepository.find({
       where: {
         categoryId: category.id,
@@ -191,7 +208,6 @@ export class SubCategoryService {
       order: { name: 'ASC' },
     });
 
-    // Recursively load children
     for (const root of roots) {
       await this.loadChildren(root);
     }
@@ -200,7 +216,9 @@ export class SubCategoryService {
   }
 
   /**
-   * Recursively load children for hierarchy
+   * Recursively load child sub-categories.
+   * 
+   * @param subCategory - Parent sub-category entity
    */
   private async loadChildren(subCategory: SubCategory): Promise<void> {
     subCategory.children = await this.subCategoryRepository.find({
@@ -215,7 +233,10 @@ export class SubCategoryService {
   }
 
   /**
-   * Find all sub categories by category UUID (flat list)
+   * Get all sub-categories (flat list) under a given category UUID.
+   * 
+   * @param categoryUuid - UUID of the category
+   * @returns List of sub-categories belonging to the category
    */
   async findAllByCategory(categoryUuid: string): Promise<SubCategory[]> {
     const category = await this.categoryRepository.findOneOrFail({
@@ -223,9 +244,7 @@ export class SubCategoryService {
     });
 
     return this.subCategoryRepository.find({
-      where: {
-        categoryId: category.id,
-      },
+      where: { categoryId: category.id },
       relations: ['parent', 'assetProperties'],
       order: {
         level: 'ASC',
@@ -235,17 +254,17 @@ export class SubCategoryService {
   }
 
   /**
-   * Find a sub category by UUID with full relations
+   * Find a single sub-category by UUID.
+   * 
+   * @param uuid - Sub-category UUID
+   * @returns SubCategory with relations (category, parent, children, assetProperties)
    */
   async findOne(uuid: string): Promise<SubCategory> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
-      where: {
-        subCategoryUuid: uuid,
-      },
+      where: { subCategoryUuid: uuid },
       relations: ['category', 'parent', 'assetProperties'],
     });
 
-    // Load children
     subCategory.children = await this.subCategoryRepository.find({
       where: { parentId: subCategory.id },
       relations: ['assetProperties'],
@@ -256,7 +275,13 @@ export class SubCategoryService {
   }
 
   /**
-   * Update a sub category by UUID
+   * Update a sub-category.
+   * 
+   * @param uuid - UUID of the sub-category to update
+   * @param userId - ID of the user performing the update
+   * @param updateSubCategoryDto - DTO containing updated data
+   * @returns Updated SubCategory
+   * @throws {BadRequestException} - If circular reference or invalid parent found
    */
   async update(
     uuid: string,
@@ -277,17 +302,14 @@ export class SubCategoryService {
       const parent = await this.subCategoryRepository.findOneOrFail({
         where: { 
           subCategoryUuid: updateSubCategoryDto.parentId,
-          categoryId: category.id // Ensure parent is in same category
+          categoryId: category.id
         },
       });
       
       newParentId = parent.id;
-      
-      // Check for circular reference
       await this.checkCircularReference(subCategory.id, newParentId);
     }
 
-    // Update basic fields
     subCategory.name = updateSubCategoryDto.name;
     subCategory.categoryId = category.id;
     subCategory.parentId = newParentId;
@@ -295,26 +317,39 @@ export class SubCategoryService {
     subCategory.updatedBy = userId;
 
     const updated = await this.subCategoryRepository.save(subCategory);
-
-    // Update all descendants' levels
     await this.updateDescendantsLevels(updated.id);
 
     return updated;
   }
 
   /**
-   * Soft delete a sub category and all its descendants
+   * Soft delete a sub-category.
+   * 
+   * @param uuid - UUID of the sub-category to delete
+   * @param userId - ID of the user performing the deletion
+   * @throws {BadRequestException} - If the sub-category has children, assets, or asset properties
    */
   async remove(uuid: string, userId: number): Promise<void> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: uuid },
-      relations: ['children'],
+      relations: ['children', 'assetProperties', 'assets'],
     });
 
-    // Check if has children
-    if (subCategory.children && subCategory.children.length > 0) {
+    if (subCategory.children?.length > 0) {
       throw new BadRequestException(
-        'Cannot delete sub-category with children. Please delete children first or reassign them.'
+        'Cannot delete sub-category that has child sub-categories. Please delete or reassign them first.',
+      );
+    }
+
+    if (subCategory.assetProperties?.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete sub-category because it is currently in use by asset properties.',
+      );
+    }
+
+    if (subCategory.assets?.length > 0) {
+      throw new BadRequestException(
+        'Cannot delete sub-category because it is currently in use by assets.',
       );
     }
 
@@ -324,7 +359,10 @@ export class SubCategoryService {
   }
 
   /**
-   * Get path from root to specific subcategory
+   * Get full path from root to a specific sub-category.
+   * 
+   * @param uuid - Sub-category UUID
+   * @returns Ordered array of sub-categories from root to target
    */
   async getPath(uuid: string): Promise<SubCategory[]> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({

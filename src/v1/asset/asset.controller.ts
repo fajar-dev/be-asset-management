@@ -77,6 +77,8 @@ export class AssetController {
     @Query('status') status?: string,
     @Query('employeeId') employeeId?: string,
     @Query('locationId') locationId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -87,10 +89,13 @@ export class AssetController {
       status,
       employeeId,
       locationId,
+      startDate,
+      endDate,
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);
   }
+
 
 
   @Get(':uuid')
