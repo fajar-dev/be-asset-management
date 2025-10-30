@@ -43,7 +43,8 @@ export class StatisticService {
       .createQueryBuilder('asset')
       .leftJoin('asset.subCategory', 'subCategory')
       .leftJoin('subCategory.category', 'category')
-      .select('category.name', 'name')
+      .select('category.categoryUuid', 'id')
+      .addSelect('category.name', 'name')
       .addSelect('COUNT(asset.id)', 'value')
       .where('asset.deletedAt IS NULL')
       .andWhere('subCategory.deletedAt IS NULL')
@@ -52,8 +53,9 @@ export class StatisticService {
       .getRawMany();
 
     return result.map(item => ({
+      id: item.id,
       name: item.name || 'Uncategorized',
-      value: parseInt(item.value),
+      value: parseInt(item.value, 10),
     }));
   }
 
@@ -61,7 +63,8 @@ export class StatisticService {
     const result = await this.assetRepository
       .createQueryBuilder('asset')
       .leftJoin('asset.subCategory', 'subCategory')
-      .select('subCategory.name', 'name')
+      .select('subCategory.subCategoryUuid', 'id')
+      .addSelect('subCategory.name', 'name')
       .addSelect('COUNT(asset.id)', 'value')
       .where('asset.deletedAt IS NULL')
       .andWhere('subCategory.deletedAt IS NULL')
@@ -69,44 +72,44 @@ export class StatisticService {
       .getRawMany();
 
     return result.map(item => ({
+      id: item.id,
       name: item.name || 'Uncategorized',
-      value: parseInt(item.value),
+      value: parseInt(item.value, 10),
     }));
   }
 
   async getAssetsByLocation() {
-  const subQuery = this.assetLocationRepository
-    .createQueryBuilder('al_sub')
-    .select('al_sub.asset_id')
-    .addSelect('MAX(al_sub.createdAt)', 'maxCreatedAt')
-    .where('al_sub.deletedAt IS NULL')
-    .groupBy('al_sub.asset_id');
+    const subQuery = this.assetLocationRepository
+      .createQueryBuilder('al_sub')
+      .select('al_sub.asset_id')
+      .addSelect('MAX(al_sub.createdAt)', 'maxCreatedAt')
+      .where('al_sub.deletedAt IS NULL')
+      .groupBy('al_sub.asset_id');
 
-  const result = await this.assetLocationRepository
-    .createQueryBuilder('al')
-    .leftJoin('al.location', 'location')
-    .leftJoin('location.branch', 'branch')
-    .leftJoin('al.asset', 'asset')
-    .leftJoin(
-      '(' + subQuery.getQuery() + ')',
-      'latest',
-      'al.asset_id = latest.asset_id AND al.createdAt = latest.maxCreatedAt',
-    )
-    .select('branch.name', 'name')
-    .addSelect('COUNT(DISTINCT al.asset_id)', 'value')
-    .where('latest.asset_id IS NOT NULL')
-    .andWhere('al.deletedAt IS NULL')
-    .andWhere('location.deletedAt IS NULL')
-    .andWhere('asset.deletedAt IS NULL')
-    .andWhere('branch.deletedAt IS NULL')
-    .groupBy('branch.id, branch.name')
-    .setParameters(subQuery.getParameters())
-    .getRawMany();
+    const result = await this.assetLocationRepository
+      .createQueryBuilder('al')
+      .leftJoin('al.location', 'location')
+      .leftJoin('al.asset', 'asset')
+      .leftJoin(
+        '(' + subQuery.getQuery() + ')',
+        'latest',
+        'al.asset_id = latest.asset_id AND al.createdAt = latest.maxCreatedAt',
+      )
+      .select('location.locationUuid', 'id')
+      .addSelect('location.name', 'name')
+      .addSelect('COUNT(DISTINCT al.asset_id)', 'value')
+      .where('latest.asset_id IS NOT NULL')
+      .andWhere('al.deletedAt IS NULL')
+      .andWhere('location.deletedAt IS NULL')
+      .andWhere('asset.deletedAt IS NULL')
+      .groupBy('location.id, location.locationUuid, location.name')
+      .setParameters(subQuery.getParameters())
+      .getRawMany();
 
-  return result.map(item => ({
-    name: item.name,
-    value: parseInt(item.value, 10),
-  }));
-}
-
+    return result.map(item => ({
+      id: item.id,
+      name: item.name,
+      value: parseInt(item.value, 10),
+    }));
+  }
 }
