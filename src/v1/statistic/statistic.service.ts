@@ -43,17 +43,20 @@ export class StatisticService {
       .createQueryBuilder('asset')
       .leftJoin('asset.subCategory', 'subCategory')
       .leftJoin('subCategory.category', 'category')
-      .select('category.name', 'name')
+      .select('category.categoryUuid', 'id')
+      .addSelect('category.name', 'name')
       .addSelect('COUNT(asset.id)', 'value')
       .where('asset.deletedAt IS NULL')
       .andWhere('subCategory.deletedAt IS NULL')
       .andWhere('category.deletedAt IS NULL')
       .groupBy('category.id, category.name')
+      .orderBy('COUNT(asset.id)', 'DESC')
       .getRawMany();
 
     return result.map(item => ({
+      id: item.id,
       name: item.name || 'Uncategorized',
-      value: parseInt(item.value),
+      value: parseInt(item.value, 10),
     }));
   }
 
@@ -61,20 +64,23 @@ export class StatisticService {
     const result = await this.assetRepository
       .createQueryBuilder('asset')
       .leftJoin('asset.subCategory', 'subCategory')
-      .select('subCategory.name', 'name')
+      .select('subCategory.subCategoryUuid', 'id')
+      .addSelect('subCategory.name', 'name')
       .addSelect('COUNT(asset.id)', 'value')
       .where('asset.deletedAt IS NULL')
       .andWhere('subCategory.deletedAt IS NULL')
       .groupBy('subCategory.id, subCategory.name')
+      .orderBy('COUNT(asset.id)', 'DESC')
       .getRawMany();
 
     return result.map(item => ({
+      id: item.id,
       name: item.name || 'Uncategorized',
-      value: parseInt(item.value),
+      value: parseInt(item.value, 10),
     }));
   }
 
-  async getAssetsByLocation() {
+async getAssetsByLocation() {
   const subQuery = this.assetLocationRepository
     .createQueryBuilder('al_sub')
     .select('al_sub.asset_id')
@@ -85,26 +91,30 @@ export class StatisticService {
   const result = await this.assetLocationRepository
     .createQueryBuilder('al')
     .leftJoin('al.location', 'location')
-    .leftJoin('location.branch', 'branch')
+    .leftJoin('location.branch', 'branch') // 👈 join ke branch
     .leftJoin('al.asset', 'asset')
     .leftJoin(
       '(' + subQuery.getQuery() + ')',
       'latest',
       'al.asset_id = latest.asset_id AND al.createdAt = latest.maxCreatedAt',
     )
-    .select('branch.name', 'name')
+    .select('location.locationUuid', 'id')
+    .addSelect('location.name', 'name')
+    .addSelect('branch.name', 'branchName') // 👈 ambil nama branch
     .addSelect('COUNT(DISTINCT al.asset_id)', 'value')
     .where('latest.asset_id IS NOT NULL')
     .andWhere('al.deletedAt IS NULL')
     .andWhere('location.deletedAt IS NULL')
     .andWhere('asset.deletedAt IS NULL')
-    .andWhere('branch.deletedAt IS NULL')
-    .groupBy('branch.id, branch.name')
+    .groupBy('location.id, location.locationUuid, location.name, branch.name') // 👈 tambahkan branch
+    .orderBy('COUNT(DISTINCT al.asset_id)', 'DESC')
     .setParameters(subQuery.getParameters())
     .getRawMany();
 
   return result.map(item => ({
+    id: item.id,
     name: item.name,
+    branch: item.branchName || 'Unknown Branch',
     value: parseInt(item.value, 10),
   }));
 }
