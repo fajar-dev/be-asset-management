@@ -36,7 +36,7 @@ export class AssetProperty extends BaseEntity {
   @JoinColumn({ name: 'sub_category_id' })
   subCategory: SubCategory;
 
-  @OneToMany(() => AssetPropertyValue, (value) => value.property)
+@OneToMany(() => AssetPropertyValue, (value) => value.property)
   values: AssetPropertyValue[];
   
   @BeforeInsert()

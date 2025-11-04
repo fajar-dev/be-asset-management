@@ -16,10 +16,16 @@ import { Roles } from '../../common/decorator/role.decorator';
 import { Role } from '../user/enum/role.enum';
 import type { Response } from 'express';
 import { exportToExcel } from 'src/common/utils/excel-export.util';
+import { ExcelUploadValidator } from '../../common/validators/excel.upload.validator';
+import { importFromExcel } from '../../common/utils/excel-import.util';
+import { AssetUtilsService } from './asset-utils.service';
 
 @Controller()
 export class AssetController {
-  constructor(private readonly assetService: AssetService) {}
+  constructor(
+    private readonly assetService: AssetService,
+    private readonly assetUtilsService: AssetUtilsService
+  ) {}
 
   @Post()
   @Roles(Role.ADMIN)
@@ -87,7 +93,7 @@ export class AssetController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    const assets = await this.assetService.getAssetsForExport({
+    const assets = await this.assetUtilsService.getAssetsForExport({
       subCategoryId,
       categoryId,
       status,
@@ -152,6 +158,77 @@ export class AssetController {
       },
     });
   }
+
+  @Post('import')
+  @Roles(Role.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async importXLS(
+    @UploadedFile(ExcelUploadValidator) file: Express.Multer.File,
+    @User() user: UserEntity,
+  ) {
+    const data = await importFromExcel(file, {
+      mapRow: (row) => ({
+        code: row['Code'],
+        name: row['Asset Name'],
+        description: row['Description'],
+        category: row['Category'],
+        subCategory: row['Sub Category'],
+        brand: row['Brand'],
+        model: row['Model'],
+        purchaseDate: row['Purchase Date'],
+        price: row['Price'],
+        user: row['User'],
+        holderEmployeeId: row['Holder (Employee ID)'],
+        location: row['Location'],
+        branchId: row['Branch ID'],
+        status: row['Status'],
+      }),
+    });
+
+    const failedList: any[] = [];
+    let successCount = 0;
+
+    for (const row of data) {
+      const result = await this.assetUtilsService.importAssets(
+        row.code,
+        row.name,
+        row.description,
+        row.category,
+        row.subCategory,
+        row.brand,
+        row.model,
+        row.purchaseDate,
+        row.price,
+        row.user,
+        row.holderEmployeeId,
+        row.location,
+        row.branchId,
+        row.status,
+        user.id,
+        failedList,
+      );
+
+      if (result.success) successCount++;
+    }
+
+    const failedCount = failedList.length;
+    const totalCount = data.length;
+
+    const summary = {
+      total: totalCount,
+      success: successCount,
+      failed: failedCount,
+      failedList,
+    };
+
+    const message =
+      failedCount > 0
+        ? `Imported with ${failedCount} failed item(s)`
+        : 'All assets imported successfully';
+
+    return new ApiResponse(message, summary, { statusCode: failedCount > 0 ? 207 : 200 });
+  }
+
 
   @Put(':uuid')
   @Roles(Role.ADMIN)

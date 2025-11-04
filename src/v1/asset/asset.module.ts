@@ -9,17 +9,23 @@ import { AssetPropertyValue } from '../asset-property-value/entities/asset-prope
 import { StorageModule } from '../../storage/storage.module';
 import { Reflector } from '@nestjs/core';
 import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
+import { Category } from '../category/entities/category.entity';
+import { AssetHolder } from '../asset-holder/entities/asset-holder.entity';
+import { AssetLocation } from '../asset-location/entities/asset-location.entity';
+import { Location } from '../location/entities/location.entity';
+import { AssetUtilsService } from './asset-utils.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue]),
+    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location]),
     AssetPropertyValueModule,
     StorageModule
   ],
   controllers: [AssetController],
   providers: [AssetService,
     SerializeV2Interceptor, 
-    Reflector
+    Reflector,
+    AssetUtilsService
   ],
   exports: [TypeOrmModule.forFeature([Asset])],
 })

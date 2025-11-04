@@ -41,19 +41,14 @@ export class SubCategory extends BaseEntity {
   /** 
    * Relasi ke Category utama
    */
-  @ManyToOne(() => Category, (category) => category.subCategories, {
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Category, (category) => category.subCategories)
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
   /**
    * Relasi ke SubCategory parent (self join)
    */
-  @ManyToOne(() => SubCategory, (subCategory) => subCategory.children, {
-    onDelete: 'CASCADE',
-    nullable: true,
-  })
+  @ManyToOne(() => SubCategory, (subCategory) => subCategory.children)
   @JoinColumn({ name: 'parent_id' })
   parent: SubCategory | null;
 
