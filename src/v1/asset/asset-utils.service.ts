@@ -169,7 +169,6 @@ export class AssetUtilsService {
     holderEmployeeId?: string,
     locationName?: string,
     branchId?: string,
-    status?: string,
     userId?: number,
     failedList: any[] = [],
     ): Promise<{ success: boolean }> {
@@ -281,7 +280,6 @@ export class AssetUtilsService {
             purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
             price: normalizedPrice,
             user: userName?.trim(),
-            status: (status ?? 'active') as any,
             subCategoryId: subCategory?.id,
             createdBy: userId,
         });

@@ -203,7 +203,6 @@ export class AssetController {
         row.holderEmployeeId,
         row.location,
         row.branchId,
-        row.status,
         user.id,
         failedList,
       );
