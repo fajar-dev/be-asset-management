@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from './entities/asset.entity';
-import { Repository, In } from 'typeorm';
+import { Repository, In, IsNull } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -33,6 +33,16 @@ export class AssetService {
       relations: ['assetProperties'],
     });
 
+    const existingAsset = await this.assetRepository.findOne({
+      where: { 
+        code: createAssetDto.code,
+        deletedAt: IsNull()
+      },
+    });
+    if (existingAsset) {
+      throw new BadRequestException(`Asset with code ${createAssetDto.code} already exists.`);      
+    }
+
     let imagePath: string | undefined;
     if (createAssetDto.image) {
       imagePath = await this.storageService.uploadFile('image', createAssetDto.image);
@@ -43,7 +53,6 @@ export class AssetService {
       try {
         customValues = JSON.parse(customValues);
       } catch (e) {
-        console.error('Gagal parse customValues saat create:', e);
         customValues = [];
       }
     }
@@ -98,7 +107,6 @@ export class AssetService {
       ],
     });
   }
-
 
   /**
    * Update an asset

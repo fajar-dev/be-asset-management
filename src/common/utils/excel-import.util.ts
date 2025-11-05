@@ -2,45 +2,43 @@ import * as ExcelJS from 'exceljs';
 import { BadRequestException } from '@nestjs/common';
 
 /**
- * Interface untuk menentukan konfigurasi kolom dan mapping data hasil import
+ * Interface for defining column configuration and mapping imported data
  */
 interface ImportOptions<T> {
     /**
-     * Nama sheet yang akan diambil, default: sheet pertama
+     * The name of the worksheet to read from, default: the first sheet
      */
     sheetName?: string;
-    /**
-     * Fungsi untuk mapping baris Excel menjadi object
-     * @param row Row dari excel
-     * @param rowNumber Nomor baris
-     */
-    mapRow: (row: Record<string, any>, rowNumber: number) => T;
-    }
 
     /**
-     * Utility untuk membaca dan parsing file Excel menjadi array data
+     * Function to map each Excel row into an object
+     * @param row Row data from the Excel sheet
+     * @param rowNumber The row number
      */
-    export async function importFromExcel<T>(
+    mapRow: (row: Record<string, any>, rowNumber: number) => T;
+}
+
+/**
+ * Utility function to read and parse an Excel file into an array of data
+ */
+export async function importFromExcel<T>(
     file: Express.Multer.File,
     options: ImportOptions<T>,
     ): Promise<T[]> {
     if (!file || !file.buffer) {
-        throw new BadRequestException('File Excel tidak ditemukan');
+        throw new BadRequestException('Excel file not found');
     }
 
     const workbook = new ExcelJS.Workbook();
-
     const buffer = Buffer.from(file.buffer as Uint8Array);
-
     await workbook.xlsx.load(buffer as any);
 
-    const worksheet =
-        options.sheetName
+    const worksheet = options.sheetName
         ? workbook.getWorksheet(options.sheetName)
         : workbook.worksheets[0];
 
     if (!worksheet) {
-        throw new BadRequestException('Sheet Excel tidak ditemukan');
+        throw new BadRequestException('Excel sheet not found');
     }
 
     const headers: string[] = [];
