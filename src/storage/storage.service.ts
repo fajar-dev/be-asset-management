@@ -14,6 +14,7 @@ export class StorageService {
       useSSL: this.configService.getOrThrow('MINIO_STORAGE_SSL') === 'true',
       accessKey: this.configService.getOrThrow('MINIO_STORAGE_KEY'),
       secretKey: this.configService.getOrThrow('MINIO_STORAGE_SECRET'),
+      // region: 'us-east-1',
     });
   }
 
@@ -44,11 +45,11 @@ export class StorageService {
     );
   }
 
-  public async getPreSignedUrl(filePath: string) {
+  public async getPreSignedUrl(filePath: string, expiry: number = 60 * 60) {
     return await this.minioClient.presignedGetObject(
       this.configService.getOrThrow('MINIO_STORAGE_BUCKET'),
       filePath,
-      60 * 60,
+      expiry,
     );
   }
 }
