@@ -128,7 +128,7 @@ export class AssetUtilsService {
         qb.andWhere('asset.purchaseDate <= :endDate', { endDate });
         }
 
-        qb.orderBy('asset.createdAt', 'DESC');
+        qb.orderBy('asset.purchaseDate', 'DESC');
 
         return qb.getMany();
     }
