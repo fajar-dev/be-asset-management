@@ -15,16 +15,18 @@ import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.in
 import { Roles } from '../../common/decorator/role.decorator';
 import { Role } from '../user/enum/role.enum';
 import type { Response } from 'express';
-import { exportToExcel } from 'src/common/utils/excel-export.util';
+import { exportToExcel } from '../../common/utils/excel-export.util';
 import { ExcelUploadValidator } from '../../common/validators/excel.upload.validator';
 import { importFromExcel } from '../../common/utils/excel-import.util';
 import { AssetUtilsService } from './asset-utils.service';
+import { StorageService } from '../../storage/storage.service';
 
 @Controller()
 export class AssetController {
   constructor(
     private readonly assetService: AssetService,
-    private readonly assetUtilsService: AssetUtilsService
+    private readonly assetUtilsService: AssetUtilsService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Post()
@@ -103,6 +105,28 @@ export class AssetController {
       endDate,
     });
 
+    const oneWeek = 7 * 24 * 60 * 60;
+    const assetsWithSignedUrls = await Promise.all(
+      assets.map(async (asset) => {
+        if (asset.imagePath) {
+          try {
+            const signedUrl = await this.storageService.getPreSignedUrl(
+              asset.imagePath,
+              oneWeek,
+            );
+            return { ...asset, imageUrl: signedUrl };
+          } catch (error) {
+            console.error(
+              `Failed to generate URL for ${asset.imagePath}:`,
+              error,
+            );
+            return { ...asset, imageUrl: null };
+          }
+        }
+        return { ...asset, imageUrl: null };
+      }),
+    );
+
     await exportToExcel(res, {
       fileName: `assets_export_${new Date().toISOString().split('T')[0]}`,
       sheetName: 'Assets',
@@ -121,18 +145,22 @@ export class AssetController {
         { header: 'Location', key: 'location', width: 25 },
         { header: 'Branch', key: 'branch', width: 25 },
         { header: 'Status', key: 'status', width: 15 },
+        { header: 'Image', key: 'imageUrl', width: 15, isHyperlink: true },
       ],
-      data: assets,
+      data: assetsWithSignedUrls,
+
       mapRow: (asset, index) => {
         const hasHolder = asset.subCategory?.category?.hasHolder;
         const hasLocation = asset.subCategory?.category?.hasLocation;
 
         const activeHolder = hasHolder
-          ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt)
+          ? (asset.holderRecords || []).find(
+              (h) => !h.returnedAt && !h.deletedAt,
+            )
           : null;
 
         const lastLocation = hasLocation
-          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location
+          ? (asset.locationRecords || []).find((l) => !l.deletedAt)?.location
           : null;
 
         return {
@@ -152,13 +180,14 @@ export class AssetController {
             ? `${activeHolder.employee.idEmployee} - ${activeHolder.employee.fullName}`
             : '-',
           location: lastLocation?.name ?? '-',
-          branch: lastLocation?.branch.name ?? '-',
+          branch: lastLocation?.branch?.name ?? '-',
           status: asset.status ?? '-',
+          imageUrl: asset.imageUrl ?? '-',
         };
       },
     });
   }
-
+  
   @Post('import')
   @Roles(Role.ADMIN)
   @UseInterceptors(FileInterceptor('file'))
