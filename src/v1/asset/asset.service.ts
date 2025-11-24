@@ -304,7 +304,7 @@ export class AssetService {
       queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
     }
 
-    queryBuilder.orderBy('asset.createdAt', 'DESC');
+    queryBuilder.orderBy('asset.purchaseDate', 'DESC');
 
     const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
