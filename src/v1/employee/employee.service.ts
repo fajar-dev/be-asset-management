@@ -14,10 +14,10 @@ export class EmployeeService {
     private readonly configService: ConfigService,
   ) {}
 
-  async crawl() {
+  async crawl(token: string) {
     const res = await axios.post(
       this.configService.getOrThrow('NUSAWORK_URL') +
-        '/v4.2/client/employee/filter',
+        '/emp/api/v4.2/client/employee/filter',
       {
         fields: { active_status: ['active'] },
         is_paginate: false,
@@ -27,7 +27,7 @@ export class EmployeeService {
       {
         headers: {
           Authorization:
-            'Bearer ' + this.configService.getOrThrow('NUSAWORK_TOKEN'),
+            'Bearer ' + token,
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
