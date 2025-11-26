@@ -1,3 +1,8 @@
+import { webcrypto, randomUUID } from 'crypto';
+
+if (!(globalThis as any).crypto) {
+  (globalThis as any).crypto = (webcrypto ?? { randomUUID }) as any;
+}
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { EmployeeService } from '../v1/employee/employee.service';
