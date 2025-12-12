@@ -45,7 +45,7 @@ export class EmployeeService {
           fullName: sanitizeText(e.full_name),
           jobPosition: sanitizeText(e.job_position),
           email: sanitizeText(e.email),
-          mobilePhone: sanitizeText(e.mobile_phone),
+          mobilePhone: sanitizeText(e.whatsapp ?? e.mobile_phone),
           photoProfile: sanitizeText(e.photo_profile),
         },
         ['idEmployee'],
