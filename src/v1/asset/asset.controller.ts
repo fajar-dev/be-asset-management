@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile, Res} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile, Res, ParseBoolPipe} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
@@ -67,6 +67,7 @@ export class AssetController {
     @Query('locationId') locationId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -79,6 +80,7 @@ export class AssetController {
       locationId,
       startDate,
       endDate,
+      hasHolder
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);

@@ -202,6 +202,7 @@ export class AssetService {
  * @param filters.locationId - Location UUID where the asset is currently placed (optional)
  * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
+ * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
  * @returns Promise<Pagination<Asset>> - paginated result of assets
  */
   async paginate(
@@ -214,6 +215,7 @@ export class AssetService {
       locationId?: string;
       startDate?: string;
       endDate?: string;
+      hasHolder?: boolean;
     },
   ): Promise<Pagination<Asset>> {
     const {
@@ -225,13 +227,14 @@ export class AssetService {
       locationId,
       startDate,
       endDate,
+      hasHolder,
       ...paginationOptions
     } = options;
 
     const queryBuilder = this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords'); // Left join untuk locationRecords
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords');
 
     if (search) {
       queryBuilder.andWhere(
@@ -265,6 +268,19 @@ export class AssetService {
           .getQuery();
         return 'asset.id IN ' + subQuery;
       }).setParameter('employeeId', employeeId);
+    }
+
+    // Filter hasHolder: hanya tampilkan asset dengan active holder jika true
+    if (hasHolder === true) {
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('ah.asset_id')
+          .from('asset_holders', 'ah')
+          .where('ah.returned_at IS NULL')
+          .andWhere('ah.deleted_at IS NULL')
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      });
     }
 
     if (locationId) {
