@@ -230,7 +230,8 @@ export class AssetService {
 
     const queryBuilder = this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category');
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords'); // Left join untuk locationRecords
 
     if (search) {
       queryBuilder.andWhere(
@@ -264,8 +265,6 @@ export class AssetService {
           .getQuery();
         return 'asset.id IN ' + subQuery;
       }).setParameter('employeeId', employeeId);
-
-      queryBuilder.andWhere('category.hasHolder = :hasHolder', { hasHolder: true });
     }
 
     if (locationId) {
@@ -289,8 +288,6 @@ export class AssetService {
 
         return 'asset.id IN ' + subQuery;
       }).setParameter('locationUuid', locationId);
-
-      queryBuilder.andWhere('category.hasLocation = :hasLocation', { hasLocation: true });
     }
 
     if (startDate && endDate) {
@@ -309,26 +306,15 @@ export class AssetService {
     const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
     if (paginationResult.items.length > 0) {
-      const assetsWithRelations = await this.assetRepository.find({
-        where: {
-          assetUuid: In(paginationResult.items.map(a => a.assetUuid)),
-        },
-        relations: [
-          'subCategory',
-          'subCategory.category',
-          'propertyValues',
-          'propertyValues.property',
-          'holderRecords',
-          'holderRecords.employee',
-          'locationRecords',
-          'locationRecords.location',
-          'locationRecords.location.branch',
-        ],
-        order: {
-          holderRecords: { createdAt: 'DESC' },
-          locationRecords: { createdAt: 'DESC' },
-        },
-      });
+      const assetsWithRelations = await this.assetRepository.createQueryBuilder('asset')
+        .leftJoinAndSelect('asset.subCategory', 'subCategory')
+        .leftJoinAndSelect('subCategory.category', 'category')
+        .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
+        .leftJoinAndSelect('holderRecords.employee', 'employee')
+        .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+        .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
+        .orderBy('asset.purchaseDate', 'DESC')
+        .getMany();
 
       (paginationResult as any).items = assetsWithRelations.map((asset) => {
         const hasHolder = asset.subCategory?.category?.hasHolder;
@@ -343,12 +329,14 @@ export class AssetService {
             ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
             : null,
           customValues: asset.customValues || [],
+          activeHolderEmployee: asset.activeHolder ? asset.activeHolder.employee : null,
         };
       });
     }
 
     return paginationResult;
   }
+
 
   /**
    * Find an asset by UUID

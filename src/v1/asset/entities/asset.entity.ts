@@ -61,6 +61,7 @@ export class Asset extends BaseEntity {
     default: Status.ACTIVE,
   })
   status: Status;
+  activeHolder: AssetHolder | null;
   
   @ManyToOne(() => SubCategory, (subCategory) => subCategory.assetProperties)
   @JoinColumn({ name: 'sub_category_id' })
