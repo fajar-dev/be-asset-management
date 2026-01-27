@@ -27,6 +27,15 @@ export class Employee extends BaseEntity {
   @Column({ name: "photo_profile", type: "varchar", length: 255, nullable: true })
   photoProfile: string;
 
+  @Column({ name: "job_level", type: "varchar", length: 255 })
+  jobLevel: string;
+
+  @Column({ name: "organization_name", type: "varchar", length: 255 })
+  organizationName: string;
+
+  @Column({ name: "status_join", type: "char", length: 36 })
+  statusJoin: string;
+
   @ManyToOne(() => Branch, (branch) => branch.employees)
   @JoinColumn({ name: "branch_id", referencedColumnName: "idBranch" }) 
   branch: Branch;

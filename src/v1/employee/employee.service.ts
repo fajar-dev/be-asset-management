@@ -47,6 +47,9 @@ export class EmployeeService {
           email: sanitizeText(e.email),
           mobilePhone: sanitizeText(e.whatsapp ?? e.mobile_phone),
           photoProfile: sanitizeText(e.photo_profile),
+          jobLevel: sanitizeText(e.job_level),
+          organizationName: sanitizeText(e.organization_name),
+          statusJoin: sanitizeText(e.status_join),
         },
         ['idEmployee'],
       );

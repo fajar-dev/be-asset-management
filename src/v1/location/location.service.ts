@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { Location } from './entities/location.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
@@ -42,21 +42,27 @@ export class LocationService {
   }
 
   /**
-     * Get all location or search by name
-     * @param search - Optional name search string
-     * @returns Promise<Location[]> - Array of category entities matching the search criteria, if provided
-     */
-    async findAll(search?: string): Promise<Location[]> {
-      if (search) {
-        return this.locationRepository.find({
-          where: { name: Like(`%${search}%`) },
-          relations: ['branch'],
-        })
-      }
-      return this.locationRepository.find({
-        relations: ['branch'],
-      })
+   * Get all location or search by name
+   * @param search - Optional name search string
+   * @returns Promise<Location[]> - Array of category entities matching the search criteria, if provided
+   */
+  async findAll(search?: string, branchId?: string): Promise<Location[]> {
+    const queryBuilder = this.locationRepository.createQueryBuilder('location')
+      .leftJoinAndSelect('location.branch', 'branch');
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(location.name LIKE :search OR branch.name LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
+
+    if (branchId) {
+      queryBuilder.andWhere('location.branchId = :branchId', { branchId });
+    }
+
+    return queryBuilder.getMany();
+  }
 
   /**
    * Paginate locations with optional search
@@ -64,17 +70,23 @@ export class LocationService {
    * @returns Promise<Pagination<Location>> - paginated result of locations
    */
   async paginate(
-    options: IPaginationOptions & { search?: string },
+    options: IPaginationOptions & { search?: string,  branchId?: string },
   ): Promise<Pagination<Location>> {
     const queryBuilder = this.locationRepository
       .createQueryBuilder('locations')
-      .leftJoinAndSelect('locations.branch', 'branch')
+      .leftJoinAndSelect('locations.branch', 'branch');
+
     if (options.search) {
       queryBuilder.andWhere(
         '(locations.name LIKE :search OR branch.name LIKE :search)',
         { search: `%${options.search}%` },
-      )
+      );
     }
+
+    if (options.branchId) {
+      queryBuilder.andWhere('locations.branchId = :branchId', { branchId: options.branchId });
+    }
+
     return paginate<Location>(queryBuilder, {
       limit: options.limit || 10,
       page: options.page || 1,

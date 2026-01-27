@@ -1,9 +1,9 @@
-import { Controller, DefaultValuePipe, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, DefaultValuePipe, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { BranchService } from './branch.service';
-import { JwtAuthGuard } from '../../auth/guards/JwtAuthGuard';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ApiResponse } from '../../common/utils/ApiResponse';
-import { ResponseBranchDto } from './dto/response-branch.dto';
+import { ResponseBranchDto, } from './dto/response-branch.dto';
+import { ResponseLocationDto } from '../location/dto/response-location.dto';
 
 @Controller()
 export class BranchController {
@@ -17,6 +17,17 @@ export class BranchController {
     return new ApiResponse(
       'Branches retrieved successfully',
       await this.branchService.findAll( search )
+    );
+  }
+
+  @Get(':id/location')
+  @Serialize(ResponseLocationDto)
+  async findLocation(
+    @Param('id', new DefaultValuePipe('')) branchId: string,
+  ) {
+    return new ApiResponse(
+      'Locations retrieved successfully',
+      await this.branchService.findLocation( branchId )
     );
   }
 }
