@@ -213,6 +213,7 @@ export class AssetService {
     status?: string;
     employeeId?: string;
     locationId?: string;
+    branchId?: string;
     startDate?: string;
     endDate?: string;
     hasHolder?: boolean;
@@ -225,6 +226,7 @@ export class AssetService {
     status,
     employeeId,
     locationId,
+    branchId,
     startDate,
     endDate,
     hasHolder,
@@ -312,6 +314,29 @@ export class AssetService {
 
       return 'asset.id IN ' + subQuery;
     }).setParameter('locationUuid', locationId);
+  }
+
+  if (branchId) {
+    queryBuilder.andWhere(qb => {
+      const subQuery = qb.subQuery()
+        .select('al.asset_id')
+        .from('asset_locations', 'al')
+        .leftJoin('locations', 'l', 'al.location_id = l.id')
+        .where('al.deletedAt IS NULL')
+        .andWhere('l.branch_id = :branchId')
+        .andWhere(qb2 => {
+          const lastLocSub = qb2.subQuery()
+            .select('MAX(al2.createdAt)')
+            .from('asset_locations', 'al2')
+            .where('al2.asset_id = al.asset_id')
+            .andWhere('al2.deletedAt IS NULL')
+            .getQuery();
+          return 'al.createdAt = ' + lastLocSub;
+        })
+        .getQuery();
+
+      return 'asset.id IN ' + subQuery;
+    }).setParameter('branchId', branchId);
   }
 
   if (startDate && endDate) {

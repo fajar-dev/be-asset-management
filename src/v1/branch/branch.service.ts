@@ -4,12 +4,15 @@ import { Branch } from './entities/branch.entity';
 import { Like, Repository } from 'typeorm';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
+import { Location } from '../location/entities/location.entity';
 
 @Injectable()
 export class BranchService {
   constructor(
     @InjectRepository(Branch)
     private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(Location)
+    private readonly locationRepository: Repository<Location>,
     private configService: ConfigService,
   ) {}
 
@@ -52,5 +55,18 @@ export class BranchService {
     } else {
       return this.branchRepository.find();
     }
+  }
+
+  /**
+   * Get all location by branch id
+   * @param branchId - branch id search string
+   * @returns Promise<Location[]> - Array of location entities matching the search criteria, if provided
+   */
+  async findLocation(branchId?: string): Promise<Location[]> {
+    return this.locationRepository.find({
+      where: {
+        branchId: branchId
+      },
+    });
   }
 }

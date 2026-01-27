@@ -65,6 +65,7 @@ export class AssetController {
     @Query('status') status?: string,
     @Query('employeeId') employeeId?: string,
     @Query('locationId') locationId?: string,
+    @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
@@ -77,6 +78,7 @@ export class AssetController {
       categoryId,
       status,
       employeeId,
+      branchId,
       locationId,
       startDate,
       endDate,
@@ -94,6 +96,7 @@ export class AssetController {
     @Query('status') status?: string,
     @Query('employeeId') employeeId?: string,
     @Query('locationId') locationId?: string,
+    @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {

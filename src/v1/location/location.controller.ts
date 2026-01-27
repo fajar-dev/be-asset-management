@@ -30,6 +30,7 @@ export class LocationController {
   @Get()
   @Serialize(ResponseLocationDto)
   async findAll(
+    @Query('branchId', new DefaultValuePipe('')) branchId: string,
     @Query('all', new DefaultValuePipe(false)) all: boolean,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
@@ -37,9 +38,9 @@ export class LocationController {
   ) {
     let data;
     if (all) {
-      data = await this.locationService.findAll( search );
+      data = await this.locationService.findAll( search, branchId );
     } else {
-      data = await this.locationService.paginate({ page, limit, search });
+      data = await this.locationService.paginate({ page, limit, search, branchId });
     }
     return new ApiResponse(
       all ? 'All locations retrieved successfully' : 'Locations retrieved successfully',

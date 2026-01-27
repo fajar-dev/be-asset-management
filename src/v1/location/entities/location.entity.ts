@@ -19,7 +19,7 @@ export class Location extends BaseEntity {
   @OneToMany(() => AssetLocation, (assetLocation) => assetLocation.location)
   assetLocations: AssetLocation[]; 
   
-  @ManyToOne(() => Branch, (branch) => branch.employees)
+  @ManyToOne(() => Branch, (branch) => branch.locations)
   @JoinColumn({ name: "branch_id", referencedColumnName: "idBranch" }) 
   branch: Branch;
 
