@@ -30,6 +30,7 @@ export class AssetUtilsService {
      * Retrieves all assets that match the given filters for Excel export.
      *
      * @param filters - Optional filter object to narrow down the query.
+     * @param filters.branchId - Branch UUID (optional)
      * @param filters.subCategoryId - Subcategory UUID (optional)
      * @param filters.categoryId - Category UUID (optional)
      * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
@@ -42,6 +43,8 @@ export class AssetUtilsService {
      * such as subCategory, category, propertyValues, holderRecords, and locationRecords.
      */
     async getAssetsForExport(filters: {
+        user?: string;
+        branchId?: string;
         subCategoryId?: string;
         categoryId?: string;
         status?: string;
@@ -51,6 +54,8 @@ export class AssetUtilsService {
         endDate?: string;
     }): Promise<Asset[]> {
         const {
+        user,
+        branchId,
         subCategoryId,
         categoryId,
         status,
@@ -71,6 +76,10 @@ export class AssetUtilsService {
         .leftJoinAndSelect('locationRecords.location', 'location')
         .leftJoinAndSelect('location.branch', 'branch')
         .where('asset.deletedAt IS NULL');
+        
+        if (user) {
+            qb.andWhere('asset.user = :user', { user });
+        }
 
         if (categoryId) {
         qb.andWhere('category.categoryUuid = :categoryId', { categoryId });
@@ -118,6 +127,29 @@ export class AssetUtilsService {
 
             return 'asset.id IN ' + subQuery;
         }).setParameter('locationUuid', locationId);
+        }
+
+        if (branchId) {
+            qb.andWhere(qb => {
+            const subQuery = qb.subQuery()
+                .select('al.asset_id')
+                .from('asset_locations', 'al')
+                .leftJoin('locations', 'l', 'al.location_id = l.id')
+                .where('al.deletedAt IS NULL')
+                .andWhere('l.branch_id = :branchId')
+                .andWhere(qb2 => {
+                const lastLocSub = qb2.subQuery()
+                    .select('MAX(al2.createdAt)')
+                    .from('asset_locations', 'al2')
+                    .where('al2.asset_id = al.asset_id')
+                    .andWhere('al2.deletedAt IS NULL')
+                    .getQuery();
+                return 'al.createdAt = ' + lastLocSub;
+                })
+                .getQuery();
+
+            return 'asset.id IN ' + subQuery;
+            }).setParameter('branchId', branchId);
         }
 
         if (startDate && endDate) {

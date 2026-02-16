@@ -195,11 +195,13 @@ export class AssetService {
  * Paginate assets with optional search and filters by category or sub-category
  * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
  * @param filters - Optional filter object to narrow down the query.
+ * @param filters.user - Employee UUID who currently holds the asset (optional)
  * @param filters.subCategoryId - Subcategory UUID (optional)
  * @param filters.categoryId - Category UUID (optional)
  * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
  * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
  * @param filters.locationId - Location UUID where the asset is currently placed (optional)
+ * @param filters.branchId - Branch UUID where the asset is currently placed (optional)
  * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
@@ -208,6 +210,7 @@ export class AssetService {
   async paginate(
   options: IPaginationOptions & {
     search?: string;
+    user?: string;
     subCategoryId?: string;
     categoryId?: string;
     status?: string;
@@ -221,6 +224,7 @@ export class AssetService {
 ): Promise<Pagination<Asset>> {
   const {
     search,
+    user,
     subCategoryId,
     categoryId,
     status,
@@ -253,6 +257,10 @@ export class AssetService {
         OR location.name LIKE :search)`,
       { search: `%${search}%` },
     );
+  }
+
+  if (user) {
+    queryBuilder.andWhere('asset.user = :user', { user });
   }
 
   if (subCategoryId) {
