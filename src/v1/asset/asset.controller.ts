@@ -60,6 +60,7 @@ export class AssetController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
+    @Query('user', new DefaultValuePipe('')) user?: string,
     @Query('subCategoryId') subCategoryId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
@@ -74,6 +75,7 @@ export class AssetController {
       page,
       limit,
       search,
+      user,
       subCategoryId,
       categoryId,
       status,
@@ -91,6 +93,7 @@ export class AssetController {
   @Get('export')
   async exportXLS(
     @Res() res: Response,
+    @Query('user', new DefaultValuePipe('')) user?: string,
     @Query('subCategoryId') subCategoryId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('status') status?: string,
@@ -101,11 +104,13 @@ export class AssetController {
     @Query('endDate') endDate?: string,
   ) {
     const assets = await this.assetUtilsService.getAssetsForExport({
+      user,
       subCategoryId,
       categoryId,
       status,
       employeeId,
       locationId,
+      branchId,
       startDate,
       endDate,
     });
