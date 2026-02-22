@@ -250,12 +250,13 @@ export class AssetService {
 
   if (search) {
     queryBuilder.andWhere(
-      `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search 
+      `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
         OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
         OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
         OR category.name LIKE :search OR subCategory.name LIKE :search
-        OR location.name LIKE :search)`,
-      { search: `%${search}%` },
+        OR location.name LIKE :search
+        OR JSON_SEARCH(asset.custom_value, 'one', :searchJson, NULL, '$[*].value') IS NOT NULL)`,
+      { search: `%${search}%`, searchJson: `%${search}%` },
     );
   }
 
@@ -302,26 +303,31 @@ export class AssetService {
   }
 
   if (locationId) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('al.asset_id')
-        .from('asset_locations', 'al')
-        .leftJoin('locations', 'l', 'al.location_id = l.id')
-        .where('al.deletedAt IS NULL')
-        .andWhere('l.location_uuid = :locationUuid')
-        .andWhere(qb2 => {
-          const lastLocSub = qb2.subQuery()
-            .select('MAX(al2.createdAt)')
-            .from('asset_locations', 'al2')
-            .where('al2.asset_id = al.asset_id')
-            .andWhere('al2.deletedAt IS NULL')
-            .getQuery();
-          return 'al.createdAt = ' + lastLocSub;
-        })
-        .getQuery();
+    queryBuilder
+      .andWhere(qb => {
+        const subQuery = qb
+          .subQuery()
+          .select('al.asset_id')
+          .from('asset_locations', 'al')
+          .leftJoin('locations', 'l', 'al.location_id = l.id')
+          .where('al.deletedAt IS NULL')
+          .andWhere('l.location_uuid = :locationUuid')
+          .andWhere(qb2 => {
+            const firstLocSub = qb2
+              .subQuery()
+              .select('MIN(al2.createdAt)')
+              .from('asset_locations', 'al2')
+              .where('al2.asset_id = al.asset_id')
+              .andWhere('al2.deletedAt IS NULL')
+              .getQuery();
 
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('locationUuid', locationId);
+            return `al.createdAt = ${firstLocSub}`;
+          })
+          .getQuery();
+
+        return `asset.id IN ${subQuery}`;
+      })
+      .setParameter('locationUuid', locationId);
   }
 
   if (branchId) {
