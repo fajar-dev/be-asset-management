@@ -70,6 +70,8 @@ export class AssetController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
+    @Query('order', new DefaultValuePipe('DESC')) order?: string,
+    @Query('sort', new DefaultValuePipe('createdAt')) sort?: string,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -84,7 +86,9 @@ export class AssetController {
       locationId,
       startDate,
       endDate,
-      hasHolder
+      hasHolder,
+      sort,
+      order: order as 'ASC' | 'DESC'
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);

@@ -220,6 +220,8 @@ export class AssetService {
     startDate?: string;
     endDate?: string;
     hasHolder?: boolean;
+    sort?: string;
+    order?: 'ASC' | 'DESC';
   },
 ): Promise<Pagination<Asset>> {
   const {
@@ -234,6 +236,8 @@ export class AssetService {
     startDate,
     endDate,
     hasHolder,
+    sort = 'purchaseDate',
+    order = 'DESC',
     ...paginationOptions
   } = options;
 
@@ -366,7 +370,8 @@ export class AssetService {
     queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
   }
 
-  queryBuilder.orderBy('asset.purchaseDate', 'DESC');
+  const sortField = sort.includes('.') ? sort : `asset.${sort}`;
+  queryBuilder.orderBy(sortField, order);
 
   const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
 
@@ -380,7 +385,7 @@ export class AssetService {
       .leftJoinAndSelect('locationRecords.location', 'location')
       .leftJoinAndSelect('location.branch', 'branch')
       .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
-      .orderBy('asset.purchaseDate', 'DESC')
+      .orderBy(sortField, order)
       .getMany();
 
     (paginationResult as any).items = assetsWithRelations.map((asset) => {
