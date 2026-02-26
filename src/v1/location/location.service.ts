@@ -44,7 +44,8 @@ export class LocationService {
   /**
    * Get all location or search by name
    * @param search - Optional name search string
-   * @returns Promise<Location[]> - Array of category entities matching the search criteria, if provided
+   * @param branchId - Optional branch UUID(s), can be comma-separated
+   * @returns Promise<Location[]> - Array of location entities matching the search criteria, if provided
    */
   async findAll(search?: string, branchId?: string): Promise<Location[]> {
     const queryBuilder = this.locationRepository.createQueryBuilder('location')
@@ -58,7 +59,8 @@ export class LocationService {
     }
 
     if (branchId) {
-      queryBuilder.andWhere('location.branchId = :branchId', { branchId });
+      const branchIds = branchId.split(',').map(id => id.trim());
+      queryBuilder.andWhere('location.branchId IN (:...branchIds)', { branchIds });
     }
 
     return queryBuilder.getMany();
@@ -84,7 +86,8 @@ export class LocationService {
     }
 
     if (options.branchId) {
-      queryBuilder.andWhere('locations.branchId = :branchId', { branchId: options.branchId });
+      const branchIds = options.branchId.split(',').map(id => id.trim());
+      queryBuilder.andWhere('locations.branchId IN (:...branchIds)', { branchIds });
     }
 
     return paginate<Location>(queryBuilder, {

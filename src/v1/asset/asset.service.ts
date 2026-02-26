@@ -200,8 +200,8 @@ export class AssetService {
  * @param filters.categoryId - Category UUID (optional)
  * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
  * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
- * @param filters.locationId - Location UUID where the asset is currently placed (optional)
- * @param filters.branchId - Branch UUID where the asset is currently placed (optional)
+ * @param filters.locationId - Location UUID(s) where the asset is currently placed (optional, can be comma-separated)
+ * @param filters.branchId - Branch UUID(s) where the asset is currently placed (optional, can be comma-separated)
  * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
  * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
@@ -303,6 +303,7 @@ export class AssetService {
   }
 
   if (locationId) {
+    const locationIds = locationId.split(',').map(id => id.trim());
     queryBuilder
       .andWhere(qb => {
         const subQuery = qb
@@ -311,7 +312,7 @@ export class AssetService {
           .from('asset_locations', 'al')
           .leftJoin('locations', 'l', 'al.location_id = l.id')
           .where('al.deletedAt IS NULL')
-          .andWhere('l.location_uuid = :locationUuid')
+          .andWhere('l.location_uuid IN (:...locationUuids)')
           .andWhere(qb2 => {
             const firstLocSub = qb2
               .subQuery()
@@ -327,17 +328,18 @@ export class AssetService {
 
         return `asset.id IN ${subQuery}`;
       })
-      .setParameter('locationUuid', locationId);
+      .setParameter('locationUuids', locationIds);
   }
 
   if (branchId) {
+    const branchIds = branchId.split(',').map(id => id.trim());
     queryBuilder.andWhere(qb => {
       const subQuery = qb.subQuery()
         .select('al.asset_id')
         .from('asset_locations', 'al')
         .leftJoin('locations', 'l', 'al.location_id = l.id')
         .where('al.deletedAt IS NULL')
-        .andWhere('l.branch_id = :branchId')
+        .andWhere('l.branch_id IN (:...branchIds)')
         .andWhere(qb2 => {
           const lastLocSub = qb2.subQuery()
             .select('MAX(al2.createdAt)')
@@ -350,7 +352,7 @@ export class AssetService {
         .getQuery();
 
       return 'asset.id IN ' + subQuery;
-    }).setParameter('branchId', branchId);
+    }).setParameter('branchIds', branchIds);
   }
 
   if (startDate && endDate) {
