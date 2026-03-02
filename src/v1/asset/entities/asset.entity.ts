@@ -15,6 +15,7 @@ import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
 import { AssetNote } from '../../../v1/asset-note/entities/asset-note.entity';
 import { Status } from '../enum/asset.enum';
 import { AssetLocation } from '../../../v1/asset-location/entities/asset-location.entity';
+import { AssetLog } from 'src/v1/asset-log/entities/asset-log.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
@@ -81,6 +82,9 @@ export class Asset extends BaseEntity {
 
   @OneToMany(() => AssetNote, (note) => note.asset)
   noteRecords: AssetNote[];
+
+  @OneToMany(() => AssetLog, (log) => log.asset)
+  logRecords: AssetLog[];
   
   @BeforeInsert()
     async generateUuid() {

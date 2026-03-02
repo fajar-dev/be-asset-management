@@ -12,6 +12,7 @@ import { StorageModule } from './storage/storage.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { FeedbackModule } from './feedback/feedback.module';
+import { AssetLogModule } from './v1/asset-log/asset-log.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { FeedbackModule } from './feedback/feedback.module';
       storage: memoryStorage(),
     }),
     FeedbackModule,
+    AssetLogModule,
   ],
     providers: [
     {

@@ -6,6 +6,7 @@ import { AssetMaintenance } from './entities/asset-maintenance.entity';
 import { Repository } from 'typeorm';
 import { Asset } from '../asset/entities/asset.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 
 @Injectable()
 export class AssetMaintenanceService {
@@ -23,6 +24,11 @@ export class AssetMaintenanceService {
    * @param assetMaintenanceDto - DTO containing maintenance data
    * @returns Promise<AssetMaintenance> - the created asset maintenance record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dto = args[2];
+    const dateStr = dto.maintenanceAt instanceof Date ? dto.maintenanceAt.toISOString().split('T')[0] : String(dto.maintenanceAt || '').split('T')[0];
+    return `Added new maintenance record ${dateStr}`;
+  })
   async create(
     userId: number,
     assetUuid: string,
@@ -90,6 +96,11 @@ export class AssetMaintenanceService {
    * @param updateAssetMaintenanceDto - DTO containing updated maintenance data
    * @returns Promise<AssetMaintenance> - the updated asset maintenance record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dto = args[3];
+    const dateStr = dto.maintenanceAt instanceof Date ? dto.maintenanceAt.toISOString().split('T')[0] : String(dto.maintenanceAt || '').split('T')[0];
+    return `Updated maintenance record ${dateStr}`;
+  })
   async update(
     assetUuid: string,
     uuid: string,
@@ -115,6 +126,10 @@ export class AssetMaintenanceService {
    * @param userId - ID of the user performing the deletion
    * @returns Promise<AssetMaintenance> - the soft-deleted asset maintenance record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dateStr = result?.maintenanceAt instanceof Date ? result.maintenanceAt.toISOString().split('T')[0] : String(result?.maintenanceAt || '').split('T')[0];
+    return `Deleted maintenance record ${dateStr}`;
+  })
   async remove(assetUuid: string, uuid: string, userId: number) {
     const assetMaintenance = await this.assetMaintenanceRepository.findOneOrFail({
       where: {

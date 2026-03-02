@@ -6,9 +6,13 @@ import { AssetMaintenance } from '../asset-maintenance/entities/asset-maintenanc
 import { AssetNote } from './entities/asset-note.entity';
 import { Asset } from '../asset/entities/asset.entity';
 
+import { AssetLogModule } from '../asset-log/asset-log.module';
+import { User } from '../user/entities/user.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Asset, AssetNote]),
+    TypeOrmModule.forFeature([Asset, AssetNote, User]),
+    AssetLogModule
   ],
   controllers: [AssetNoteController],
   providers: [AssetNoteService],

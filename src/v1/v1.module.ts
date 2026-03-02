@@ -16,6 +16,7 @@ import { RolesGuard } from '../auth/guards/role.guard';
 import { BranchModule } from './branch/branch.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { LocationModule } from './location/location.module';
+import { AssetLogModule } from './asset-log/asset-log.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LocationModule } from './location/location.module';
     AssetNoteModule,
     EmployeeModule,
     BranchModule,
+    AssetLogModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -85,12 +87,13 @@ import { LocationModule } from './location/location.module';
             path: '/asset/:assetUuid/note',
             module: AssetNoteModule
           },
+          {
+            path: '/asset/:assetUuid/log',
+            module: AssetLogModule
+          },
         ],
       },
     ]),
-    BranchModule,
-    AssetLocationModule,
-    LocationModule,
   ],
   providers: [
     {
