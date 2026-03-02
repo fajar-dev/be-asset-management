@@ -13,6 +13,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AssetLogModule } from './v1/asset-log/asset-log.module';
+import { GeminiModule } from './v1/gemini/gemini.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AssetLogModule } from './v1/asset-log/asset-log.module';
     }),
     FeedbackModule,
     AssetLogModule,
+    GeminiModule,
   ],
     providers: [
     {

@@ -17,6 +17,7 @@ import { BranchModule } from './branch/branch.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
 import { LocationModule } from './location/location.module';
 import { AssetLogModule } from './asset-log/asset-log.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { AssetLogModule } from './asset-log/asset-log.module';
         ],
       },
     ]),
+    GeminiModule,
   ],
   providers: [
     {

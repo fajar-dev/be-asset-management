@@ -16,13 +16,15 @@ import { AssetLocation } from '../asset-location/entities/asset-location.entity'
 import { Location } from '../location/entities/location.entity';
 import { AssetUtilsService } from './asset-utils.service';
 import { AssetLogModule } from '../asset-log/asset-log.module';
+import { GeminiModule } from '../gemini/gemini.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location, User]),
     AssetPropertyValueModule,
     AssetLogModule,
-    StorageModule
+    StorageModule,
+    GeminiModule
   ],
   controllers: [AssetController],
   providers: [AssetService,
