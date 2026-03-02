@@ -2,7 +2,9 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { AssetHolder } from './entities/asset-holder.entity';
+import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 import { Asset } from '../asset/entities/asset.entity';
+import { Employee } from '../employee/entities/employee.entity';
 import { assignedAssetHolderDto } from './dto/assigned-asset-holder.dto';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -11,9 +13,11 @@ import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginat
 export class AssetHolderService {
   constructor(
     @InjectRepository(AssetHolder)
-    private readonly assetHolderRepository: Repository<AssetHolder>,
+    public readonly assetHolderRepository: Repository<AssetHolder>,
     @InjectRepository(Asset)
-    private readonly assetRepository: Repository<Asset>
+    private readonly assetRepository: Repository<Asset>,
+    @InjectRepository(Employee)
+    public readonly employeeRepository: Repository<Employee>,
   ) {}
 
   /**
@@ -23,6 +27,11 @@ export class AssetHolderService {
    * @param assignAssetHolderDto - DTO containing assignment details
    * @returns Promise<Boolean> - boolean indicating success or failure
    */
+  @LogAsset(async (args, result, ctx) => {
+    const assignDto = args[2];
+    const employee = await ctx.employeeRepository.findOne({ where: { idEmployee: assignDto.employeeId } });
+    return `Assigned asset to ${employee?.fullName || 'Unknown'}`;
+  })
   async assign(
     userId: number,
     assetUuid: string,
@@ -62,6 +71,11 @@ export class AssetHolderService {
    * @param assetUuid - UUID of the asset
    * @returns Promise<Boolean> - boolean indicating success or failure
    */
+  @LogAsset(async (args, result, ctx) => {
+    const assetHolderUuid = args[2];
+    const assetHolder = await ctx.assetHolderRepository.findOne({ where: { assetHolderUuid }, relations: ['employee'] });
+    return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
+  })
   async return(
     userId: number,
     assetUuid: string,

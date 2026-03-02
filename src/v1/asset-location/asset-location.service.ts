@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Asset } from '../asset/entities/asset.entity';
 import { Location } from '../location/entities/location.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 
 @Injectable()
 export class AssetLocationService {   
@@ -16,7 +17,7 @@ export class AssetLocationService {
     @InjectRepository(Asset)
     private readonly assetRepository: Repository<Asset>,
     @InjectRepository(Location)
-    private readonly locationRepository: Repository<Location>
+    public readonly locationRepository: Repository<Location>
   ) {}
 
   /**
@@ -26,6 +27,11 @@ export class AssetLocationService {
    * @param createAssetLocationDto - DTO containing the target location UUID
    * @returns Promise<AssetLocation> - the created asset-location entity
    */
+  @LogAsset(async (args, result, ctx) => {
+    const createLocationDto = args[2];
+    const location = await ctx.locationRepository.findOne({ where: { locationUuid: createLocationDto.locationId } });
+    return `Relocated asset to ${location?.name || 'Unknown'}`;
+  })
   async create(
     userId: number,
     assetUuid: string,

@@ -7,9 +7,13 @@ import { AssetHolderService } from './asset-holder.service';
 import { Employee } from '../employee/entities/employee.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { CategoryGuard } from '../category/guards/category.guard';
+import { AssetLogModule } from '../asset-log/asset-log.module';
+import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AssetHolder, Asset, Employee])], 
+  imports: [TypeOrmModule.forFeature([AssetHolder, Asset, Employee, User]),    
+    AssetLogModule,
+  ], 
   controllers: [AssetHolderController],
   providers: 
   [

@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { AssetMaintenance } from '../asset-maintenance/entities/asset-maintenance.entity';
 import { Asset } from '../asset/entities/asset.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 
 @Injectable()
 export class AssetNoteService {
@@ -24,6 +25,11 @@ export class AssetNoteService {
    * @param createAssetNoteDto - DTO containing note data
    * @returns Promise<AssetNote> - the created asset note record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dto = args[2];
+    const dateStr = dto.occuredAt instanceof Date ? dto.occuredAt.toISOString().split('T')[0] : String(dto.occuredAt || '').split('T')[0];
+    return `Added new note record ${dateStr}`;
+  })
   async create(
     userId: number,
     assetUuid: string,
@@ -76,6 +82,11 @@ export class AssetNoteService {
    * @param updateAssetNoteDto - DTO containing updated note data
    * @returns Promise<AssetNote> - the updated asset note record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dto = args[3];
+    const dateStr = dto.occuredAt instanceof Date ? dto.occuredAt.toISOString().split('T')[0] : String(dto.occuredAt || '').split('T')[0];
+    return `Updated note record ${dateStr}`;
+  })
   async update(
     assetUuid: string,
     uuid: string,
@@ -116,6 +127,10 @@ export class AssetNoteService {
    * @param userId - ID of the user performing the deletion
    * @returns Promise<AssetNote> - the soft-deleted asset note record
    */
+  @LogAsset(async (args, result, ctx) => {
+    const dateStr = result?.occuredAt instanceof Date ? result.occuredAt.toISOString().split('T')[0] : String(result?.occuredAt || '').split('T')[0];
+    return `Deleted note record ${dateStr}`;
+  })
   async remove(assetUuid: string, uuid: string, userId: number): Promise<AssetNote> {
     const assetNote = await this.assetNoteRepository.findOneOrFail({
       where: {

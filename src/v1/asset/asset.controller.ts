@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile, Res, ParseBoolPipe} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe, Put, Delete, UseInterceptors, UploadedFile, Res, ParseBoolPipe, BadRequestException} from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
@@ -20,6 +20,7 @@ import { ExcelUploadValidator } from '../../common/validators/excel.upload.valid
 import { importFromExcel } from '../../common/utils/excel-import.util';
 import { AssetUtilsService } from './asset-utils.service';
 import { StorageService } from '../../storage/storage.service';
+import { GeminiService } from '../gemini/gemini.service';
 
 @Controller()
 export class AssetController {
@@ -27,6 +28,7 @@ export class AssetController {
     private readonly assetService: AssetService,
     private readonly assetUtilsService: AssetUtilsService,
     private readonly storageService: StorageService,
+    private readonly geminiService: GeminiService,
   ) {}
 
   @Post()
@@ -47,6 +49,25 @@ export class AssetController {
     return new ApiResponse(
       'Asset Property created successfully',  
       await this.assetService.create(user.id, createAssetDto)
+    );
+  }
+
+  @Post('scan-image')
+  @PreSignedUrl([
+    { originalKey: 'imagePath', urlKey: 'imageUrl' },
+  ])
+  @Serialize(ResponseAssetDto)
+  @UseInterceptors(FileInterceptor('image'), SerializeV2Interceptor)
+  async scanImage(
+    @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
+  ) {
+    if (!image) {
+      throw new BadRequestException('Image file is required');
+    }
+    const result = await this.geminiService.parseImage(image);
+    return new ApiResponse(
+      'Image scanned successfully',
+      await this.assetService.findOneByCode(result.barcode)
     );
   }
 

@@ -8,6 +8,9 @@ import { AssetPropertyValue } from '../asset-property-value/entities/asset-prope
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { StorageService } from '../../storage/storage.service';
+import { AssetLogService } from '../asset-log/asset-log.service';
+import { User } from '../user/entities/user.entity';
+import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 
 @Injectable()
 export class AssetService {
@@ -18,7 +21,10 @@ export class AssetService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AssetPropertyValue)
     private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private storageService: StorageService,
+    private assetLogService: AssetLogService,
   ) {}
   
   /**
@@ -27,6 +33,7 @@ export class AssetService {
    * @param createAssetDto - DTO containing data to create an asset
    * @returns Promise<Asset> - the created asset entity
    */
+  @LogAsset('Created a new asset')
   async create(userId: number, createAssetDto: CreateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: createAssetDto.subCategoryId },
@@ -97,7 +104,7 @@ export class AssetService {
       await this.assetPropertyValueRepository.save(propertyValues);
     }
 
-    return this.assetRepository.findOneOrFail({
+    const result = await this.assetRepository.findOneOrFail({
       where: { id: savedAsset.id },
       relations: [
         'propertyValues',
@@ -106,6 +113,8 @@ export class AssetService {
         'subCategory.category',
       ],
     });
+
+    return result;
   }
 
   /**
@@ -115,6 +124,7 @@ export class AssetService {
    * @param updateAssetDto - DTO containing data to update an asset
    * @returns Promise<Asset> - the updated asset entity
    */
+  @LogAsset('Updated asset details')
   async update(assetId: string, userId: number, updateAssetDto: UpdateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: updateAssetDto.subCategoryId },
@@ -445,6 +455,7 @@ export class AssetService {
    * @returns Promise<Asset> - the soft-deleted asset entity
    * @throws NotFoundException if asset is not found
    */
+  @LogAsset('Removed asset')
   async remove(uuid: string, userId: number) {
     const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: uuid },
