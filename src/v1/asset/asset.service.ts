@@ -33,7 +33,7 @@ export class AssetService {
    * @param createAssetDto - DTO containing data to create an asset
    * @returns Promise<Asset> - the created asset entity
    */
-  @LogAsset('Created a new asset')
+  @LogAsset('Created a new asset', 'asset')
   async create(userId: number, createAssetDto: CreateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: createAssetDto.subCategoryId },
@@ -124,7 +124,7 @@ export class AssetService {
    * @param updateAssetDto - DTO containing data to update an asset
    * @returns Promise<Asset> - the updated asset entity
    */
-  @LogAsset('Updated asset details')
+  @LogAsset('Updated asset details', 'asset')
   async update(assetId: string, userId: number, updateAssetDto: UpdateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: updateAssetDto.subCategoryId },
@@ -455,7 +455,7 @@ export class AssetService {
    * @returns Promise<Asset> - the soft-deleted asset entity
    * @throws NotFoundException if asset is not found
    */
-  @LogAsset('Removed asset')
+  @LogAsset('Removed asset', 'asset')
   async remove(uuid: string, userId: number) {
     const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: uuid },

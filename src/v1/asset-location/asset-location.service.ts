@@ -31,7 +31,7 @@ export class AssetLocationService {
     const createLocationDto = args[2];
     const location = await ctx.locationRepository.findOne({ where: { locationUuid: createLocationDto.locationId } });
     return `Relocated asset to ${location?.name || 'Unknown'}`;
-  })
+  }, 'location')
   async create(
     userId: number,
     assetUuid: string,

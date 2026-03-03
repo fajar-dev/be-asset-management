@@ -24,6 +24,7 @@ export class AssetLogService {
       employeeId: string,
       assetUuid: string,
       message: string,
+      type: string,
     ): Promise<AssetLog> {
       const asset = await this.assetRepository.findOneOrFail({
         where: { assetUuid: assetUuid }
@@ -31,6 +32,7 @@ export class AssetLogService {
       const assetLog = this.assetLogRepository.create({
         employeeId: employeeId,
         message: message,
+        type: type,
         assetId: asset.id,
         createdAt: new Date(),
       });
@@ -42,10 +44,11 @@ export class AssetLogService {
    * @param assetUuid - UUID of the asset
    * @returns Promise<AssetLog[]> - the found asset log records
    */
-  findAll(assetUuid: string): Promise<AssetLog[]> {
-    return this.assetLogRepository.find({
+  async findAll(assetUuid: string): Promise<AssetLog[]> {
+    const assetLogs = await this.assetLogRepository.find({
       where: { asset: { assetUuid: assetUuid } },
       relations: ['employee'],
     });
+    return assetLogs;
   }
 }

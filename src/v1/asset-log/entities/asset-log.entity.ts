@@ -20,6 +20,9 @@ export class AssetLog {
     @Column({ name: 'message', type: 'text' })
     message: string;
 
+    @Column({ name: 'type', type: 'enum', enum: ['asset', 'holder', 'maintenance', 'note', 'location'] })
+    type: string;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

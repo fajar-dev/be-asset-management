@@ -2,16 +2,20 @@ import { Controller, Get, Post, Body, Param, ParseUUIDPipe } from '@nestjs/commo
 import { AssetLogService } from './asset-log.service';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ResponseAssetLogDto } from './dto/response-asset-log.dto';
+import { ApiResponse } from '../../common/utils/ApiResponse';
 
-@Controller('asset-log')
+@Controller()
 export class AssetLogController {
   constructor(
       private readonly assetLogService: AssetLogService
   ) {}
 
-  @Get(':uuid')
+  @Get()
   @Serialize(ResponseAssetLogDto)
-  findAll(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.assetLogService.findAll(uuid);
+  async findAll(@Param('assetUuid', new ParseUUIDPipe()) assetUuid: string) {
+    return new ApiResponse(
+      'Asset logs retrieved successfully',
+      await this.assetLogService.findAll(assetUuid)
+    );
   }
 }

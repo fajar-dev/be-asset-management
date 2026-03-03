@@ -6,7 +6,7 @@ import { User } from '../../user/entities/user.entity';
 
 export type LogAssetMessageBuilder = (args: any[], result: any, ctx?: any) => Promise<string> | string;
 
-export function LogAsset(message: string | LogAssetMessageBuilder) {
+export function LogAsset(message: string | LogAssetMessageBuilder, type: string) {
   const injectAssetLogService = Inject(AssetLogService);
   const injectUserRepository = Inject(getRepositoryToken(User));
 
@@ -52,7 +52,7 @@ export function LogAsset(message: string | LogAssetMessageBuilder) {
                 ? message 
                 : await message(args, result, this);
                 
-              await assetLogService.create(user.employeeId, assetUuid, finalMessage);
+              await assetLogService.create(user.employeeId, assetUuid, finalMessage, type);
             }
           }
         }
