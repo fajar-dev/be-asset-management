@@ -1,5 +1,12 @@
-import { Expose } from 'class-transformer';
-import { Employee } from '../../employee/entities/employee.entity';
+import { Expose, Type } from 'class-transformer';
+
+export class ResponseEmployeeDto  {
+  @Expose({ name: 'idEmployee' })
+  employeeId: string;
+
+  @Expose()
+  fullName: string;
+}
 
 export class ResponseAssetLogDto {
   @Expose({ name: 'assetLogUuid' })
@@ -9,7 +16,11 @@ export class ResponseAssetLogDto {
   message: string;
 
   @Expose()
-  employee: Employee;
+  @Type(() => ResponseEmployeeDto)
+  employee: ResponseEmployeeDto;
+
+  @Expose()
+  type: string;
 
   @Expose()
   createdAt: Date;

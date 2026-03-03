@@ -31,7 +31,7 @@ export class AssetHolderService {
     const assignDto = args[2];
     const employee = await ctx.employeeRepository.findOne({ where: { idEmployee: assignDto.employeeId } });
     return `Assigned asset to ${employee?.fullName || 'Unknown'}`;
-  })
+  }, 'holder')
   async assign(
     userId: number,
     assetUuid: string,
@@ -75,7 +75,7 @@ export class AssetHolderService {
     const assetHolderUuid = args[2];
     const assetHolder = await ctx.assetHolderRepository.findOne({ where: { assetHolderUuid }, relations: ['employee'] });
     return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
-  })
+  }, 'holder')
   async return(
     userId: number,
     assetUuid: string,

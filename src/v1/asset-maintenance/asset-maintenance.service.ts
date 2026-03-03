@@ -28,7 +28,7 @@ export class AssetMaintenanceService {
     const dto = args[2];
     const dateStr = dto.maintenanceAt instanceof Date ? dto.maintenanceAt.toISOString().split('T')[0] : String(dto.maintenanceAt || '').split('T')[0];
     return `Added new maintenance record ${dateStr}`;
-  })
+  }, 'maintenance')
   async create(
     userId: number,
     assetUuid: string,
@@ -100,7 +100,7 @@ export class AssetMaintenanceService {
     const dto = args[3];
     const dateStr = dto.maintenanceAt instanceof Date ? dto.maintenanceAt.toISOString().split('T')[0] : String(dto.maintenanceAt || '').split('T')[0];
     return `Updated maintenance record ${dateStr}`;
-  })
+  }, 'maintenance')
   async update(
     assetUuid: string,
     uuid: string,
@@ -129,7 +129,7 @@ export class AssetMaintenanceService {
   @LogAsset(async (args, result, ctx) => {
     const dateStr = result?.maintenanceAt instanceof Date ? result.maintenanceAt.toISOString().split('T')[0] : String(result?.maintenanceAt || '').split('T')[0];
     return `Deleted maintenance record ${dateStr}`;
-  })
+  }, 'maintenance')
   async remove(assetUuid: string, uuid: string, userId: number) {
     const assetMaintenance = await this.assetMaintenanceRepository.findOneOrFail({
       where: {
