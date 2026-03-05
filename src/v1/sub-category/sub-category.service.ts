@@ -127,6 +127,7 @@ export class SubCategoryService {
       categoryId: category.id,
       parentId,
       level,
+      labels: createSubCategoryDto.labels,
       createdBy: userId,
     });
 
@@ -314,6 +315,7 @@ export class SubCategoryService {
     subCategory.categoryId = category.id;
     subCategory.parentId = newParentId;
     subCategory.level = await this.calculateLevel(newParentId);
+    subCategory.labels = updateSubCategoryDto.labels ?? null;
     subCategory.updatedBy = userId;
 
     const updated = await this.subCategoryRepository.save(subCategory);

@@ -67,9 +67,9 @@ export class ResponseAssetLastLocationDto {
   branch: ResponseBranchDto;
 }
 
-export class ResponseCustomValueDto {
+export class ResponseAssetLabelDto {
   @Expose()
-  name: string;
+  key: string;
 
   @Expose()
   value: string;
@@ -114,6 +114,9 @@ export class ResponseAssetDto {
   status: Status;
 
   @Expose()
+  isLendable: boolean;
+
+  @Expose()
   @Type(() => ResponseSubCategoryDto)
   subCategory: ResponseSubCategoryDto;
 
@@ -129,9 +132,9 @@ export class ResponseAssetDto {
   @Type(() => ResponseAssetLastLocationDto)
   lastLocation?: ResponseAssetLastLocationDto | null;
 
-  @Expose({ name: 'customValues' })
-  @Type(() => ResponseCustomValueDto)
-  customValues: ResponseCustomValueDto[];
+  @Expose({ name: 'labelRecords' })
+  @Type(() => ResponseAssetLabelDto)
+  labels: ResponseAssetLabelDto[];
 
   @Expose()
   @Transform(({ obj }) => {

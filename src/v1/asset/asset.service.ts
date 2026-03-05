@@ -11,6 +11,7 @@ import { StorageService } from '../../storage/storage.service';
 import { AssetLogService } from '../asset-log/asset-log.service';
 import { User } from '../user/entities/user.entity';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
+import { AssetLabel } from '../asset-label/entities/asset-label.entity';
 
 @Injectable()
 export class AssetService {
@@ -23,6 +24,8 @@ export class AssetService {
     private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(AssetLabel)
+    private readonly assetLabelRepository: Repository<AssetLabel>,
     private storageService: StorageService,
     private assetLogService: AssetLogService,
   ) {}
@@ -55,12 +58,12 @@ export class AssetService {
       imagePath = await this.storageService.uploadFile('image', createAssetDto.image);
     }
 
-    let customValues = createAssetDto.customValues || [];
-    if (typeof customValues === 'string') {
+    let labels = createAssetDto.labels || [];
+    if (typeof labels === 'string') {
       try {
-        customValues = JSON.parse(customValues);
+        labels = JSON.parse(labels);
       } catch (e) {
-        customValues = [];
+        labels = [];
       }
     }
 
@@ -75,9 +78,9 @@ export class AssetService {
       price: createAssetDto.price,
       purchaseDate: createAssetDto.purchaseDate,
       status: createAssetDto.status,
+      isLendable: createAssetDto.isLendable ?? false,
       createdBy: userId,
       imagePath,
-      customValues,
     });
 
     const savedAsset = await this.assetRepository.save(asset);
@@ -104,6 +107,17 @@ export class AssetService {
       await this.assetPropertyValueRepository.save(propertyValues);
     }
 
+    if (labels?.length) {
+      const labelRecords = labels.map((l) => {
+        return this.assetLabelRepository.create({
+          assetId: savedAsset.id,
+          key: l.key,
+          value: l.value,
+        });
+      });
+      await this.assetLabelRepository.save(labelRecords);
+    }
+
     const result = await this.assetRepository.findOneOrFail({
       where: { id: savedAsset.id },
       relations: [
@@ -111,6 +125,7 @@ export class AssetService {
         'propertyValues.property',
         'subCategory',
         'subCategory.category',
+        'labelRecords',
       ],
     });
 
@@ -137,287 +152,340 @@ export class AssetService {
     }
 
     const asset = await this.assetRepository.findOneOrFail({
-      where: { assetUuid: assetId },
-    });
-
-    let customValues = updateAssetDto.customValues || [];
-    if (typeof customValues === 'string') {
-      try {
-        customValues = JSON.parse(customValues);
-      } catch (e) {
-        console.error('Gagal parse customValues saat update:', e);
-        customValues = [];
-      }
-    }
-
-    asset.subCategoryId = subCategory.id;
-    asset.code = updateAssetDto.code;
-    asset.name = updateAssetDto.name;
-    asset.description = updateAssetDto.description;
-    asset.brand = updateAssetDto.brand;
-    asset.model = updateAssetDto.model;
-    asset.status = updateAssetDto.status;
-    asset.user = updateAssetDto.user;
-    asset.price = updateAssetDto.price;
-    asset.purchaseDate = updateAssetDto.purchaseDate;
-    asset.updatedBy = userId;
-    asset.imagePath = imagePath || asset.imagePath;
-    asset.customValues = customValues;
-
-    await this.assetRepository.save(asset);
-
-    await this.assetPropertyValueRepository.delete({ assetId: asset.id });
-
-    if (updateAssetDto.properties?.length) {
-      const propertyValues = updateAssetDto.properties.map((p) => {
-        const propertyDef = subCategory.assetProperties.find(
-          (def) => def.assetPropertyUuid === p.id,
-        );
-        if (!propertyDef) {
-          throw new Error(
-            `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
-          );
-        }
-
-        return this.assetPropertyValueRepository.create({
-          assetId: asset.id,
-          propertyId: propertyDef.id,
-          valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
-          valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
-          createdBy: userId,
-        });
+        where: { assetUuid: assetId },
       });
-      await this.assetPropertyValueRepository.save(propertyValues);
+
+      let labels = updateAssetDto.labels || [];
+      if (typeof labels === 'string') {
+        try {
+          labels = JSON.parse(labels);
+        } catch (e) {
+          console.error('Gagal parse labels saat update:', e);
+          labels = [];
+        }
+      }
+
+      asset.subCategoryId = subCategory.id;
+      asset.code = updateAssetDto.code;
+      asset.name = updateAssetDto.name;
+      asset.description = updateAssetDto.description;
+      asset.brand = updateAssetDto.brand;
+      asset.model = updateAssetDto.model;
+      asset.status = updateAssetDto.status;
+      asset.user = updateAssetDto.user;
+      asset.price = updateAssetDto.price;
+      asset.purchaseDate = updateAssetDto.purchaseDate;
+      asset.isLendable = updateAssetDto.isLendable;
+      asset.updatedBy = userId;
+      asset.imagePath = imagePath || asset.imagePath;
+
+      await this.assetRepository.save(asset);
+
+      await this.assetPropertyValueRepository.delete({ assetId: asset.id });
+      await this.assetLabelRepository.delete({ assetId: asset.id });
+
+      if (updateAssetDto.properties?.length) {
+        const propertyValues = updateAssetDto.properties.map((p) => {
+          const propertyDef = subCategory.assetProperties.find(
+            (def) => def.assetPropertyUuid === p.id,
+          );
+          if (!propertyDef) {
+            throw new Error(
+              `Property dengan id ${p.id} tidak ditemukan di SubCategory ${subCategory.subCategoryUuid}`,
+            );
+          }
+
+          return this.assetPropertyValueRepository.create({
+            assetId: asset.id,
+            propertyId: propertyDef.id,
+            valueString: propertyDef.dataType === 'string' ? String(p.value) : null,
+            valueInt: propertyDef.dataType === 'number' ? Number(p.value) : null,
+            createdBy: userId,
+          });
+        });
+        await this.assetPropertyValueRepository.save(propertyValues);
+      }
+
+      if (labels?.length) {
+        const labelRecords = labels.map((l) => {
+          return this.assetLabelRepository.create({
+            assetId: asset.id,
+            key: l.key,
+            value: l.value,
+          });
+        });
+        await this.assetLabelRepository.save(labelRecords);
+      }
+
+      return this.assetRepository.findOneOrFail({
+        where: { id: asset.id },
+        relations: [
+          'propertyValues',
+          'propertyValues.property',
+          'subCategory',
+          'subCategory.category',
+          'labelRecords',
+        ],
+      });
     }
 
-    return this.assetRepository.findOneOrFail({
-      where: { id: asset.id },
-      relations: [
-        'propertyValues',
-        'propertyValues.property',
-        'subCategory',
-        'subCategory.category',
-      ],
-    });
-  }
+    /**
+   * Paginate assets with optional search and filters by category or sub-category
+   * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
+   * @param filters - Optional filter object to narrow down the query.
+   * @param filters.user - Employee UUID who currently holds the asset (optional)
+   * @param filters.subCategoryId - Subcategory UUID (optional)
+   * @param filters.categoryId - Category UUID (optional)
+   * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
+   * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
+   * @param filters.locationId - Location UUID(s) where the asset is currently placed (optional, can be comma-separated)
+   * @param filters.branchId - Branch UUID(s) where the asset is currently placed (optional, can be comma-separated)
+   * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
+   * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
+   * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
+   * @returns Promise<Pagination<Asset>> - paginated result of assets
+   */
+    async paginate(
+    options: IPaginationOptions & {
+      search?: string;
+      user?: string;
+      subCategoryId?: string;
+      categoryId?: string;
+      status?: string;
+      employeeId?: string;
+      locationId?: string;
+      branchId?: string;
+      startDate?: string;
+      endDate?: string;
+      hasHolder?: boolean;
+      sort?: string;
+      order?: 'ASC' | 'DESC';
+      labels?: string;
+    },
+  ): Promise<Pagination<Asset>> {
+    const {
+      search,
+      user,
+      subCategoryId,
+      categoryId,
+      status,
+      employeeId,
+      locationId,
+      branchId,
+      startDate,
+      endDate,
+      hasHolder,
+      labels,
+      sort = 'purchaseDate',
+      order = 'DESC',
+      ...paginationOptions
+    } = options;
 
-  /**
- * Paginate assets with optional search and filters by category or sub-category
- * @param options - Pagination options plus optional search string and/or sub-category/category UUIDs
- * @param filters - Optional filter object to narrow down the query.
- * @param filters.user - Employee UUID who currently holds the asset (optional)
- * @param filters.subCategoryId - Subcategory UUID (optional)
- * @param filters.categoryId - Category UUID (optional)
- * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
- * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
- * @param filters.locationId - Location UUID(s) where the asset is currently placed (optional, can be comma-separated)
- * @param filters.branchId - Branch UUID(s) where the asset is currently placed (optional, can be comma-separated)
- * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
- * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
- * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
- * @returns Promise<Pagination<Asset>> - paginated result of assets
- */
-  async paginate(
-  options: IPaginationOptions & {
-    search?: string;
-    user?: string;
-    subCategoryId?: string;
-    categoryId?: string;
-    status?: string;
-    employeeId?: string;
-    locationId?: string;
-    branchId?: string;
-    startDate?: string;
-    endDate?: string;
-    hasHolder?: boolean;
-    sort?: string;
-    order?: 'ASC' | 'DESC';
-  },
-): Promise<Pagination<Asset>> {
-  const {
-    search,
-    user,
-    subCategoryId,
-    categoryId,
-    status,
-    employeeId,
-    locationId,
-    branchId,
-    startDate,
-    endDate,
-    hasHolder,
-    sort = 'purchaseDate',
-    order = 'DESC',
-    ...paginationOptions
-  } = options;
+    const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+      .leftJoinAndSelect('locationRecords.location', 'location')
+      .leftJoinAndSelect('location.branch', 'branch')
+      // Join untuk pencarian active holder
+      .leftJoin('asset.holderRecords', 'activeHolder', 
+        'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
+      .leftJoin('activeHolder.employee', 'activeHolderEmployee')
+      .leftJoin('asset.labelRecords', 'labelRecords');
 
-  const queryBuilder = this.assetRepository.createQueryBuilder('asset')
-    .leftJoinAndSelect('asset.subCategory', 'subCategory')
-    .leftJoinAndSelect('subCategory.category', 'category')
-    .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
-    .leftJoinAndSelect('locationRecords.location', 'location')
-    .leftJoinAndSelect('location.branch', 'branch')
-    // Join untuk pencarian active holder
-    .leftJoin('asset.holderRecords', 'activeHolder', 
-      'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
-    .leftJoin('activeHolder.employee', 'activeHolderEmployee');
+    if (search) {
+      queryBuilder.andWhere(
+        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
+          OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+          OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
+          OR category.name LIKE :search OR subCategory.name LIKE :search
+          OR location.name LIKE :search
+          OR labelRecords.value LIKE :search)`,
+        { search: `%${search}%` },
+      );
+    }
 
-  if (search) {
-    queryBuilder.andWhere(
-      `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
-        OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
-        OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
-        OR category.name LIKE :search OR subCategory.name LIKE :search
-        OR location.name LIKE :search
-        OR JSON_SEARCH(asset.custom_value, 'one', :searchJson, NULL, '$[*].value') IS NOT NULL)`,
-      { search: `%${search}%`, searchJson: `%${search}%` },
-    );
-  }
+    if (user) {
+      queryBuilder.andWhere('asset.user = :user', { user });
+    }
 
-  if (user) {
-    queryBuilder.andWhere('asset.user = :user', { user });
-  }
+    if (subCategoryId) {
+      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
+    }
 
-  if (subCategoryId) {
-    queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
-  }
+    if (categoryId) {
+      queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
+    }
 
-  if (categoryId) {
-    queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
-  }
+    if (status) {
+      queryBuilder.andWhere('asset.status = :status', { status });
+    }
 
-  if (status) {
-    queryBuilder.andWhere('asset.status = :status', { status });
-  }
+    if (employeeId) {
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('ah.asset_id')
+          .from('asset_holders', 'ah')
+          .where('ah.employee_id = :employeeId')
+          .andWhere('ah.returned_at IS NULL')
+          .andWhere('ah.deleted_at IS NULL')
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('employeeId', employeeId);
+    }
 
-  if (employeeId) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('ah.asset_id')
-        .from('asset_holders', 'ah')
-        .where('ah.employee_id = :employeeId')
-        .andWhere('ah.returned_at IS NULL')
-        .andWhere('ah.deleted_at IS NULL')
-        .getQuery();
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('employeeId', employeeId);
-  }
+    // Filter hasHolder: hanya tampilkan asset dengan active holder jika true
+    if (hasHolder === true) {
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('ah.asset_id')
+          .from('asset_holders', 'ah')
+          .where('ah.returned_at IS NULL')
+          .andWhere('ah.deleted_at IS NULL')
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      });
+    }
 
-  // Filter hasHolder: hanya tampilkan asset dengan active holder jika true
-  if (hasHolder === true) {
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('ah.asset_id')
-        .from('asset_holders', 'ah')
-        .where('ah.returned_at IS NULL')
-        .andWhere('ah.deleted_at IS NULL')
-        .getQuery();
-      return 'asset.id IN ' + subQuery;
-    });
-  }
+    if (locationId) {
+      const locationIds = locationId.split(',').map(id => id.trim());
+      queryBuilder
+        .andWhere(qb => {
+          const subQuery = qb
+            .subQuery()
+            .select('al.asset_id')
+            .from('asset_locations', 'al')
+            .leftJoin('locations', 'l', 'al.location_id = l.id')
+            .where('al.deletedAt IS NULL')
+            .andWhere('l.location_uuid IN (:...locationUuids)')
+            .andWhere(qb2 => {
+              const firstLocSub = qb2
+                .subQuery()
+                .select('MIN(al2.createdAt)')
+                .from('asset_locations', 'al2')
+                .where('al2.asset_id = al.asset_id')
+                .andWhere('al2.deletedAt IS NULL')
+                .getQuery();
 
-  if (locationId) {
-    const locationIds = locationId.split(',').map(id => id.trim());
-    queryBuilder
-      .andWhere(qb => {
-        const subQuery = qb
-          .subQuery()
+              return `al.createdAt = ${firstLocSub}`;
+            })
+            .getQuery();
+
+          return `asset.id IN ${subQuery}`;
+        })
+        .setParameter('locationUuids', locationIds);
+    }
+
+    if (branchId) {
+      const branchIds = branchId.split(',').map(id => id.trim());
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
           .select('al.asset_id')
           .from('asset_locations', 'al')
           .leftJoin('locations', 'l', 'al.location_id = l.id')
           .where('al.deletedAt IS NULL')
-          .andWhere('l.location_uuid IN (:...locationUuids)')
+          .andWhere('l.branch_id IN (:...branchIds)')
           .andWhere(qb2 => {
-            const firstLocSub = qb2
-              .subQuery()
-              .select('MIN(al2.createdAt)')
+            const lastLocSub = qb2.subQuery()
+              .select('MAX(al2.createdAt)')
               .from('asset_locations', 'al2')
               .where('al2.asset_id = al.asset_id')
               .andWhere('al2.deletedAt IS NULL')
               .getQuery();
-
-            return `al.createdAt = ${firstLocSub}`;
+            return 'al.createdAt = ' + lastLocSub;
           })
           .getQuery();
 
-        return `asset.id IN ${subQuery}`;
-      })
-      .setParameter('locationUuids', locationIds);
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('branchIds', branchIds);
+    }
+
+    if (startDate && endDate) {
+      queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    } else if (startDate) {
+      queryBuilder.andWhere('asset.purchaseDate >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
+    }
+
+    if (labels) {
+      const labelFilters = labels.split(',');
+      labelFilters.forEach((filter, index) => {
+        let key: string;
+        let value: string;
+        let isNot = false;
+
+        if (filter.includes('!=')) {
+          [key, value] = filter.split('!=');
+          isNot = true;
+        } else if (filter.includes('=')) {
+          [key, value] = filter.split('=');
+        } else {
+          return;
+        }
+
+        // Clean up values (replace + with space if necessary, although express might do it)
+        key = key.trim();
+        value = value.trim().replace(/\+/g, ' ');
+
+        const subQuery = this.assetLabelRepository.createQueryBuilder('al')
+          .select('al.assetId')
+          .where('al.key = :key' + index)
+          .andWhere('al.value = :value' + index)
+          .getQuery();
+
+        if (isNot) {
+          queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
+        } else {
+          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
+        }
+        
+        queryBuilder.setParameter('key' + index, key);
+        queryBuilder.setParameter('value' + index, value);
+      });
+    }
+
+    const sortField = sort.includes('.') ? sort : `asset.${sort}`;
+    queryBuilder.orderBy(sortField, order);
+
+    const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+
+    if (paginationResult.items.length > 0) {
+      const assetsWithRelations = await this.assetRepository.createQueryBuilder('asset')
+        .leftJoinAndSelect('asset.subCategory', 'subCategory')
+        .leftJoinAndSelect('subCategory.category', 'category')
+        .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
+        .leftJoinAndSelect('holderRecords.employee', 'employee')
+        .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+        .leftJoinAndSelect('locationRecords.location', 'location')
+        .leftJoinAndSelect('location.branch', 'branch')
+        .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
+        .orderBy(sortField, order)
+        .getMany();
+
+      (paginationResult as any).items = assetsWithRelations.map((asset) => {
+        const hasHolder = asset.subCategory?.category?.hasHolder;
+        const hasLocation = asset.subCategory?.category?.hasLocation;
+        return {
+          ...asset,
+          propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+          activeHolder: hasHolder
+            ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+            : null,
+          lastLocation: hasLocation
+            ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+            : null,
+          labels: asset.labelRecords || [],
+          activeHolderEmployee: asset.activeHolder ? asset.activeHolder.employee : null,
+        };
+      });
+    }
+
+    return paginationResult;
   }
-
-  if (branchId) {
-    const branchIds = branchId.split(',').map(id => id.trim());
-    queryBuilder.andWhere(qb => {
-      const subQuery = qb.subQuery()
-        .select('al.asset_id')
-        .from('asset_locations', 'al')
-        .leftJoin('locations', 'l', 'al.location_id = l.id')
-        .where('al.deletedAt IS NULL')
-        .andWhere('l.branch_id IN (:...branchIds)')
-        .andWhere(qb2 => {
-          const lastLocSub = qb2.subQuery()
-            .select('MAX(al2.createdAt)')
-            .from('asset_locations', 'al2')
-            .where('al2.asset_id = al.asset_id')
-            .andWhere('al2.deletedAt IS NULL')
-            .getQuery();
-          return 'al.createdAt = ' + lastLocSub;
-        })
-        .getQuery();
-
-      return 'asset.id IN ' + subQuery;
-    }).setParameter('branchIds', branchIds);
-  }
-
-  if (startDate && endDate) {
-    queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', {
-      startDate,
-      endDate,
-    });
-  } else if (startDate) {
-    queryBuilder.andWhere('asset.purchaseDate >= :startDate', { startDate });
-  } else if (endDate) {
-    queryBuilder.andWhere('asset.purchaseDate <= :endDate', { endDate });
-  }
-
-  const sortField = sort.includes('.') ? sort : `asset.${sort}`;
-  queryBuilder.orderBy(sortField, order);
-
-  const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
-
-  if (paginationResult.items.length > 0) {
-    const assetsWithRelations = await this.assetRepository.createQueryBuilder('asset')
-      .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
-      .leftJoinAndSelect('holderRecords.employee', 'employee')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
-      .leftJoinAndSelect('locationRecords.location', 'location')
-      .leftJoinAndSelect('location.branch', 'branch')
-      .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
-      .orderBy(sortField, order)
-      .getMany();
-
-    (paginationResult as any).items = assetsWithRelations.map((asset) => {
-      const hasHolder = asset.subCategory?.category?.hasHolder;
-      const hasLocation = asset.subCategory?.category?.hasLocation;
-      return {
-        ...asset,
-        propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
-        activeHolder: hasHolder
-          ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
-          : null,
-        lastLocation: hasLocation
-          ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
-          : null,
-        customValues: asset.customValues || [],
-        activeHolderEmployee: asset.activeHolder ? asset.activeHolder.employee : null,
-      };
-    });
-  }
-
-  return paginationResult;
-}
 
   /**
    * Find an asset by UUID
@@ -425,16 +493,32 @@ export class AssetService {
    * @returns Promise<Asset> - the found asset entity
    * @throws NotFoundException if the asset is not found
    */
-  findOne(id: string): Promise<Asset> {
-    return this.assetRepository.findOneOrFail({
+  async findOne(id: string): Promise<Asset> {
+    const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: id },
       relations: [
         'propertyValues',
         'propertyValues.property',
         'subCategory',
         'subCategory.category',
+        'labelRecords',
       ],
     });
+
+    const hasHolder = asset.subCategory?.category?.hasHolder;
+    const hasLocation = asset.subCategory?.category?.hasLocation;
+
+    return {
+      ...asset,
+      propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+      activeHolder: hasHolder
+        ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+        : null,
+      lastLocation: hasLocation
+        ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+        : null,
+      labels: asset.labelRecords || [],
+    } as any;
   }
 
 
@@ -445,7 +529,31 @@ export class AssetService {
    * @throws NotFoundException if the asset is not found
    */
   async findOneByCode(code: string): Promise<Asset> {
-    return this.assetRepository.findOneByOrFail({ code });
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { code },
+      relations: [
+        'propertyValues',
+        'propertyValues.property',
+        'subCategory',
+        'subCategory.category',
+        'labelRecords',
+      ],
+    });
+
+    const hasHolder = asset.subCategory?.category?.hasHolder;
+    const hasLocation = asset.subCategory?.category?.hasLocation;
+
+    return {
+      ...asset,
+      propertyValues: (asset.propertyValues || []).filter(pv => pv.property && !pv.property.deletedAt),
+      activeHolder: hasHolder
+        ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
+        : null,
+      lastLocation: hasLocation
+        ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+        : null,
+      labels: asset.labelRecords || [],
+    } as any;
   }
 
     /**

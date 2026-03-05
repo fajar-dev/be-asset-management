@@ -40,8 +40,16 @@ export class AssetController {
     @User() user: UserEntity,
     @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const isLendableVal = body.isLendable ?? body.is_lendable;
+    const labels = parseProperties(body.labels).map(l => ({
+      key: l.key || l.name,
+      value: l.value,
+    }));
+
     const createAssetDto: CreateAssetDto = {
       ...body,
+      isLendable: String(isLendableVal) === 'true',
+      labels,
       properties: parseProperties(body.properties),
       image,
     };
@@ -93,6 +101,7 @@ export class AssetController {
     @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
     @Query('order', new DefaultValuePipe('DESC')) order?: string,
     @Query('sort', new DefaultValuePipe('createdAt')) sort?: string,
+    @Query('labels') labels?: string,
   ) {
     const paginated = await this.assetService.paginate({
       page,
@@ -109,7 +118,8 @@ export class AssetController {
       endDate,
       hasHolder,
       sort,
-      order: order as 'ASC' | 'DESC'
+      order: order as 'ASC' | 'DESC',
+      labels,
     });
 
     return new ApiResponse('Assets retrieved successfully', paginated);
@@ -127,6 +137,9 @@ export class AssetController {
     @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
+    @Query('search', new DefaultValuePipe('')) search?: string,
+    @Query('labels') labels?: string,
   ) {
     const assets = await this.assetUtilsService.getAssetsForExport({
       user,
@@ -138,6 +151,9 @@ export class AssetController {
       branchId,
       startDate,
       endDate,
+      hasHolder,
+      search,
+      labels,
     });
 
     const oneWeek = 7 * 24 * 60 * 60;
@@ -303,8 +319,16 @@ export class AssetController {
     @User() user: UserEntity,
     @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const isLendableVal = body.isLendable ?? body.is_lendable;
+    const labels = parseProperties(body.labels).map(l => ({
+      key: l.key || l.name,
+      value: l.value,
+    }));
+
     const updateAssetDto: UpdateAssetDto = {
       ...body,
+      isLendable: String(isLendableVal) === 'true',
+      labels,
       properties: parseProperties(body.properties),
       image,
     };

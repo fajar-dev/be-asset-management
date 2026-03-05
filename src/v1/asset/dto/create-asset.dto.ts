@@ -6,8 +6,9 @@ import {
   Validate,
   IsEnum,
   IsDate,
+  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { SubCategory } from '../../../v1/sub-category/entities/sub-category.entity';
 import { IsExist } from '../../../common/validators/is-exist.decorator';
 import { ValidatePropertiesBySubCategory } from '../../../common/validators/validate-properties-by-subcategory.decorator';
@@ -24,10 +25,10 @@ export class CreateAssetPropertyValueDto {
   value: string | number;
 }
 
-export class CreateCustomValueDto {
+export class CreateAssetLabelDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  key: string;
 
   @IsString()
   @IsNotEmpty()
@@ -76,6 +77,11 @@ export class CreateAssetDto {
   @IsNotEmpty()
   status: Status;
 
+  @Transform(({ value }) => value === 'true' || value === true || value === 1 || value === '1')
+  @IsBoolean()
+  @IsNotEmpty()
+  isLendable: boolean;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateAssetPropertyValueDto)
@@ -86,9 +92,9 @@ export class CreateAssetDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCustomValueDto)
+  @Type(() => CreateAssetLabelDto)
   @IsOptional()
-  customValues?: CreateCustomValueDto[];
+  labels?: CreateAssetLabelDto[];
 
   image?: Express.Multer.File;
 }

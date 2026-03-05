@@ -9,6 +9,7 @@ import { v4 as uuidv7 } from 'uuid'
 import { AssetHolder } from '../asset-holder/entities/asset-holder.entity';
 import { AssetLocation } from '../asset-location/entities/asset-location.entity';
 import { Location } from '../location/entities/location.entity';
+import { AssetLabel } from '../asset-label/entities/asset-label.entity';
 
 @Injectable()
 export class AssetUtilsService {
@@ -24,7 +25,9 @@ export class AssetUtilsService {
         @InjectRepository(AssetLocation)
         private readonly assetLocationRepository: Repository<AssetLocation>,
         @InjectRepository(Location)
-        private readonly locationRepository: Repository<Location>
+        private readonly locationRepository: Repository<Location>,
+        @InjectRepository(AssetLabel)
+        private readonly assetLabelRepository: Repository<AssetLabel>
     ) {}
     /**
      * Retrieves all assets that match the given filters for Excel export.
@@ -38,6 +41,9 @@ export class AssetUtilsService {
      * @param filters.locationId - Location UUID(s) where the asset is currently placed (optional, can be comma-separated)
      * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
      * @param filters.endDate - End date filter for purchase date (optional, format: 'YYYY-MM-DD')
+     * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
+     * @param filters.search - Search string (optional)
+     * @param filters.labels - Labels filter string (optional)
      *
      * @returns Promise<Asset[]> - Returns an array of fully loaded `Asset` entities including relations
      * such as subCategory, category, propertyValues, holderRecords, and locationRecords.
@@ -52,6 +58,9 @@ export class AssetUtilsService {
         locationId?: string;
         startDate?: string;
         endDate?: string;
+        hasHolder?: boolean;
+        search?: string;
+        labels?: string;
     }): Promise<Asset[]> {
         const {
         user,
@@ -63,6 +72,9 @@ export class AssetUtilsService {
         locationId,
         startDate,
         endDate,
+        hasHolder,
+        search,
+        labels,
         } = filters;
 
         const qb = this.assetRepository.createQueryBuilder('asset')
@@ -75,7 +87,23 @@ export class AssetUtilsService {
         .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
         .leftJoinAndSelect('locationRecords.location', 'location')
         .leftJoinAndSelect('location.branch', 'branch')
+        .leftJoin('asset.holderRecords', 'activeHolder', 
+            'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
+        .leftJoin('activeHolder.employee', 'activeHolderEmployee')
+        .leftJoin('asset.labelRecords', 'labelRecords')
         .where('asset.deletedAt IS NULL');
+        
+        if (search) {
+            qb.andWhere(
+              `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
+                OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+                OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
+                OR category.name LIKE :search OR subCategory.name LIKE :search
+                OR location.name LIKE :search
+                OR labelRecords.value LIKE :search)`,
+              { search: `%${search}%` },
+            );
+        }
         
         if (user) {
             qb.andWhere('asset.user = :user', { user });
@@ -104,6 +132,18 @@ export class AssetUtilsService {
             .getQuery();
             return 'asset.id IN ' + subQuery;
         }).setParameter('employeeId', employeeId);
+        }
+
+        if (hasHolder === true) {
+            qb.andWhere(qb2 => {
+              const subQuery = qb2.subQuery()
+                .select('ah.asset_id')
+                .from('asset_holders', 'ah')
+                .where('ah.returned_at IS NULL')
+                .andWhere('ah.deleted_at IS NULL')
+                .getQuery();
+              return 'asset.id IN ' + subQuery;
+            });
         }
 
         if (locationId) {
@@ -160,6 +200,42 @@ export class AssetUtilsService {
         qb.andWhere('asset.purchaseDate >= :startDate', { startDate });
         } else if (endDate) {
         qb.andWhere('asset.purchaseDate <= :endDate', { endDate });
+        }
+
+        if (labels) {
+            const labelFilters = labels.split(',');
+            labelFilters.forEach((filter, index) => {
+              let key: string;
+              let value: string;
+              let isNot = false;
+      
+              if (filter.includes('!=')) {
+                [key, value] = filter.split('!=');
+                isNot = true;
+              } else if (filter.includes('=')) {
+                [key, value] = filter.split('=');
+              } else {
+                return;
+              }
+      
+              key = key.trim();
+              value = value.trim().replace(/\+/g, ' ');
+      
+              const subQuery = this.assetLabelRepository.createQueryBuilder('al')
+                .select('al.asset_id')
+                .where('al.key = :key' + index)
+                .andWhere('al.value = :value' + index)
+                .getQuery();
+      
+              if (isNot) {
+                qb.andWhere(`asset.id NOT IN (${subQuery})`);
+              } else {
+                qb.andWhere(`asset.id IN (${subQuery})`);
+              }
+              
+              qb.setParameter('key' + index, key);
+              qb.setParameter('value' + index, value);
+            });
         }
 
         qb.orderBy('asset.purchaseDate', 'DESC');
