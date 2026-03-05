@@ -75,6 +75,7 @@ export class AssetService {
       price: createAssetDto.price,
       purchaseDate: createAssetDto.purchaseDate,
       status: createAssetDto.status,
+      isLendable: createAssetDto.isLendable ?? false,
       createdBy: userId,
       imagePath,
       customValues,
@@ -160,6 +161,7 @@ export class AssetService {
     asset.user = updateAssetDto.user;
     asset.price = updateAssetDto.price;
     asset.purchaseDate = updateAssetDto.purchaseDate;
+    asset.isLendable = updateAssetDto.isLendable;
     asset.updatedBy = userId;
     asset.imagePath = imagePath || asset.imagePath;
     asset.customValues = customValues;

@@ -114,6 +114,9 @@ export class ResponseAssetDto {
   status: Status;
 
   @Expose()
+  isLendable: boolean;
+
+  @Expose()
   @Type(() => ResponseSubCategoryDto)
   subCategory: ResponseSubCategoryDto;
 

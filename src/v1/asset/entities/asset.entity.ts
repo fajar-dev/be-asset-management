@@ -15,7 +15,8 @@ import { AssetHolder } from '../../asset-holder/entities/asset-holder.entity';
 import { AssetNote } from '../../../v1/asset-note/entities/asset-note.entity';
 import { Status } from '../enum/asset.enum';
 import { AssetLocation } from '../../../v1/asset-location/entities/asset-location.entity';
-import { AssetLog } from 'src/v1/asset-log/entities/asset-log.entity';
+import { AssetLog } from '../../asset-log/entities/asset-log.entity';
+import { AssetLabel } from '../../asset-label/entities/asset-label.entity';
 
 @Entity('assets')
 export class Asset extends BaseEntity {
@@ -52,6 +53,9 @@ export class Asset extends BaseEntity {
   @Column({ name: 'purchase_date', type: 'date', nullable: true })
   purchaseDate: Date | null;
 
+  @Column({ name: 'is_lendable', type: 'boolean', default: false })
+  isLendable: boolean;
+
   @Column({ name:'custom_value', type: 'json', nullable: true })
   customValues?: { name: string; value: string | number }[];
   
@@ -86,6 +90,9 @@ export class Asset extends BaseEntity {
   @OneToMany(() => AssetLog, (log) => log.asset)
   logRecords: AssetLog[];
   
+  @OneToMany(() => AssetLabel, (label) => label.asset)
+  labelRecords: AssetLabel[];
+
   @BeforeInsert()
     async generateUuid() {
       this.assetUuid = uuidv7();

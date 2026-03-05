@@ -18,6 +18,7 @@ import { AssetLocationModule } from './asset-location/asset-location.module';
 import { LocationModule } from './location/location.module';
 import { AssetLogModule } from './asset-log/asset-log.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { AssetLabelModule } from './asset-label/asset-label.module';
 
 @Module({
   imports: [
@@ -92,10 +93,15 @@ import { GeminiModule } from './gemini/gemini.module';
             path: '/asset/:assetUuid/log',
             module: AssetLogModule
           },
+          {
+            path: '/asset/:assetUuid/asset-label',
+            module: AssetLabelModule
+          },
         ],
       },
     ]),
     GeminiModule,
+    AssetLabelModule,
   ],
   providers: [
     {

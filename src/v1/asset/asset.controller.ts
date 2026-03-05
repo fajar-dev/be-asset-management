@@ -40,8 +40,10 @@ export class AssetController {
     @User() user: UserEntity,
     @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const isLendableVal = body.isLendable ?? body.is_lendable;
     const createAssetDto: CreateAssetDto = {
       ...body,
+      isLendable: String(isLendableVal) === 'true',
       properties: parseProperties(body.properties),
       image,
     };
@@ -303,8 +305,10 @@ export class AssetController {
     @User() user: UserEntity,
     @UploadedFile(ImageUploadValidator) image: Express.Multer.File,
   ) {
+    const isLendableVal = body.isLendable ?? body.is_lendable;
     const updateAssetDto: UpdateAssetDto = {
       ...body,
+      isLendable: String(isLendableVal) === 'true',
       properties: parseProperties(body.properties),
       image,
     };
