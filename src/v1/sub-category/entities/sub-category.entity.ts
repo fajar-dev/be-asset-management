@@ -31,6 +31,9 @@ export class SubCategory extends BaseEntity {
   @Column({ name: 'name', type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ name: 'labels', type: 'json', nullable: true })
+  labels: string[] | null;
+
   // Self-referencing parent
   @Column({ name: 'parent_id', type: 'int', nullable: true })
   parentId: number | null;

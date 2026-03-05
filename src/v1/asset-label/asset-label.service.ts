@@ -67,5 +67,13 @@ export class AssetLabelService {
       isAvailable: !existingLabel
     };
   }
+
+  async findAllUnique(): Promise<{ key: string, value: string }[]> {
+    return await this.assetLabelRepository.createQueryBuilder('label')
+      .select(['label.key as `key`', 'label.value as `value`'])
+      .groupBy('label.key')
+      .addGroupBy('label.value')
+      .getRawMany();
+  }
 }
 

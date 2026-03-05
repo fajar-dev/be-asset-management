@@ -18,9 +18,11 @@ import { AssetUtilsService } from './asset-utils.service';
 import { AssetLogModule } from '../asset-log/asset-log.module';
 import { GeminiModule } from '../gemini/gemini.module';
 
+import { AssetLabel } from '../asset-label/entities/asset-label.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location, User]),
+    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location, User, AssetLabel]),
     AssetPropertyValueModule,
     AssetLogModule,
     StorageModule,

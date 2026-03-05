@@ -25,10 +25,10 @@ export class CreateAssetPropertyValueDto {
   value: string | number;
 }
 
-export class CreateCustomValueDto {
+export class CreateAssetLabelDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  key: string;
 
   @IsString()
   @IsNotEmpty()
@@ -92,9 +92,9 @@ export class CreateAssetDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateCustomValueDto)
+  @Type(() => CreateAssetLabelDto)
   @IsOptional()
-  customValues?: CreateCustomValueDto[];
+  labels?: CreateAssetLabelDto[];
 
   image?: Express.Multer.File;
 }

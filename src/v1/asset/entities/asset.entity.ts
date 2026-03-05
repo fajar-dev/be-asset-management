@@ -56,9 +56,6 @@ export class Asset extends BaseEntity {
   @Column({ name: 'is_lendable', type: 'boolean', default: false })
   isLendable: boolean;
 
-  @Column({ name:'custom_value', type: 'json', nullable: true })
-  customValues?: { name: string; value: string | number }[];
-  
   @Column({
     name: 'status',
     type: 'enum',

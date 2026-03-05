@@ -19,6 +19,7 @@ import { LocationModule } from './location/location.module';
 import { AssetLogModule } from './asset-log/asset-log.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { AssetLabelModule } from './asset-label/asset-label.module';
+import { LabelModule } from './asset-label/label.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AssetLabelModule } from './asset-label/asset-label.module';
     EmployeeModule,
     BranchModule,
     AssetLogModule,
+    LabelModule,
     RouterModule.register([
       {
         path: 'v1',
@@ -60,6 +62,10 @@ import { AssetLabelModule } from './asset-label/asset-label.module';
           {
             path: '/employee',
             module: EmployeeModule
+          },
+          {
+            path: '/label',
+            module: LabelModule
           },
           {
             path: '/sub-category',
@@ -101,7 +107,6 @@ import { AssetLabelModule } from './asset-label/asset-label.module';
       },
     ]),
     GeminiModule,
-    AssetLabelModule,
   ],
   providers: [
     {

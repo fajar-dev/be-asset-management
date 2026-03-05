@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, MaxLength, Validate } from 'class-validator';
 import { IsExist } from '../../../common/validators/is-exist.decorator';
 import { Category } from '../../category/entities/category.entity';
 import { SubCategory } from '../entities/sub-category.entity';
@@ -18,4 +18,9 @@ export class CreateSubCategoryDto {
   @IsString()
   @Validate(IsExist, [SubCategory, 'subCategoryUuid'])
   parentId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  labels?: string[];
 }

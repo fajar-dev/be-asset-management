@@ -13,6 +13,9 @@ export class ResponseSubCategoryDto {
   level: number;
 
   @Expose()
+  labels: string[] | null;
+
+  @Expose()
   @Type(() => ResponseCategoryDto)
   category: ResponseCategoryDto;
 
