@@ -5,7 +5,7 @@ import { Asset } from './entities/asset.entity';
 import { Repository, In, IsNull } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
-import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { IPaginationOptions, paginate, Pagination, PaginationTypeEnum } from 'nestjs-typeorm-paginate';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { StorageService } from '../../storage/storage.service';
 import { AssetLogService } from '../asset-log/asset-log.service';
@@ -245,7 +245,7 @@ export class AssetService {
    * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
    * @returns Promise<Pagination<Asset>> - paginated result of assets
    */
-    async paginate(
+  async paginate(
     options: IPaginationOptions & {
       search?: string;
       user?: string;
@@ -413,7 +413,9 @@ export class AssetService {
 
     if (labels) {
       const labelFilters = labels.split(',');
-      labelFilters.forEach((filter, index) => {
+      const groupedFilters: Record<string, { inValues: string[], notInValues: string[] }> = {};
+
+      labelFilters.forEach((filter) => {
         let key: string;
         let value: string;
         let isNot = false;
@@ -431,27 +433,63 @@ export class AssetService {
         key = key.trim();
         value = value.trim().replace(/\+/g, ' ');
 
-        const subQuery = this.assetLabelRepository.createQueryBuilder('al')
-          .select('al.assetId')
-          .where('al.key = :key' + index)
-          .andWhere('al.value = :value' + index)
-          .getQuery();
+        if (!groupedFilters[key]) {
+          groupedFilters[key] = { inValues: [], notInValues: [] };
+        }
 
         if (isNot) {
-          queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
+          groupedFilters[key].notInValues.push(value);
         } else {
-          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
+          groupedFilters[key].inValues.push(value);
         }
-        
-        queryBuilder.setParameter('key' + index, key);
-        queryBuilder.setParameter('value' + index, value);
       });
+
+      let index = 0;
+      for (const [key, { inValues, notInValues }] of Object.entries(groupedFilters)) {
+        if (inValues.length > 0) {
+          const uniqueInValues = Array.from(new Set(inValues));
+          const subQuery = this.assetLabelRepository.createQueryBuilder('al')
+            .select('al.assetId')
+            .where('al.key = :key' + index)
+            .andWhere('al.value IN (:...values' + index + ')')
+            .getQuery();
+
+          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
+          queryBuilder.setParameter('key' + index, key);
+          queryBuilder.setParameter('values' + index, uniqueInValues);
+          index++;
+        }
+
+        if (notInValues.length > 0) {
+          const uniqueNotInValues = Array.from(new Set(notInValues));
+          const subQuery = this.assetLabelRepository.createQueryBuilder('al')
+            .select('al.assetId')
+            .where('al.key = :key' + index)
+            .andWhere('al.value IN (:...values' + index + ')')
+            .getQuery();
+
+          queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
+          queryBuilder.setParameter('key' + index, key);
+          queryBuilder.setParameter('values' + index, uniqueNotInValues);
+          index++;
+        }
+      }
     }
 
     const sortField = sort.includes('.') ? sort : `asset.${sort}`;
     queryBuilder.orderBy(sortField, order);
 
-    const paginationResult = await paginate<Asset>(queryBuilder, paginationOptions);
+    const totalItems = await queryBuilder.getCount();
+
+    const paginationResult = await paginate<Asset>(queryBuilder, {
+      ...paginationOptions,
+      paginationType: PaginationTypeEnum.TAKE_AND_SKIP,
+      countQueries: false,
+    });
+
+    const limit = Number(paginationOptions.limit) || 10;
+    paginationResult.meta.totalItems = totalItems;
+    paginationResult.meta.totalPages = Math.ceil(totalItems / limit);
 
     if (paginationResult.items.length > 0) {
       const assetsWithRelations = await this.assetRepository.createQueryBuilder('asset')
