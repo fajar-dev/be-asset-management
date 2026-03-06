@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from './entities/asset.entity';
-import { Repository, In, IsNull } from 'typeorm';
+import { Repository, In, IsNull, Brackets } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
@@ -245,7 +245,7 @@ export class AssetService {
    * @param filters.hasHolder - Filter assets that have a current holder (optional, boolean)
    * @returns Promise<Pagination<Asset>> - paginated result of assets
    */
-    async paginate(
+  async paginate(
     options: IPaginationOptions & {
       search?: string;
       user?: string;
@@ -282,25 +282,29 @@ export class AssetService {
     } = options;
 
     const queryBuilder = this.assetRepository.createQueryBuilder('asset')
+      // Join untuk pencarian (Many-to-One safe joins)
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
-      .leftJoinAndSelect('locationRecords.location', 'location')
-      .leftJoinAndSelect('location.branch', 'branch')
-      // Join untuk pencarian active holder
       .leftJoin('asset.holderRecords', 'activeHolder', 
         'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
-      .leftJoin('activeHolder.employee', 'activeHolderEmployee')
-      .leftJoin('asset.labelRecords', 'labelRecords');
+      .leftJoin('activeHolder.employee', 'activeHolderEmployee');
 
     if (search) {
       queryBuilder.andWhere(
-        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
-          OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
-          OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
-          OR category.name LIKE :search OR subCategory.name LIKE :search
-          OR location.name LIKE :search
-          OR labelRecords.value LIKE :search)`,
+        new Brackets((qb) => {
+          qb.where(
+            `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
+              OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+              OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
+              OR category.name LIKE :search OR subCategory.name LIKE :search)`,
+          )
+            .orWhere(
+              'EXISTS (SELECT 1 FROM asset_labels al WHERE al.asset_id = asset.id AND al.value LIKE :search)',
+            )
+            .orWhere(
+              'EXISTS (SELECT 1 FROM asset_locations aloc JOIN locations loc ON aloc.location_id = loc.id WHERE aloc.asset_id = asset.id AND loc.name LIKE :search)',
+            );
+        }),
         { search: `%${search}%` },
       );
     }
@@ -413,7 +417,9 @@ export class AssetService {
 
     if (labels) {
       const labelFilters = labels.split(',');
-      labelFilters.forEach((filter, index) => {
+      const groupedFilters: Record<string, { key: string; values: string[]; isNot: boolean }> = {};
+
+      labelFilters.forEach((filter) => {
         let key: string;
         let value: string;
         let isNot = false;
@@ -427,24 +433,31 @@ export class AssetService {
           return;
         }
 
-        // Clean up values (replace + with space if necessary, although express might do it)
         key = key.trim();
         value = value.trim().replace(/\+/g, ' ');
 
+        const filterKey = `${isNot ? 'not_' : 'eq_'}${key}`;
+        if (!groupedFilters[filterKey]) {
+          groupedFilters[filterKey] = { key, values: [], isNot };
+        }
+        groupedFilters[filterKey].values.push(value);
+      });
+
+      Object.values(groupedFilters).forEach((info, index) => {
         const subQuery = this.assetLabelRepository.createQueryBuilder('al')
           .select('al.assetId')
-          .where('al.key = :key' + index)
-          .andWhere('al.value = :value' + index)
+          .where('al.key = :l_key' + index)
+          .andWhere('al.value IN (:...l_values' + index + ')')
           .getQuery();
 
-        if (isNot) {
+        if (info.isNot) {
           queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
         } else {
           queryBuilder.andWhere(`asset.id IN (${subQuery})`);
         }
         
-        queryBuilder.setParameter('key' + index, key);
-        queryBuilder.setParameter('value' + index, value);
+        queryBuilder.setParameter('l_key' + index, info.key);
+        queryBuilder.setParameter('l_values' + index, info.values);
       });
     }
 
@@ -462,6 +475,7 @@ export class AssetService {
         .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
         .leftJoinAndSelect('locationRecords.location', 'location')
         .leftJoinAndSelect('location.branch', 'branch')
+        .leftJoinAndSelect('asset.labelRecords', 'labelRecords')
         .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
         .orderBy(sortField, order)
         .getMany();

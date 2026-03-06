@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from './entities/asset.entity';
-import { Repository, Like, IsNull } from 'typeorm';
+import { Repository, Like, IsNull, Brackets } from 'typeorm';
 import { SubCategory } from '../sub-category/entities/sub-category.entity';
 import { AssetPropertyValue } from '../asset-property-value/entities/asset-property-value.entity';
 import { Category } from '../category/entities/category.entity';
@@ -95,13 +95,21 @@ export class AssetUtilsService {
         
         if (search) {
             qb.andWhere(
-              `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
-                OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
-                OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
-                OR category.name LIKE :search OR subCategory.name LIKE :search
-                OR location.name LIKE :search
-                OR labelRecords.value LIKE :search)`,
-              { search: `%${search}%` },
+                new Brackets((subQb) => {
+                    subQb.where(
+                        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
+                          OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
+                          OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
+                          OR category.name LIKE :search OR subCategory.name LIKE :search)`,
+                    )
+                    .orWhere(
+                        'EXISTS (SELECT 1 FROM asset_labels al WHERE al.asset_id = asset.id AND al.value LIKE :search)',
+                    )
+                    .orWhere(
+                        'EXISTS (SELECT 1 FROM asset_locations aloc JOIN locations loc ON aloc.location_id = loc.id WHERE aloc.asset_id = asset.id AND loc.name LIKE :search)',
+                    );
+                }),
+                { search: `%${search}%` },
             );
         }
         
@@ -204,7 +212,9 @@ export class AssetUtilsService {
 
         if (labels) {
             const labelFilters = labels.split(',');
-            labelFilters.forEach((filter, index) => {
+            const groupedFilters: Record<string, { key: string; values: string[]; isNot: boolean }> = {};
+      
+            labelFilters.forEach((filter) => {
               let key: string;
               let value: string;
               let isNot = false;
@@ -221,20 +231,28 @@ export class AssetUtilsService {
               key = key.trim();
               value = value.trim().replace(/\+/g, ' ');
       
+              const filterKey = `${isNot ? 'not_' : 'eq_'}${key}`;
+              if (!groupedFilters[filterKey]) {
+                groupedFilters[filterKey] = { key, values: [], isNot };
+              }
+              groupedFilters[filterKey].values.push(value);
+            });
+      
+            Object.values(groupedFilters).forEach((info, index) => {
               const subQuery = this.assetLabelRepository.createQueryBuilder('al')
                 .select('al.asset_id')
-                .where('al.key = :key' + index)
-                .andWhere('al.value = :value' + index)
+                .where('al.key = :l_key' + index)
+                .andWhere('al.value IN (:...l_values' + index + ')')
                 .getQuery();
       
-              if (isNot) {
+              if (info.isNot) {
                 qb.andWhere(`asset.id NOT IN (${subQuery})`);
               } else {
                 qb.andWhere(`asset.id IN (${subQuery})`);
               }
               
-              qb.setParameter('key' + index, key);
-              qb.setParameter('value' + index, value);
+              qb.setParameter('l_key' + index, info.key);
+              qb.setParameter('l_values' + index, info.values);
             });
         }
 
