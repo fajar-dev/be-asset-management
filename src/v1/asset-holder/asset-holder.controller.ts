@@ -1,6 +1,9 @@
-import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { AssetHolderService } from './asset-holder.service';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
+import { PreSignedUrl } from '../../common/decorator/presigned-url.decorator';
+import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 import { ResponseAssetHolderDto } from './dto/response-asset-holder.dto';
 import { assignedAssetHolderDto } from './dto/assigned-asset-holder.dto';
 import { User } from '../../common/decorator/auth-user.decorator';
@@ -19,7 +22,11 @@ export class AssetHolderController {
   ) {}
   
   @Get()
+  @PreSignedUrl([
+    { originalKey: 'attachmentPaths', urlKey: 'attachmentUrls' }
+  ])
   @Serialize(ResponseAssetHolderDto)
+  @UseInterceptors(SerializeV2Interceptor)
   async findAll(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
@@ -34,11 +41,19 @@ export class AssetHolderController {
       
   @Post()
   @Roles(Role.ADMIN)
+  @UseInterceptors(FilesInterceptor('attachments', 3))
   async assigned(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
-    @Body() assignedAssetHolderDto: assignedAssetHolderDto,
+    @Body() body: any,
     @User() user: UserEntity,
+    @UploadedFiles() attachments: Express.Multer.File[],
   ) {
+    const assignedAssetHolderDto: assignedAssetHolderDto = {
+      ...body,
+      assignedAt: body.assignedAt ? new Date(body.assignedAt) : undefined,
+      attachments 
+    };
+    assignedAssetHolderDto.attachments = attachments;
     const assign = await this.assetHolderService.assign(user.id, assetUuid, assignedAssetHolderDto)
     if(assign){
       return new ApiResponse(
@@ -51,12 +66,20 @@ export class AssetHolderController {
 
   @Post(':uuid')
   @Roles(Role.ADMIN)
+  @UseInterceptors(FilesInterceptor('attachments', 3))
   async returned(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @Body() returnedAssetHolderDto: returnedAssetHolderDto,
+    @Body() body: any,
     @User() user: UserEntity,
+    @UploadedFiles() attachments: Express.Multer.File[],
   ) {
+    const returnedAssetHolderDto: returnedAssetHolderDto = { 
+       ...body, 
+       returnedAt: body.returnedAt ? new Date(body.returnedAt) : undefined,
+       attachments 
+    };
+    returnedAssetHolderDto.attachments = attachments;
     const assign = await this.assetHolderService.return(user.id, assetUuid, uuid, returnedAssetHolderDto)
     if(assign){
       return new ApiResponse(

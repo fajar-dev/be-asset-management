@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { StorageService } from '../../storage/storage.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { AssetHolder } from './entities/asset-holder.entity';
@@ -18,6 +19,7 @@ export class AssetHolderService {
     private readonly assetRepository: Repository<Asset>,
     @InjectRepository(Employee)
     public readonly employeeRepository: Repository<Employee>,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -54,11 +56,22 @@ export class AssetHolderService {
       return false;
     }
 
+    const uploadedPaths: string[] = [];
+    if (assignAssetHolderDto.attachments) {
+      for (const file of assignAssetHolderDto.attachments) {
+        const objectPath = await this.storageService.uploadFile('asset-holder', file);
+        if (objectPath) {
+          uploadedPaths.push(objectPath);
+        }
+      }
+    }
+
     const assetHolder = this.assetHolderRepository.create({
       assetId: asset.id,
       employeeId: assignAssetHolderDto.employeeId,
       assignedAt: assignAssetHolderDto.assignedAt,
       purpose: assignAssetHolderDto.purpose,
+      attachmentPaths: uploadedPaths,
       createdBy: userId
     });
 
@@ -93,6 +106,19 @@ export class AssetHolderService {
     if (!lastAssignment) {
       return false
     }
+
+    const uploadedPaths: string[] = [];
+    if (returnedAssetHolderDto.attachments) {
+      for (const file of returnedAssetHolderDto.attachments) {
+        const objectPath = await this.storageService.uploadFile('asset-holder', file);
+        if (objectPath) {
+          uploadedPaths.push(objectPath);
+        }
+      }
+    }
+
+    const currentPaths = Array.isArray(lastAssignment.attachmentPaths) ? lastAssignment.attachmentPaths : [];
+    lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
 
     lastAssignment.returnedAt = returnedAssetHolderDto.returnedAt
     lastAssignment.updatedBy = userId
