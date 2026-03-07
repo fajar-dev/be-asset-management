@@ -15,6 +15,12 @@ export class ResponseAssetHolderDto {
   returnedAt: Date | null;
 
   @Expose()
+  attachmentPaths: string[];
+
+  @Expose()
+  attachmentUrls: string[];
+
+  @Expose()
   @Type(() => ResponseEmployeeDto)
   employee: ResponseEmployeeDto
 }

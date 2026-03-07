@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { StorageModule } from '../../storage/storage.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AssetHolder } from './entities/asset-holder.entity';
 import { Asset } from '../asset/entities/asset.entity';
@@ -13,6 +14,7 @@ import { User } from '../user/entities/user.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([AssetHolder, Asset, Employee, User]),    
     AssetLogModule,
+    StorageModule,
   ], 
   controllers: [AssetHolderController],
   providers: 

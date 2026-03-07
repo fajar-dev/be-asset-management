@@ -1,8 +1,10 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsDate, IsNotEmpty, IsString } from "class-validator";
 
 export class returnedAssetHolderDto {
   @IsDate()
-  @Type(() => Date)
+  @Transform(({ value }) => new Date(value))
   returnedAt: Date;
+
+  attachments?: Express.Multer.File[];
 }
