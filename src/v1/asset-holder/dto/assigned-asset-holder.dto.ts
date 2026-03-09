@@ -19,4 +19,5 @@ export class assignedAssetHolderDto {
   employeeId: string;
 
   attachments?: Express.Multer.File[];
+  isRequest?: boolean;
 }

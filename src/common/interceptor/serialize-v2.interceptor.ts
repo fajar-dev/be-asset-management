@@ -74,48 +74,56 @@ export class SerializeV2Interceptor implements NestInterceptor {
   }
 
   private async processPreSignedUrl(
-  item: any,
-  preSignedUrlObject: PreSignedUrlObject[],
-) {
-  await Promise.all(
-    preSignedUrlObject.map(async (preSignedUrl) => {
-      const path = item[preSignedUrl.originalKey];
+    item: any,
+    preSignedUrlObject: PreSignedUrlObject[],
+  ) {
+    await Promise.all(
+      preSignedUrlObject.map(async (preSignedUrl) => {
+        const keys = preSignedUrl.originalKey.split('.');
+        const urlKeys = preSignedUrl.urlKey.split('.');
+        
+        let path = item;
+        for (let i = 0; i < keys.length; i++) {
+          path = path ? path[keys[i]] : null;
+        }
 
-      if (!path) {
-        item[preSignedUrl.urlKey] = null;
-        return;
-      }
+        if (!path) {
+          this.setNestedValue(item, urlKeys, null);
+          return;
+        }
 
-      // case: array
-      if (Array.isArray(path)) {
-        item[preSignedUrl.urlKey] = await Promise.all(
-          path.map((key) => this.storageService.getPreSignedUrl(key)),
-        );
-        return;
-      }
+        let resolvedUrl: any = null;
+        // case: array
+        if (Array.isArray(path)) {
+          resolvedUrl = await Promise.all(
+            path.map((key) => this.storageService.getPreSignedUrl(key)),
+          );
+        }
+        // case: comma separated string
+        else if (typeof path === 'string' && path.includes(',')) {
+          const parts = path.split(',').map((p) => p.trim());
+          resolvedUrl = await Promise.all(
+            parts.map((key) => this.storageService.getPreSignedUrl(key)),
+          );
+        }
+        // case: single string
+        else if (typeof path === 'string') {
+          resolvedUrl = await this.storageService.getPreSignedUrl(path);
+        }
 
-      // case: comma separated string
-      if (typeof path === 'string' && path.includes(',')) {
-        const parts = path.split(',').map((p) => p.trim());
-        item[preSignedUrl.urlKey] = await Promise.all(
-          parts.map((key) => this.storageService.getPreSignedUrl(key)),
-        );
-        return;
-      }
+        this.setNestedValue(item, urlKeys, resolvedUrl);
+      }),
+    );
+  }
 
-      // case: single string
-      if (typeof path === 'string') {
-        item[preSignedUrl.urlKey] = await this.storageService.getPreSignedUrl(
-          path,
-        );
-        return;
-      }
-
-      // fallback
-      item[preSignedUrl.urlKey] = null;
-    }),
-  );
-}
+  private setNestedValue(obj: any, keys: string[], value: any) {
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = value;
+  }
 
 
   private async dtoHandler(data: any, context: ExecutionContext) {

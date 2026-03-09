@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { StorageService } from '../../storage/storage.service';
+import sharp from 'sharp';
+import { DateTime } from 'luxon';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { AssetHolder } from './entities/asset-holder.entity';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 import { Asset } from '../asset/entities/asset.entity';
@@ -44,7 +46,25 @@ export class AssetHolderService {
     });
 
     if (asset.status !== 'active') {
-      return false;
+      throw new BadRequestException('The asset status is inactive.');
+    }
+
+    if (assignAssetHolderDto.isRequest) {
+      if (!asset.isLendable) {
+        throw new BadRequestException('This asset is not lendable for independent request.');
+      }
+
+      const activeEmployeeHolder = await this.assetHolderRepository.findOne({
+        where: {
+          employeeId: assignAssetHolderDto.employeeId,
+          returnedAt: IsNull(),
+          isRequest: true,
+        },
+      });
+
+      if (activeEmployeeHolder) {
+        throw new BadRequestException('You already have an active asset on loan. Please return it first before requesting another one.');
+      }
     }
 
     const lastAssignment = await this.assetHolderRepository.findOne({
@@ -53,7 +73,7 @@ export class AssetHolderService {
     });
 
     if (lastAssignment && !lastAssignment.returnedAt) {
-      return false;
+      throw new BadRequestException('The asset is currently on loan.');
     }
 
     const uploadedPaths: string[] = [];
@@ -72,6 +92,7 @@ export class AssetHolderService {
       assignedAt: assignAssetHolderDto.assignedAt,
       purpose: assignAssetHolderDto.purpose,
       attachmentPaths: uploadedPaths,
+      isRequest: assignAssetHolderDto.isRequest ?? false,
       createdBy: userId
     });
 
@@ -94,17 +115,24 @@ export class AssetHolderService {
     assetUuid: string,
     assetHolder: string,
     returnedAssetHolderDto: returnedAssetHolderDto,
+    employeeId?: string,
   ): Promise<Boolean> {
     const asset = await this.assetRepository.findOneOrFail({
-      where: {assetUuid : assetUuid}
+      where: { assetUuid: assetUuid }
     })
+    
+    const where: any = { assetHolderUuid: assetHolder, assetId: asset.id, returnedAt: IsNull() };
+    if (employeeId) {
+      where.employeeId = employeeId;
+    }
+
     const lastAssignment = await this.assetHolderRepository.findOne({
-        where: { assetHolderUuid: assetHolder, assetId: asset.id, returnedAt: IsNull() },
-        order: { createdAt: 'DESC' },
-      });
+      where,
+      order: { createdAt: 'DESC' },
+    });
 
     if (!lastAssignment) {
-      return false
+      throw new BadRequestException('Asset assignment record not found or already returned.');
     }
 
     const uploadedPaths: string[] = [];
@@ -150,5 +178,70 @@ export class AssetHolderService {
       page: options.page,
     });
   }
+
+  async watermarkImage(image: Express.Multer.File): Promise<Express.Multer.File> {
+    const timestamp = DateTime.now().setZone('Asia/Jakarta').toFormat('yyyy-MM-dd HH:mm:ss');
+    const metadata = await sharp(image.buffer).metadata();
+    const width = metadata.width || 800;
+    const height = metadata.height || 600;
+
+    const bgHeight = Math.max(30, width * 0.08);
+    const fontSize = Math.max(16, width * 0.04);
+    
+    const svgImage = `<svg width="${width}" height="${height}">
+      <style>
+      .bg { fill: rgba(0, 0, 0, 0.5); } 
+      .title { fill: white; font-size: ${fontSize}px; font-family: sans-serif; }
+      </style>
+      <rect x="0" y="${height - bgHeight}" width="${width}" height="${bgHeight}" class="bg" />
+      <text x="10" y="${height - 10}" class="title">${timestamp}</text>
+      </svg>`;
+
+    const watermarkedBuffer = await sharp(image.buffer)
+      .composite([{ input: Buffer.from(svgImage), gravity: 'south' }])
+      .toBuffer();
+
+    image.buffer = watermarkedBuffer;
+    image.size = watermarkedBuffer.length;
+    return image;
+  }
+
+  async findByEmployeeId(employeeId: string) {
+    return await this.assetHolderRepository.find({
+      where: { employeeId },
+      relations: [
+        'asset',
+        'asset.subCategory',
+        'asset.propertyValues',
+        'asset.propertyValues.property',
+        'asset.labelRecords',
+      ],
+      order: { assignedAt: 'DESC' },
+    });
+  }
+
+  async paginateByEmployee(
+    employeeId: string,
+    options: IPaginationOptions & { status?: 'active' | 'history' },
+  ): Promise<Pagination<AssetHolder>> {
+    const where: any = { employeeId };
+
+    if (options.status === 'active') {
+      where.returnedAt = IsNull();
+    } else if (options.status === 'history') {
+      where.returnedAt = Not(IsNull());
+    }
+
+    return paginate<AssetHolder>(this.assetHolderRepository, options, {
+      where,
+      relations: [
+        'asset',
+        'asset.subCategory',
+        'asset.propertyValues',
+        'asset.propertyValues.property',
+        'asset.labelRecords',
+      ],
+      order: { assignedAt: 'DESC' },
+    });
+  }
 }
-  

@@ -25,7 +25,6 @@ import { User } from '../user/entities/user.entity';
       useClass: CategoryGuard,
     },
   ],
-
+  exports: [AssetHolderService],
 })
 export class AssetHolderModule {}
-
