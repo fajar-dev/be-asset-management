@@ -20,7 +20,6 @@ export class CategoryGuard implements CanActivate {
     const { assetUuid } = req.params;
     const url: string = req.url;
 
-    console.log('Guard running on:', url);
 
     if (!assetUuid) return true;
 

@@ -103,6 +103,10 @@ import { LabelModule } from './asset-label/label.module';
             path: '/asset/:assetUuid/asset-label',
             module: AssetLabelModule
           },
+          {
+            path: '/user/my-assets',
+            module: UserModule
+          }
         ],
       },
     ]),

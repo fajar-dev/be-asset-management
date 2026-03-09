@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { BadRequestException, Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, ParseUUIDPipe, Post, Query, UseGuards, UploadedFiles, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { AssetHolderService } from './asset-holder.service';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { PreSignedUrl } from '../../common/decorator/presigned-url.decorator';
@@ -10,6 +10,8 @@ import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
 import { ApiResponse } from '../../common/utils/ApiResponse';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
+import { RequestAssetHolderDto } from './dto/request-asset-holder.dto';
+import { ReturnRequestAssetHolderDto } from './dto/return-request-asset-holder.dto';
 import { CategoryGuard } from '../category/guards/category.guard';
 import { Roles } from '../../common/decorator/role.decorator';
 import { Role } from '../user/enum/role.enum';
@@ -54,15 +56,42 @@ export class AssetHolderController {
       attachments 
     };
     assignedAssetHolderDto.attachments = attachments;
-    const assign = await this.assetHolderService.assign(user.id, assetUuid, assignedAssetHolderDto)
-    if(assign){
-      return new ApiResponse(
-        'Holder asset assigned successfully'
-      );
-    }
-    throw new BadRequestException('The asset is currently on loan or the asset status is inactive.');
+    await this.assetHolderService.assign(user.id, assetUuid, assignedAssetHolderDto);
+    return new ApiResponse('Holder asset assigned successfully');
   }
   
+  @Post('request')
+  @UseInterceptors(FileInterceptor('image'))
+  async request(
+    @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
+    @Body() body: RequestAssetHolderDto,
+    @User() user: UserEntity,
+    @UploadedFile() image: Express.Multer.File,
+  ) {
+    if (!image) {
+      throw new BadRequestException('Image is required');
+    }
+    if (!user.employeeId) {
+      throw new BadRequestException('User is not associated with an employee');
+    }
+
+    const watermarkedImage = await this.assetHolderService.watermarkImage(image);
+
+    const assignDto: assignedAssetHolderDto = {
+      assignedAt: new Date(),
+      purpose: body.purpose || 'Peminjaman Pribadi',
+      employeeId: user.employeeId,
+      attachments: [watermarkedImage],
+      isRequest: true,
+    };
+
+    await this.assetHolderService.assign(
+      user.id,
+      assetUuid,
+      assignDto,
+    );
+    return new ApiResponse('Holder asset requested successfully');
+  }
 
   @Post(':uuid')
   @Roles(Role.ADMIN)
@@ -80,12 +109,40 @@ export class AssetHolderController {
        attachments 
     };
     returnedAssetHolderDto.attachments = attachments;
-    const assign = await this.assetHolderService.return(user.id, assetUuid, uuid, returnedAssetHolderDto)
-    if(assign){
-      return new ApiResponse(
-        'Holder asset returned successfully'
-      );
+    await this.assetHolderService.return(user.id, assetUuid, uuid, returnedAssetHolderDto);
+    return new ApiResponse('Holder asset returned successfully');
+  }
+
+  @Post(':uuid/return-request')
+  @UseInterceptors(FileInterceptor('image'))
+  async returnRequest(
+    @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @Body() body: ReturnRequestAssetHolderDto,
+    @User() user: UserEntity,
+    @UploadedFile() image: Express.Multer.File,
+  ) {
+    if (!image) {
+      throw new BadRequestException('Image is required');
     }
-    throw new BadRequestException('The asset is currently on loan or the asset status is inactive.');
+    if (!user.employeeId) {
+      throw new BadRequestException('User is not associated with an employee');
+    }
+
+    const watermarkedImage = await this.assetHolderService.watermarkImage(image);
+
+    const returnDto: returnedAssetHolderDto = {
+      returnedAt: new Date(),
+      attachments: [watermarkedImage],
+    };
+
+    await this.assetHolderService.return(
+      user.id,
+      assetUuid,
+      uuid,
+      returnDto,
+      user.employeeId,
+    );
+    return new ApiResponse('Holder asset returned successfully');
   }
 }

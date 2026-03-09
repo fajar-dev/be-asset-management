@@ -24,8 +24,11 @@ export class AssetHolder extends BaseEntity {
   @Column({ name: 'returned_at', type: 'date', nullable: true })
   returnedAt: Date;
 
-  @Column({ name:'attachment_paths', type: 'json', nullable: false })
+  @Column({ name:'attachment_paths', type: 'json', nullable: true})
   attachmentPaths: string[];
+
+  @Column({ name: 'is_request', type: 'boolean', default: false })
+  isRequest: boolean;
 
   @ManyToOne(() => Asset, (asset) => asset.holderRecords)
   @JoinColumn({ name: 'asset_id' })

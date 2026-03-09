@@ -1,7 +1,7 @@
 import { Expose, Type } from 'class-transformer';
-import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
+import { ResponseAssetDto } from '../../asset/dto/response-asset.dto';
 
-export class ResponseAssetHolderDto {
+export class ResponseUserAssetDto {
   @Expose({ name: 'assetHolderUuid' })
   id: string;
 
@@ -24,6 +24,6 @@ export class ResponseAssetHolderDto {
   isRequest: boolean;
 
   @Expose()
-  @Type(() => ResponseEmployeeDto)
-  employee: ResponseEmployeeDto
+  @Type(() => ResponseAssetDto)
+  asset: ResponseAssetDto;
 }
