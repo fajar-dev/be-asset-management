@@ -68,12 +68,17 @@ export class AssetLabelService {
     };
   }
 
-  async findAllUnique(): Promise<{ key: string, value: string }[]> {
-    return await this.assetLabelRepository.createQueryBuilder('label')
+  async findAllUnique(search?: string): Promise<{ key: string, value: string }[]> {
+    const query = this.assetLabelRepository.createQueryBuilder('label')
       .select(['label.key as `key`', 'label.value as `value`'])
       .groupBy('label.key')
-      .addGroupBy('label.value')
-      .getRawMany();
+      .addGroupBy('label.value');
+
+    if (search) {
+      query.where('label.key LIKE :search OR label.value LIKE :search', { search: `%${search}%` });
+    }
+
+    return await query.getRawMany();
   }
 }
 
