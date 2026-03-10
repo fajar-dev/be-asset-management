@@ -413,7 +413,7 @@ export class AssetService {
 
     if (labels) {
       const labelFilters = labels.split(',');
-      const groupedFilters: Record<string, { inValues: string[], notInValues: string[] }> = {};
+      let index = 0;
 
       labelFilters.forEach((filter) => {
         let key: string;
@@ -429,51 +429,26 @@ export class AssetService {
           return;
         }
 
-        // Clean up values (replace + with space if necessary, although express might do it)
+        // Clean up values
         key = key.trim();
         value = value.trim().replace(/\+/g, ' ');
 
-        if (!groupedFilters[key]) {
-          groupedFilters[key] = { inValues: [], notInValues: [] };
-        }
+        const subQuery = this.assetLabelRepository.createQueryBuilder('al')
+          .select('al.assetId')
+          .where('al.key = :key' + index)
+          .andWhere('al.value = :value' + index)
+          .getQuery();
 
         if (isNot) {
-          groupedFilters[key].notInValues.push(value);
-        } else {
-          groupedFilters[key].inValues.push(value);
-        }
-      });
-
-      let index = 0;
-      for (const [key, { inValues, notInValues }] of Object.entries(groupedFilters)) {
-        if (inValues.length > 0) {
-          const uniqueInValues = Array.from(new Set(inValues));
-          const subQuery = this.assetLabelRepository.createQueryBuilder('al')
-            .select('al.assetId')
-            .where('al.key = :key' + index)
-            .andWhere('al.value IN (:...values' + index + ')')
-            .getQuery();
-
-          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
-          queryBuilder.setParameter('key' + index, key);
-          queryBuilder.setParameter('values' + index, uniqueInValues);
-          index++;
-        }
-
-        if (notInValues.length > 0) {
-          const uniqueNotInValues = Array.from(new Set(notInValues));
-          const subQuery = this.assetLabelRepository.createQueryBuilder('al')
-            .select('al.assetId')
-            .where('al.key = :key' + index)
-            .andWhere('al.value IN (:...values' + index + ')')
-            .getQuery();
-
           queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
-          queryBuilder.setParameter('key' + index, key);
-          queryBuilder.setParameter('values' + index, uniqueNotInValues);
-          index++;
+        } else {
+          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
         }
-      }
+
+        queryBuilder.setParameter('key' + index, key);
+        queryBuilder.setParameter('value' + index, value);
+        index++;
+      });
     }
 
     const sortField = sort.includes('.') ? sort : `asset.${sort}`;
