@@ -5,12 +5,15 @@ import { Repository } from 'typeorm';
 import { AssetHolder } from 'src/v1/asset-holder/entities/asset-holder.entity';
 import { AssetHolderService } from 'src/v1/asset-holder/asset-holder.service';
 import { User } from 'src/v1/user/entities/user.entity';
+import { ReturnBookDto } from './dto/return-book.dto';
 
 @Injectable()
 export class BookService {
   constructor(
     @InjectRepository(Asset)
     private readonly assetRepository: Repository<Asset>,
+    @InjectRepository(AssetHolder)
+    private readonly assetHolderRepository: Repository<AssetHolder>,
     private readonly assetHolderService: AssetHolderService,
   ) {}
 
@@ -85,5 +88,31 @@ export class BookService {
       assignedAt: new Date(),
       isRequest: true
     });
+  }
+
+  async return(user: User, body: ReturnBookDto) {
+    return await this.assetHolderService.return(user.id, body.assetId, body.assetHolderId, {
+      returnedAt: new Date(),
+    }, body.employeeId);
+  }
+
+  async findLoansByEmployee(employeeId: string, hasReturn?: boolean | string) {
+    const qb = this.assetHolderRepository.createQueryBuilder('ah')
+      .leftJoinAndSelect('ah.asset', 'asset')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .where('ah.employeeId = :employeeId', { employeeId })
+      .andWhere('category.name = :categoryName', { categoryName: 'Buku' });
+
+    if (hasReturn !== undefined && hasReturn !== '') {
+      const isTrue = String(hasReturn) === 'true';
+      if (isTrue) {
+        qb.andWhere('ah.returnedAt IS NOT NULL');
+      } else {
+        qb.andWhere('ah.returnedAt IS NULL');
+      }
+    }
+
+    return await qb.orderBy('ah.assignedAt', 'DESC').getMany();
   }
 }
