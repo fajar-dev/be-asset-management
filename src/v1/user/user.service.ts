@@ -13,4 +13,8 @@ export class UserService {
   async findOne(id: number) {
     return await this.userRepository.findOneBy({ id });
   }
+
+  async findByApiKey(apiKey: string) {
+    return await this.userRepository.findOne({ where: { apiKey } });
+  }
 }

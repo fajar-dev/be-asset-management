@@ -3,7 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { AssetHolder } from "../../../v1/asset-holder/entities/asset-holder.entity";
 import { User } from "../../../v1/user/entities/user.entity";
 import { Branch } from "../../../v1/branch/entities/branch.entity";
-import { AssetLog } from "../../asset-log/entities/asset-log.entity";
+
 
 @Entity("employees")
 export class Employee extends BaseEntity {
@@ -47,6 +47,4 @@ export class Employee extends BaseEntity {
   @OneToMany(() => User, (user) => user.employee)
   users: User[];
 
-  @OneToMany(() => AssetLog, (log) => log.employee)
-  assetLogs: AssetLog[];
 }

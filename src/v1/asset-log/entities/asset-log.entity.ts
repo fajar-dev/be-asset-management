@@ -1,7 +1,7 @@
 import { Asset } from "../../asset/entities/asset.entity";
 import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
-import { Employee } from "../../../v1/employee/entities/employee.entity";
+import { User } from "../../user/entities/user.entity";
 
 @Entity('asset_logs')
 export class AssetLog {
@@ -14,8 +14,8 @@ export class AssetLog {
     @Column({ name: 'asset_id', type: 'int' })
     assetId: number;
 
-    @Column({ name: 'employee_id', type: 'char', length: 36})
-    employeeId: string;
+    @Column({ name: 'user_id', type: 'int' })
+    userId: number;
 
     @Column({ name: 'message', type: 'text' })
     message: string;
@@ -30,9 +30,9 @@ export class AssetLog {
     @JoinColumn({ name: 'asset_id' })
     asset: Asset;
 
-    @ManyToOne(() => Employee, (employee) => employee.assetLogs)
-    @JoinColumn({ name: 'employee_id',  referencedColumnName: "idEmployee" })
-    employee: Employee;
+    @ManyToOne(() => User, (user) => user.assetLogs)
+    @JoinColumn({ name: 'user_id' })
+    user: User;
 
     @BeforeInsert()
     async generateUuid() {
