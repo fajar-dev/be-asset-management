@@ -17,6 +17,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     ]);
     if (isPublic) return true; 
 
+    // If user is already set (e.g., by ApiKeyGuard), bypass JWT check
+    const request = context.switchToHttp().getRequest();
+    if (request.user) return true;
+
     return super.canActivate(context);
   }
 

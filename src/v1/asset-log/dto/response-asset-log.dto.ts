@@ -1,11 +1,11 @@
 import { Expose, Type } from 'class-transformer';
 
-export class ResponseEmployeeDto  {
-  @Expose({ name: 'idEmployee' })
+export class ResponseUserForLogDto  {
+  @Expose({ name: 'employeeId' })
   employeeId: string;
 
   @Expose()
-  fullName: string;
+  name: string;
 }
 
 export class ResponseAssetLogDto {
@@ -16,8 +16,8 @@ export class ResponseAssetLogDto {
   message: string;
 
   @Expose()
-  @Type(() => ResponseEmployeeDto)
-  employee: ResponseEmployeeDto;
+  @Type(() => ResponseUserForLogDto)
+  user: ResponseUserForLogDto;
 
   @Expose()
   type: string;

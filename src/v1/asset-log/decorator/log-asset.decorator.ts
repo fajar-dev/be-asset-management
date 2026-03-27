@@ -42,18 +42,11 @@ export function LogAsset(message: string | LogAssetMessageBuilder, type: string)
           }
 
           if (userId && assetUuid) {
-            // Fetch user details to get the employeeId
-            const user = await userRepository.findOne({
-              where: { id: userId },
-            });
-
-            if (user && user.employeeId) {
-              const finalMessage = typeof message === 'string' 
-                ? message 
-                : await message(args, result, this);
-                
-              await assetLogService.create(user.employeeId, assetUuid, finalMessage, type);
-            }
+            const finalMessage = typeof message === 'string' 
+              ? message 
+              : await message(args, result, this);
+              
+            await assetLogService.create(userId, assetUuid, finalMessage, type);
           }
         }
       } catch (error) {

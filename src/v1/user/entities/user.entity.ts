@@ -4,6 +4,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { Role } from '../enum/role.enum';
 import { Feedback } from '../../../feedback/entities/feedback.entity';
 import { Employee } from '../../../v1/employee/entities/employee.entity';
+import { AssetLog } from '../../asset-log/entities/asset-log.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -37,6 +38,9 @@ export class User extends BaseEntity {
   @Column({ name: 'employee_id', type: 'char', length: 36, nullable: true })
   employeeId: string;
 
+  @Column({ name: 'api_key', type: 'varchar', length: 255, nullable: true, unique: true })
+  apiKey: string;
+
   @Column({
     name: 'role',
     type: 'enum',
@@ -47,6 +51,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Feedback, (feedback) => feedback.user)
   feedbacks: Feedback[];
+
+  @OneToMany(() => AssetLog, (assetLog) => assetLog.user)
+  assetLogs: AssetLog[];
 
   @ManyToOne(() => Employee, (employee) => employee.users, { nullable: true })
   @JoinColumn({ name: 'employee_id',  referencedColumnName: "idEmployee" })

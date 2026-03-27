@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { V1Module } from './v1/v1.module';
+import { V2Module } from './v2/v2.module';
 import { APP_FILTER } from '@nestjs/core';
 import { CatchEverythingFilter } from './common/filters/http-exception.filter';
 import { IsNotExist } from './common/validators/is-not-exist.decorator';
@@ -20,6 +21,7 @@ import { GeminiModule } from './v1/gemini/gemini.module';
     DatabaseModule, 
     AuthModule,
     V1Module,
+    V2Module,
     StorageModule,
     MulterModule.register({
       storage: memoryStorage(),

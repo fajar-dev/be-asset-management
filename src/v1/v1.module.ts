@@ -12,6 +12,7 @@ import { AssetNoteModule } from './asset-note/asset-note.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { EmployeeModule } from './employee/employee.module';
 import { JwtAuthGuard } from '../auth/guards/JwtAuthGuard';
+import { ApiKeyGuard } from '../auth/guards/ApiKeyGuard';
 import { RolesGuard } from '../auth/guards/role.guard';
 import { BranchModule } from './branch/branch.module';
 import { AssetLocationModule } from './asset-location/asset-location.module';
@@ -113,6 +114,10 @@ import { LabelModule } from './asset-label/label.module';
     GeminiModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
