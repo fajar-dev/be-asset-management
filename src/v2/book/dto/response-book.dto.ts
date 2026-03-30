@@ -2,6 +2,8 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
 import { Status } from '../../../v1/asset/enum/asset.enum';
 
+import { ResponseLocationDto } from '../../../v1/location/dto/response-location.dto';
+
 export class ResponseSubCategoryDto {
   @Expose({ name: 'subCategoryUuid' })
   id: string;
@@ -77,4 +79,9 @@ export class ResponseBookDto {
   @Expose()
   @Type(() => ResponseAssetHolderDto)
   activeHolder?: ResponseAssetHolderDto | null;
+
+  @Expose()
+  @Type(() => ResponseLocationDto)
+  lastLocation?: ResponseLocationDto | null;
 }
+

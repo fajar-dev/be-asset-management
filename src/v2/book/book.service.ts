@@ -17,15 +17,19 @@ export class BookService {
     private readonly assetHolderService: AssetHolderService,
   ) {}
 
-  async findAll(search?: string, hasHolder?: boolean | string): Promise<Asset[]> {
+  async findAll(search?: string, hasHolder?: boolean | string, branchId?: string): Promise<Asset[]> {
     const qb = this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
       .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
       .leftJoinAndSelect('holderRecords.employee', 'employee')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+      .leftJoinAndSelect('locationRecords.location', 'location')
+      .leftJoinAndSelect('location.branch', 'branch')
       .where('category.name = :categoryName', { categoryName: 'Buku' })
       .andWhere('asset.deletedAt IS NULL')
-      .andWhere('asset.isLendable = :isLendable', { isLendable: true });
+      .andWhere('asset.isLendable = :isLendable', { isLendable: true })
+      .addOrderBy('locationRecords.createdAt', 'DESC');
 
     if (search) {
       qb.andWhere('asset.name LIKE :search', { search: `%${search}%` });
@@ -46,16 +50,47 @@ export class BookService {
         qb.andWhere(`asset.id NOT IN (${subQuery})`);
       }
     }
+    if (branchId) {
+      const branchIds = branchId.split(',').map((id) => id.trim());
+      qb.andWhere((subQb) => {
+        const subQuery = subQb
+          .subQuery()
+          .select('al.asset_id')
+          .from('asset_locations', 'al')
+          .leftJoin('locations', 'l', 'al.location_id = l.id')
+          .where('al.deletedAt IS NULL')
+          .andWhere('l.branch_id IN (:...branchIds)')
+          .andWhere((qb2) => {
+            const lastLocSub = qb2
+              .subQuery()
+              .select('MAX(al2.createdAt)')
+              .from('asset_locations', 'al2')
+              .where('al2.asset_id = al.asset_id')
+              .andWhere('al2.deletedAt IS NULL')
+              .getQuery();
+            return 'al.createdAt = ' + lastLocSub;
+          })
+          .getQuery();
+
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('branchIds', branchIds);
+    }
 
     const assets = await qb.getMany();
 
     return assets.map((asset) => {
       const hasHolder = asset.subCategory?.category?.hasHolder;
+      const hasLocation = asset.subCategory?.category?.hasLocation;
 
       return {
         ...asset,
         activeHolder: hasHolder
           ? (asset.holderRecords || []).find((h) => !h.returnedAt && !h.deletedAt) ?? null
+          : null,
+        lastLocation: hasLocation
+          ? (asset.locationRecords || [])
+              .filter((l) => !l.deletedAt)
+              .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.location ?? null
           : null,
       } as any;
     });
@@ -67,16 +102,26 @@ export class BookService {
       .leftJoinAndSelect('subCategory.category', 'category')
       .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
       .leftJoinAndSelect('holderRecords.employee', 'employee')
+      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
+      .leftJoinAndSelect('locationRecords.location', 'location')
+      .leftJoinAndSelect('location.branch', 'branch')
       .where('asset.assetUuid = :uuid', { uuid })
       .andWhere('category.name = :categoryName', { categoryName: 'Buku' })
+      .addOrderBy('locationRecords.createdAt', 'DESC')
       .getOneOrFail();
 
     const hasHolder = asset.subCategory?.category?.hasHolder;
+    const hasLocation = asset.subCategory?.category?.hasLocation;
 
     return {
       ...asset,
       activeHolder: hasHolder
         ? (asset.holderRecords || []).find((h) => !h.returnedAt && !h.deletedAt) ?? null
+        : null,
+      lastLocation: hasLocation
+        ? (asset.locationRecords || [])
+            .filter((l) => !l.deletedAt)
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.location ?? null
         : null,
     } as any;
   }

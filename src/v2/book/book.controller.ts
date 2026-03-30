@@ -29,10 +29,11 @@ export class BookController {
   async findAll(
     @Query('search') search?: string,
     @Query('hasHolder') hasHolder?: boolean,
+    @Query('branchId') branchId?: string,
   ) {
     return new ApiResponse(
       'Books retrieved successfully',
-      await this.bookService.findAll(search, hasHolder)
+      await this.bookService.findAll(search, hasHolder, branchId)
     );
   }
 
