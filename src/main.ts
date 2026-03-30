@@ -14,13 +14,10 @@ async function bootstrap() {
   app.useGlobalPipes(customValidationPipe());
 
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://a.nusa.id'
-    ],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    credentials: false,
   });
 
   app.useGlobalInterceptors(new ResponseInterceptor());
