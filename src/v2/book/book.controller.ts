@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseInterceptors } from '@nestjs/common';
 import { BookService } from './book.service';
 import { ApiResponse } from '../../common/utils/ApiResponse';
-import { Public } from '../../common/decorator/public.decorator';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { ResponseBookDto } from './dto/response-book.dto';
 import { ResponseBookLoanDto } from './dto/response-book-loan.dto';
+import { ResponseEmployeeLoanDto } from './dto/response-employee-loan.dto';
 import { SerializeV2Interceptor } from '../../common/interceptor/serialize-v2.interceptor';
 import { PreSignedUrl } from '../../common/decorator/presigned-url.decorator';
 import { User } from '../../common/decorator/auth-user.decorator';
@@ -49,6 +49,19 @@ export class BookController {
   async return(@Body() body: ReturnBookDto, @User() user: UserEntity) {
     await this.bookService.return(user, body);
     return new ApiResponse('Book returned successfully');
+  }
+
+  @Get('loan')
+  @Roles(Role.ADMIN)
+  async findAllLoans(
+    @Query('search') search?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return new ApiResponse(
+      'Employee Loan Book Data',
+      await this.bookService.findAllLoans(search, startDate, endDate)
+    );
   }
 
   @Get('loan/:employeeId')

@@ -79,41 +79,67 @@ export class SerializeV2Interceptor implements NestInterceptor {
   ) {
     await Promise.all(
       preSignedUrlObject.map(async (preSignedUrl) => {
-        const keys = preSignedUrl.originalKey.split('.');
-        const urlKeys = preSignedUrl.urlKey.split('.');
-        
-        let path = item;
-        for (let i = 0; i < keys.length; i++) {
-          path = path ? path[keys[i]] : null;
-        }
-
-        if (!path) {
-          this.setNestedValue(item, urlKeys, null);
-          return;
-        }
-
-        let resolvedUrl: any = null;
-        // case: array
-        if (Array.isArray(path)) {
-          resolvedUrl = await Promise.all(
-            path.map((key) => this.storageService.getPreSignedUrl(key)),
-          );
-        }
-        // case: comma separated string
-        else if (typeof path === 'string' && path.includes(',')) {
-          const parts = path.split(',').map((p) => p.trim());
-          resolvedUrl = await Promise.all(
-            parts.map((key) => this.storageService.getPreSignedUrl(key)),
-          );
-        }
-        // case: single string
-        else if (typeof path === 'string') {
-          resolvedUrl = await this.storageService.getPreSignedUrl(path);
-        }
-
-        this.setNestedValue(item, urlKeys, resolvedUrl);
+        await this.handlePreSignRecursively(
+          item,
+          preSignedUrl.originalKey.split('.'),
+          preSignedUrl.urlKey.split('.'),
+        );
       }),
     );
+  }
+
+  private async handlePreSignRecursively(
+    data: any,
+    originalKeys: string[],
+    urlKeys: string[],
+  ) {
+    if (!data) return;
+
+    if (Array.isArray(data)) {
+      await Promise.all(
+        data.map((item) =>
+          this.handlePreSignRecursively(item, originalKeys, urlKeys),
+        ),
+      );
+      return;
+    }
+
+    const currentKey = originalKeys[0];
+    const currentUrlKey = urlKeys[0];
+    const remainingOriginalKeys = originalKeys.slice(1);
+    const remainingUrlKeys = urlKeys.slice(1);
+
+    const value = data[currentKey];
+
+    if (remainingOriginalKeys.length === 0) {
+      // Leaf node: time to pre-sign
+      if (!value) {
+        data[currentUrlKey] = null;
+        return;
+      }
+
+      let resolvedUrl: any = null;
+      if (Array.isArray(value)) {
+        resolvedUrl = await Promise.all(
+          value.map((key) => this.storageService.getPreSignedUrl(key)),
+        );
+      } else if (typeof value === 'string' && value.includes(',')) {
+        const parts = value.split(',').map((p) => p.trim());
+        resolvedUrl = await Promise.all(
+          parts.map((key) => this.storageService.getPreSignedUrl(key)),
+        );
+      } else if (typeof value === 'string') {
+        resolvedUrl = await this.storageService.getPreSignedUrl(value);
+      }
+      data[currentUrlKey] = resolvedUrl;
+    } else {
+      // Internal node: keep going
+      await this.handlePreSignRecursively(
+        value,
+        remainingOriginalKeys,
+        remainingUrlKeys,
+      );
+    }
   }
 
   private setNestedValue(obj: any, keys: string[], value: any) {

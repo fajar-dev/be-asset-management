@@ -6,6 +6,7 @@ import { AssetHolder } from 'src/v1/asset-holder/entities/asset-holder.entity';
 import { AssetHolderService } from 'src/v1/asset-holder/asset-holder.service';
 import { User } from 'src/v1/user/entities/user.entity';
 import { ReturnBookDto } from './dto/return-book.dto';
+import { StorageService } from 'src/storage/storage.service';
 
 @Injectable()
 export class BookService {
@@ -15,6 +16,7 @@ export class BookService {
     @InjectRepository(AssetHolder)
     private readonly assetHolderRepository: Repository<AssetHolder>,
     private readonly assetHolderService: AssetHolderService,
+    private readonly storageService: StorageService,
   ) {}
 
   async findAll(search?: string, hasHolder?: boolean | string, branchId?: string): Promise<Asset[]> {
@@ -159,5 +161,66 @@ export class BookService {
     }
 
     return await qb.orderBy('ah.assignedAt', 'DESC').getMany();
+  }
+
+  async findAllLoans(search?: string, startDate?: string, endDate?: string) {
+    const qb = this.assetHolderRepository.createQueryBuilder('ah')
+      .leftJoinAndSelect('ah.asset', 'asset')
+      .leftJoinAndSelect('ah.employee', 'employee')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .where('category.name = :categoryName', { categoryName: 'Buku' })
+      .andWhere('ah.returnedAt IS NOT NULL');
+
+    if (search) {
+      qb.andWhere('(employee.fullName LIKE :search OR employee.idEmployee LIKE :search OR asset.name LIKE :search)', { search: `%${search}%` });
+    }
+
+    if (startDate && endDate) {
+      qb.andWhere('ah.returnedAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+    } else if (startDate) {
+      qb.andWhere('ah.returnedAt >= :startDate', { startDate });
+    } else if (endDate) {
+      qb.andWhere('ah.returnedAt <= :endDate', { endDate });
+    }
+
+    const loans = await qb.orderBy('ah.assignedAt', 'DESC').getMany();
+
+    const employeeLoans: Record<string, any> = {};
+
+    for (const loan of loans) {
+      const empId = loan.employee.idEmployee;
+      if (!employeeLoans[empId]) {
+        employeeLoans[empId] = {
+          employee: loan.employee.fullName,
+          bookLoans: {}
+        };
+      }
+
+      const bookImageUrl = loan.asset.imagePath ? await this.storageService.getPreSignedUrl(loan.asset.imagePath) : null;
+      const attachments = loan.attachmentPaths || [];
+      const loanPhoto = attachments[0] ? await this.storageService.getPreSignedUrl(attachments[0]) : null;
+      const returnPhoto = attachments[1] ? await this.storageService.getPreSignedUrl(attachments[1]) : null;
+
+      employeeLoans[empId].bookLoans[loan.assetHolderUuid] = {
+        code: loan.asset.code,
+        name: loan.asset.name,
+        imageUrl: bookImageUrl,
+        subCategory: loan.asset.subCategory?.name || null,
+        loanHistory: {
+          loaning: {
+            loanPeriod: loan.assignedAt,
+            loanPhoto: loanPhoto
+          },
+          return: {
+            returnTime: loan.returnedAt,
+            returnPhoto: returnPhoto,
+            linkReview: loan.purpose
+          }
+        }
+      };
+    }
+
+    return [employeeLoans];
   }
 }
