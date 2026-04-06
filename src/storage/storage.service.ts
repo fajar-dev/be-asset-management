@@ -16,6 +16,10 @@ export class StorageService {
       secretKey: this.configService.getOrThrow('MINIO_STORAGE_SECRET'),
       // region: 'us-east-1',
     });
+
+    if (this.configService.get('APP_ENV') !== 'production') {
+      this.minioClient.setRequestOptions({ rejectUnauthorized: false });
+    }
   }
 
   public async uploadFile(filePath: string, file: Express.Multer.File) {
