@@ -16,9 +16,19 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     credentials: false,
   });
+
+  // app.enableCors({
+  //   origin: [
+  //     'http://localhost:3000',
+  //     'https://a.nusa.id'
+  //   ],
+  //   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  //   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  //   credentials: true,
+  // });
 
   app.useGlobalInterceptors(new ResponseInterceptor());
 

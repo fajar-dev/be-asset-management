@@ -12,11 +12,15 @@ import { Reflector } from '@nestjs/core';
 import { AssetHolderModule } from 'src/v1/asset-holder/asset-holder.module';
 import { UserModule } from 'src/v1/user/user.module';
 import { ApiKeyGuard } from 'src/auth/guards/ApiKeyGuard';
+import { Employee } from 'src/v1/employee/entities/employee.entity';
+import { AssetLogModule } from 'src/v1/asset-log/asset-log.module';
+import { User } from 'src/v1/user/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Asset, Category, SubCategory, AssetHolder]),
+    TypeOrmModule.forFeature([Asset, Category, SubCategory, AssetHolder, Employee, User]),
     StorageModule,
+    AssetLogModule,
     AssetHolderModule,
     UserModule,
   ],

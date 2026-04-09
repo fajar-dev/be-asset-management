@@ -5,11 +5,5 @@ export class AssignBookDto {
   @IsString()
   assetId: string;
 
-  @IsNotEmpty()
-  @IsString()
-  employeeId: string;
-
-  @IsNotEmpty()
-  @IsString()
-  purpose: string;
+  attachments?: Express.Multer.File[];
 }

@@ -15,6 +15,7 @@ import { ReturnRequestAssetHolderDto } from './dto/return-request-asset-holder.d
 import { CategoryGuard } from '../category/guards/category.guard';
 import { Roles } from '../../common/decorator/role.decorator';
 import { Role } from '../user/enum/role.enum';
+import { watermarkImage } from '../../common/utils/image-watermark.util';
 
 @Controller()
 @UseGuards(CategoryGuard)
@@ -74,8 +75,7 @@ export class AssetHolderController {
     if (!user.employeeId) {
       throw new BadRequestException('User is not associated with an employee');
     }
-
-    const watermarkedImage = await this.assetHolderService.watermarkImage(image);
+    const watermarkedImage = await watermarkImage(image);
 
     const assignDto: assignedAssetHolderDto = {
       assignedAt: new Date(),
@@ -128,8 +128,7 @@ export class AssetHolderController {
     if (!user.employeeId) {
       throw new BadRequestException('User is not associated with an employee');
     }
-
-    const watermarkedImage = await this.assetHolderService.watermarkImage(image);
+    const watermarkedImage = await watermarkImage(image);
 
     const returnDto: returnedAssetHolderDto = {
       returnedAt: new Date(),
