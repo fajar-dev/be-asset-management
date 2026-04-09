@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from 'src/v1/asset/entities/asset.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { AssetHolder } from 'src/v1/asset-holder/entities/asset-holder.entity';
-import { AssetHolderService } from 'src/v1/asset-holder/asset-holder.service';
 import { User } from 'src/v1/user/entities/user.entity';
 import { ReturnBookDto } from './dto/return-book.dto';
 import { StorageService } from 'src/storage/storage.service';
+import { Employee } from 'src/v1/employee/entities/employee.entity';
+import { LogAsset } from 'src/v1/asset-log/decorator/log-asset.decorator';
+import { watermarkImage } from 'src/common/utils/image-watermark.util';
 
 @Injectable()
 export class BookService {
@@ -15,7 +17,8 @@ export class BookService {
     private readonly assetRepository: Repository<Asset>,
     @InjectRepository(AssetHolder)
     private readonly assetHolderRepository: Repository<AssetHolder>,
-    private readonly assetHolderService: AssetHolderService,
+    @InjectRepository(Employee)
+    public readonly employeeRepository: Repository<Employee>,
     private readonly storageService: StorageService,
   ) {}
 
@@ -98,58 +101,157 @@ export class BookService {
     });
   }
 
-  async findOne(uuid: string): Promise<Asset> {
-    const asset = await this.assetRepository.createQueryBuilder('asset')
+  async findOne(code: string): Promise<Asset> {
+    return await this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.holderRecords', 'holderRecords')
-      .leftJoinAndSelect('holderRecords.employee', 'employee')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
-      .leftJoinAndSelect('locationRecords.location', 'location')
-      .leftJoinAndSelect('location.branch', 'branch')
-      .where('asset.assetUuid = :uuid', { uuid })
+      .where('asset.code = :code', { code })
       .andWhere('category.name = :categoryName', { categoryName: 'Buku' })
-      .addOrderBy('locationRecords.createdAt', 'DESC')
+      .andWhere((qb) => {
+        const sub = qb.subQuery()
+          .select('ah.assetId')
+          .from(AssetHolder, 'ah')
+          .where('ah.returnedAt IS NULL')
+          .andWhere('ah.deletedAt IS NULL')
+          .getQuery();
+        return `asset.id NOT IN ${sub}`;
+      })
       .getOneOrFail();
-
-    const hasHolder = asset.subCategory?.category?.hasHolder;
-    const hasLocation = asset.subCategory?.category?.hasLocation;
-
-    return {
-      ...asset,
-      activeHolder: hasHolder
-        ? (asset.holderRecords || []).find((h) => !h.returnedAt && !h.deletedAt) ?? null
-        : null,
-      lastLocation: hasLocation
-        ? (asset.locationRecords || [])
-            .filter((l) => !l.deletedAt)
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.location ?? null
-        : null,
-    } as any;
   }
 
-  async assign(user: User, body: any) {
-    return await this.assetHolderService.assign(user.id, body.assetId, {
-      employeeId: body.employeeId,
-      purpose: body.purpose,
-      assignedAt: new Date(),
-      isRequest: true
+  @LogAsset(async (args, result, ctx) => {
+    const user = args[2];
+    const employee = await ctx.employeeRepository.findOne({ where: { idEmployee: user.employeeId } });
+    return `Assigned asset to ${employee?.fullName || 'Unknown'}`;
+  }, 'holder')
+  async assign(userId: number, assetUuid: string, user: User, body: any) {
+
+    const asset = await this.assetRepository.findOneOrFail({
+      where: { assetUuid: assetUuid }
     });
+
+    if (asset.status !== 'active') {
+      throw new BadRequestException('The asset status is inactive.');
+    }
+
+    if (!asset.isLendable) {
+      throw new BadRequestException('This asset is not lendable.');
+    }
+
+    const activeEmployeeHolder = await this.assetHolderRepository.findOne({
+      where: {
+        employeeId: user.employeeId,
+        returnedAt: IsNull(),
+        isRequest: true,
+      },
+    });
+
+    if (activeEmployeeHolder) {
+      throw new BadRequestException('You already have an active loan. Please return it first.');
+    }
+
+    const lastAssignment = await this.assetHolderRepository.findOne({
+      where: { assetId: asset.id, returnedAt: IsNull() }
+    });
+
+    if (lastAssignment) {
+      throw new BadRequestException('The book is currently on loan.');
+    }
+
+    const uploadedPaths: string[] = [];
+    if (body.attachments) {
+      for (const file of body.attachments) {
+        const objectPath = await this.storageService.uploadFile('asset-holder', file);
+        if (objectPath) {
+          uploadedPaths.push(objectPath);
+        }
+      }
+    }
+
+    const assetHolder = this.assetHolderRepository.create({
+      assetId: asset.id,
+      employeeId: user.employeeId,
+      assignedAt: new Date(),
+      purpose: body.purpose || 'Book Loan Request',
+      attachmentPaths: uploadedPaths,
+      isRequest: true,
+      createdBy: user.id
+    });
+
+    await this.assetHolderRepository.save(assetHolder);
+    return { assetUuid: asset.assetUuid, success: true } as any;
   }
 
-  async return(user: User, body: ReturnBookDto) {
-    return await this.assetHolderService.return(user.id, body.assetId, body.assetHolderId, {
-      returnedAt: new Date(),
-    }, body.employeeId);
+  @LogAsset(async (args, result, ctx) => {
+    const body = args[3];
+    const assetHolderUuid = body.assetHolderId;
+    const assetHolder = await ctx.assetHolderRepository.findOne({ where: { assetHolderUuid }, relations: ['employee'] });
+    return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
+  }, 'holder')
+  async return(userId: number, assetUuid: string, user: User, body: ReturnBookDto) {
+
+    const assetHolder = await this.assetHolderRepository.findOneOrFail({
+      where: { 
+        assetHolderUuid: assetUuid,
+        employeeId: user.employeeId,
+        returnedAt: IsNull()
+      },
+      relations: ['asset']
+    });
+
+    const lastAssignment = await this.assetHolderRepository.findOne({
+      where: { 
+        assetHolderUuid: body.assetHolderId, 
+        assetId: assetHolder.assetId, 
+        employeeId: user.employeeId,
+        returnedAt: IsNull() 
+      }
+    });
+
+    if (!lastAssignment) {
+      throw new BadRequestException('Asset assignment record not found or already returned.');
+    }
+
+    const uploadedPaths: string[] = [];
+    if (body.attachments) {
+      for (const file of body.attachments) {
+        const objectPath = await this.storageService.uploadFile('asset-holder', file);
+        if (objectPath) {
+          uploadedPaths.push(objectPath);
+        }
+      }
+    }
+
+    const currentPaths = Array.isArray(lastAssignment.attachmentPaths) ? lastAssignment.attachmentPaths : [];
+    lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
+    lastAssignment.returnedAt = new Date();
+    lastAssignment.purpose = body.purpose;
+    lastAssignment.updatedBy = user.id;
+    
+    await this.assetHolderRepository.save(lastAssignment);
+    return { assetUuid: assetHolder.asset?.assetUuid || assetUuid, success: true } as any;
   }
 
-  async findLoansByEmployee(employeeId: string, hasReturn?: boolean | string) {
+  async findLoansByEmployee(employeeId: string) {
     const qb = this.assetHolderRepository.createQueryBuilder('ah')
       .leftJoinAndSelect('ah.asset', 'asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
       .where('ah.employeeId = :employeeId', { employeeId })
-      .andWhere('category.name = :categoryName', { categoryName: 'Buku' });
+      .andWhere('category.name = :categoryName', { categoryName: 'Buku' })
+      .andWhere('ah.returnedAt IS NULL')
+      .andWhere('ah.isRequest = true');
+
+    return await qb.orderBy('ah.assignedAt', 'DESC').getMany();
+  }
+
+  async findAllLoans(search?: string, startDate?: string, endDate?: string, hasReturn?: boolean | string) {
+    const qb = this.assetHolderRepository.createQueryBuilder('ah')
+      .leftJoinAndSelect('ah.asset', 'asset')
+      .leftJoinAndSelect('ah.employee', 'employee')
+      .leftJoinAndSelect('asset.subCategory', 'subCategory')
+      .leftJoinAndSelect('subCategory.category', 'category')
+      .where('category.name = :categoryName', { categoryName: 'Buku' });
 
     if (hasReturn !== undefined && hasReturn !== '') {
       const isTrue = String(hasReturn) === 'true';
@@ -159,18 +261,6 @@ export class BookService {
         qb.andWhere('ah.returnedAt IS NULL');
       }
     }
-
-    return await qb.orderBy('ah.assignedAt', 'DESC').getMany();
-  }
-
-  async findAllLoans(search?: string, startDate?: string, endDate?: string) {
-    const qb = this.assetHolderRepository.createQueryBuilder('ah')
-      .leftJoinAndSelect('ah.asset', 'asset')
-      .leftJoinAndSelect('ah.employee', 'employee')
-      .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category')
-      .where('category.name = :categoryName', { categoryName: 'Buku' })
-      .andWhere('ah.returnedAt IS NOT NULL');
 
     if (search) {
       qb.andWhere('(employee.fullName LIKE :search OR employee.idEmployee LIKE :search OR asset.name LIKE :search)', { search: `%${search}%` });

@@ -18,10 +18,10 @@ export class AssetHolder extends BaseEntity {
   @Column({ name: 'purpose', type: 'text' })
   purpose: string;
 
-  @Column({ name: 'assigned_at', type: 'date' })
+  @Column({ name: 'assigned_at', type: 'datetime' })
   assignedAt: Date;
 
-  @Column({ name: 'returned_at', type: 'date', nullable: true })
+  @Column({ name: 'returned_at', type: 'datetime', nullable: true })
   returnedAt: Date;
 
   @Column({ name:'attachment_paths', type: 'json', nullable: true})
