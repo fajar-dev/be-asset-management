@@ -5,11 +5,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { AssetHolder } from './entities/asset-holder.entity';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../asset-log/enum/asset-log.enum';
 import { Asset } from '../asset/entities/asset.entity';
 import { Employee } from '../employee/entities/employee.entity';
 import { assignedAssetHolderDto } from './dto/assigned-asset-holder.dto';
 import { returnedAssetHolderDto } from './dto/returned-asset-holder.dto';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { AssetStatusType } from '../asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class AssetHolderService {
@@ -34,17 +36,20 @@ export class AssetHolderService {
     const assignDto = args[2];
     const employee = await ctx.employeeRepository.findOne({ where: { idEmployee: assignDto.employeeId } });
     return `Assigned asset to ${employee?.fullName || 'Unknown'}`;
-  }, 'holder')
+  }, AssetLogType.HOLDER)
   async assign(
     userId: number,
     assetUuid: string,
     assignAssetHolderDto: assignedAssetHolderDto,
   ): Promise<Boolean> {
     const asset = await this.assetRepository.findOneOrFail({
-      where: { assetUuid }
+      where: { assetUuid },
+      relations: ['statusRecords']
     });
 
-    if (asset.status !== 'active') {
+    const lastStatus = (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+
+    if (!lastStatus || lastStatus.type !== AssetStatusType.ACTIVE) {
       throw new BadRequestException('The asset status is inactive.');
     }
 
@@ -108,7 +113,7 @@ export class AssetHolderService {
     const assetHolderUuid = args[2];
     const assetHolder = await ctx.assetHolderRepository.findOne({ where: { assetHolderUuid }, relations: ['employee'] });
     return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
-  }, 'holder')
+  }, AssetLogType.HOLDER)
   async return(
     userId: number,
     assetUuid: string,

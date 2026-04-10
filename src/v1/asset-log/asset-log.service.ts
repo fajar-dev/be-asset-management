@@ -3,6 +3,7 @@ import { AssetLog } from './entities/asset-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from '../asset/entities/asset.entity';
 import { Repository } from 'typeorm';
+import { AssetLogType } from './enum/asset-log.enum';
 
 @Injectable()
 export class AssetLogService {
@@ -24,7 +25,7 @@ export class AssetLogService {
       userId: number,
       assetUuid: string,
       message: string,
-      type: string,
+      type: AssetLogType,
     ): Promise<AssetLog> {
       const asset = await this.assetRepository.findOneOrFail({
         where: { assetUuid: assetUuid }

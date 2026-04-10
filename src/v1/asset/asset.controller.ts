@@ -214,6 +214,8 @@ export class AssetController {
           ? (asset.locationRecords || []).find((l) => !l.deletedAt)?.location
           : null;
 
+        const lastStatus = (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+
         return {
           no: index + 1,
           code: asset.code,
@@ -232,7 +234,7 @@ export class AssetController {
             : '-',
           location: lastLocation?.name ?? '-',
           branch: lastLocation?.branch?.name ?? '-',
-          status: asset.status ?? '-',
+          status: lastStatus?.type ?? '-',
           imageUrl: asset.imageUrl ?? '-',
         };
       },
@@ -261,7 +263,6 @@ export class AssetController {
         holderEmployeeId: row['Holder (Employee ID)'],
         location: row['Location'],
         branchId: row['Branch ID'],
-        status: row['Status'],
       }),
     });
 

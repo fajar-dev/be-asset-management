@@ -2,6 +2,7 @@ import { Asset } from "../../asset/entities/asset.entity";
 import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
 import { User } from "../../user/entities/user.entity";
+import { AssetLogType } from "../enum/asset-log.enum";
 
 @Entity('asset_logs')
 export class AssetLog {
@@ -20,8 +21,8 @@ export class AssetLog {
     @Column({ name: 'message', type: 'text' })
     message: string;
 
-    @Column({ name: 'type', type: 'enum', enum: ['asset', 'holder', 'maintenance', 'note', 'location'] })
-    type: string;
+    @Column({ name: 'type', type: 'enum', enum: AssetLogType })
+    type: AssetLogType;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

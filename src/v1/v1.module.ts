@@ -21,6 +21,7 @@ import { AssetLogModule } from './asset-log/asset-log.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { AssetLabelModule } from './asset-label/asset-label.module';
 import { LabelModule } from './asset-label/label.module';
+import { AssetStatusModule } from './asset-status/asset-status.module';
 
 @Module({
   imports: [
@@ -105,6 +106,10 @@ import { LabelModule } from './asset-label/label.module';
             module: AssetLabelModule
           },
           {
+            path: '/asset/:assetUuid/status',
+            module: AssetStatusModule
+          },
+          {
             path: '/user/my-assets',
             module: UserModule
           }
@@ -112,6 +117,7 @@ import { LabelModule } from './asset-label/label.module';
       },
     ]),
     GeminiModule,
+    AssetStatusModule,
   ],
   providers: [
     {

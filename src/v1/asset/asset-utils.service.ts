@@ -36,7 +36,6 @@ export class AssetUtilsService {
      * @param filters.branchId - Branch UUID(s) (optional, can be comma-separated)
      * @param filters.subCategoryId - Subcategory UUID (optional)
      * @param filters.categoryId - Category UUID (optional)
-     * @param filters.status - Asset status (optional, e.g., 'active', 'maintenance', etc.)
      * @param filters.employeeId - Employee UUID who currently holds the asset (optional)
      * @param filters.locationId - Location UUID(s) where the asset is currently placed (optional, can be comma-separated)
      * @param filters.startDate - Start date filter for purchase date (optional, format: 'YYYY-MM-DD')
@@ -87,6 +86,7 @@ export class AssetUtilsService {
         .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
         .leftJoinAndSelect('locationRecords.location', 'location')
         .leftJoinAndSelect('location.branch', 'branch')
+        .leftJoinAndSelect('asset.statusRecords', 'statusRecords')
         .leftJoin('asset.holderRecords', 'activeHolder', 
             'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
         .leftJoin('activeHolder.employee', 'activeHolderEmployee')
@@ -118,8 +118,24 @@ export class AssetUtilsService {
         }
 
         if (status) {
-        qb.andWhere('asset.status = :status', { status });
+            qb.andWhere(qb2 => {
+              const subQuery = qb2.subQuery()
+                .select('as.asset_id')
+                .from('asset_statuses', 'as')
+                .where('as.type = :status')
+                .andWhere(qb3 => {
+                  const lastStatusSub = qb3.subQuery()
+                    .select('MAX(as2.createdAt)')
+                    .from('asset_statuses', 'as2')
+                    .where('as2.asset_id = as.asset_id')
+                    .getQuery();
+                  return 'as.createdAt = ' + lastStatusSub;
+                })
+                .getQuery();
+              return 'asset.id IN ' + subQuery;
+            }).setParameter('status', status);
         }
+
 
         if (employeeId) {
         qb.andWhere(qb2 => {
@@ -259,7 +275,6 @@ export class AssetUtilsService {
  * @param holderEmployeeId - Employee ID of the asset holder.
  * @param locationName - The name of the asset's location.
  * @param branchId - The branch ID the asset belongs to.
- * @param status - The asset's current status (default: 'active').
  * @param userId - The user ID performing the import.
  * @param failedList - Reference to an array that collects failed imports.
  *
