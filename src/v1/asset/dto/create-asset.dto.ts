@@ -15,7 +15,6 @@ import { ValidatePropertiesBySubCategory } from '../../../common/validators/vali
 import { IsOptional } from '../../../common/validators/optional.decorator';
 import { IsNotExist } from '../../../common/validators/is-not-exist.decorator';
 import { Asset } from '../entities/asset.entity';
-import { Status } from '../enum/asset.enum';
 
 export class CreateAssetPropertyValueDto {
   @IsString()
@@ -71,11 +70,6 @@ export class CreateAssetDto {
   @Type(() => Date)
   purchaseDate: Date;
 
-  @IsEnum(Status, {
-    message: 'status must be one of: active, in repair, disposed',
-  })
-  @IsNotEmpty()
-  status: Status;
 
   @Transform(({ value }) => value === 'true' || value === true || value === 1 || value === '1')
   @IsBoolean()

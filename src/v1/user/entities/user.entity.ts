@@ -5,6 +5,7 @@ import { Role } from '../enum/role.enum';
 import { Feedback } from '../../../feedback/entities/feedback.entity';
 import { Employee } from '../../../v1/employee/entities/employee.entity';
 import { AssetLog } from '../../asset-log/entities/asset-log.entity';
+import { AssetStatus } from '../../asset-status/entities/asset-status.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -54,6 +55,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => AssetLog, (assetLog) => assetLog.user)
   assetLogs: AssetLog[];
+
+  @OneToMany(() => AssetStatus, (assetStatus) => assetStatus.user)
+  assetStatuses: AssetStatus[];
 
   @ManyToOne(() => Employee, (employee) => employee.users, { nullable: true })
   @JoinColumn({ name: 'employee_id',  referencedColumnName: "idEmployee" })

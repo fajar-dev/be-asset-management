@@ -9,6 +9,8 @@ import { StorageService } from 'src/storage/storage.service';
 import { Employee } from 'src/v1/employee/entities/employee.entity';
 import { LogAsset } from 'src/v1/asset-log/decorator/log-asset.decorator';
 import { watermarkImage } from 'src/common/utils/image-watermark.util';
+import { AssetLogType } from 'src/v1/asset-log/enum/asset-log.enum';
+import { AssetStatusType } from 'src/v1/asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class BookService {
@@ -123,14 +125,17 @@ export class BookService {
     const user = args[2];
     const employee = await ctx.employeeRepository.findOne({ where: { idEmployee: user.employeeId } });
     return `Assigned asset to ${employee?.fullName || 'Unknown'}`;
-  }, 'holder')
+  }, AssetLogType.HOLDER)
   async assign(userId: number, assetUuid: string, user: User, body: any) {
 
     const asset = await this.assetRepository.findOneOrFail({
-      where: { assetUuid: assetUuid }
+      where: { assetUuid: assetUuid },
+      relations: ['statusRecords']
     });
 
-    if (asset.status !== 'active') {
+    const lastStatus = (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+
+    if (!lastStatus || lastStatus.type !== AssetStatusType.ACTIVE) {
       throw new BadRequestException('The asset status is inactive.');
     }
 
@@ -187,7 +192,7 @@ export class BookService {
     const assetHolderUuid = body.assetHolderId;
     const assetHolder = await ctx.assetHolderRepository.findOne({ where: { assetHolderUuid }, relations: ['employee'] });
     return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
-  }, 'holder')
+  }, AssetLogType.HOLDER)
   async return(userId: number, assetUuid: string, user: User, body: ReturnBookDto) {
 
     const assetHolder = await this.assetHolderRepository.findOneOrFail({

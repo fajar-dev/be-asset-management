@@ -8,6 +8,7 @@ import { AssetMaintenance } from '../asset-maintenance/entities/asset-maintenanc
 import { Asset } from '../asset/entities/asset.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../asset-log/enum/asset-log.enum';
 
 @Injectable()
 export class AssetNoteService {
@@ -29,7 +30,7 @@ export class AssetNoteService {
     const dto = args[2];
     const dateStr = dto.occuredAt instanceof Date ? dto.occuredAt.toISOString().split('T')[0] : String(dto.occuredAt || '').split('T')[0];
     return `Added new note record ${dateStr}`;
-  }, 'note')
+  }, AssetLogType.NOTE)
   async create(
     userId: number,
     assetUuid: string,
@@ -86,7 +87,7 @@ export class AssetNoteService {
     const dto = args[3];
     const dateStr = dto.occuredAt instanceof Date ? dto.occuredAt.toISOString().split('T')[0] : String(dto.occuredAt || '').split('T')[0];
     return `Updated note record ${dateStr}`;
-  }, 'note')
+  }, AssetLogType.NOTE)
   async update(
     assetUuid: string,
     uuid: string,
@@ -130,7 +131,7 @@ export class AssetNoteService {
   @LogAsset(async (args, result, ctx) => {
     const dateStr = result?.occuredAt instanceof Date ? result.occuredAt.toISOString().split('T')[0] : String(result?.occuredAt || '').split('T')[0];
     return `Deleted note record ${dateStr}`;
-  }, 'note')
+  }, AssetLogType.NOTE)
   async remove(assetUuid: string, uuid: string, userId: number): Promise<AssetNote> {
     const assetNote = await this.assetNoteRepository.findOneOrFail({
       where: {

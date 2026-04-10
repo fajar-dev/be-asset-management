@@ -17,12 +17,12 @@ import { Location } from '../location/entities/location.entity';
 import { AssetUtilsService } from './asset-utils.service';
 import { AssetLogModule } from '../asset-log/asset-log.module';
 import { GeminiModule } from '../gemini/gemini.module';
-
 import { AssetLabel } from '../asset-label/entities/asset-label.entity';
+import { AssetStatus } from '../asset-status/entities/asset-status.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location, User, AssetLabel]),
+    TypeOrmModule.forFeature([Asset, SubCategory, AssetPropertyValue, Category, AssetHolder, AssetLocation, Location, User, AssetLabel, AssetStatus]),
     AssetPropertyValueModule,
     AssetLogModule,
     StorageModule,

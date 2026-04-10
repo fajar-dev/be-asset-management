@@ -8,10 +8,11 @@ import { AssetPropertyValue } from '../asset-property-value/entities/asset-prope
 import { IPaginationOptions, paginate, Pagination, PaginationTypeEnum } from 'nestjs-typeorm-paginate';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { StorageService } from '../../storage/storage.service';
-import { AssetLogService } from '../asset-log/asset-log.service';
-import { User } from '../user/entities/user.entity';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../asset-log/enum/asset-log.enum';
 import { AssetLabel } from '../asset-label/entities/asset-label.entity';
+import { AssetStatus } from '../asset-status/entities/asset-status.entity';
+import { AssetStatusType } from '../asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class AssetService {
@@ -22,12 +23,11 @@ export class AssetService {
     private readonly subCategoryRepository: Repository<SubCategory>,
     @InjectRepository(AssetPropertyValue)
     private readonly assetPropertyValueRepository: Repository<AssetPropertyValue>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     @InjectRepository(AssetLabel)
     private readonly assetLabelRepository: Repository<AssetLabel>,
+    @InjectRepository(AssetStatus)
+    private readonly assetStatusRepository: Repository<AssetStatus>,
     private storageService: StorageService,
-    private assetLogService: AssetLogService,
   ) {}
   
   /**
@@ -36,7 +36,7 @@ export class AssetService {
    * @param createAssetDto - DTO containing data to create an asset
    * @returns Promise<Asset> - the created asset entity
    */
-  @LogAsset('Created a new asset', 'asset')
+  @LogAsset('Created a new asset', AssetLogType.ASSET)
   async create(userId: number, createAssetDto: CreateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: createAssetDto.subCategoryId },
@@ -77,7 +77,6 @@ export class AssetService {
       user: createAssetDto.user,
       price: createAssetDto.price,
       purchaseDate: createAssetDto.purchaseDate,
-      status: createAssetDto.status,
       isLendable: createAssetDto.isLendable ?? false,
       createdBy: userId,
       imagePath,
@@ -118,6 +117,14 @@ export class AssetService {
       await this.assetLabelRepository.save(labelRecords);
     }
 
+    await this.assetStatusRepository.save(
+      this.assetStatusRepository.create({
+        assetId: savedAsset.id,
+        type: AssetStatusType.ACTIVE,
+        userId: userId,
+      }),
+    );
+
     const result = await this.assetRepository.findOneOrFail({
       where: { id: savedAsset.id },
       relations: [
@@ -139,7 +146,7 @@ export class AssetService {
    * @param updateAssetDto - DTO containing data to update an asset
    * @returns Promise<Asset> - the updated asset entity
    */
-  @LogAsset('Updated asset details', 'asset')
+  @LogAsset('Updated asset details', AssetLogType.ASSET)
   async update(assetId: string, userId: number, updateAssetDto: UpdateAssetDto): Promise<Asset> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: updateAssetDto.subCategoryId },
@@ -171,7 +178,6 @@ export class AssetService {
       asset.description = updateAssetDto.description;
       asset.brand = updateAssetDto.brand;
       asset.model = updateAssetDto.model;
-      asset.status = updateAssetDto.status;
       asset.user = updateAssetDto.user;
       asset.price = updateAssetDto.price;
       asset.purchaseDate = updateAssetDto.purchaseDate;
@@ -316,10 +322,26 @@ export class AssetService {
     if (categoryId) {
       queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
     }
-
+    
     if (status) {
-      queryBuilder.andWhere('asset.status = :status', { status });
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('as.asset_id')
+          .from('asset_statuses', 'as')
+          .where('as.type = :status')
+          .andWhere(qb2 => {
+            const lastStatusSub = qb2.subQuery()
+              .select('MAX(as2.createdAt)')
+              .from('asset_statuses', 'as2')
+              .where('as2.asset_id = as.asset_id')
+              .getQuery();
+            return 'as.createdAt = ' + lastStatusSub;
+          })
+          .getQuery();
+        return 'asset.id IN ' + subQuery;
+      }).setParameter('status', status);
     }
+
 
     if (employeeId) {
       queryBuilder.andWhere(qb => {
@@ -475,6 +497,8 @@ export class AssetService {
         .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
         .leftJoinAndSelect('locationRecords.location', 'location')
         .leftJoinAndSelect('location.branch', 'branch')
+        .leftJoinAndSelect('asset.statusRecords', 'statusRecords')
+        .leftJoinAndSelect('statusRecords.user', 'statusUser')
         .where('asset.assetUuid IN (:...assetUuids)', { assetUuids: paginationResult.items.map(a => a.assetUuid) })
         .orderBy(sortField, order)
         .getMany();
@@ -491,6 +515,7 @@ export class AssetService {
           lastLocation: hasLocation
             ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
             : null,
+          lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
           labels: asset.labelRecords || [],
           activeHolderEmployee: asset.activeHolder ? asset.activeHolder.employee : null,
         };
@@ -515,6 +540,8 @@ export class AssetService {
         'subCategory',
         'subCategory.category',
         'labelRecords',
+        'statusRecords',
+        'statusRecords.user',
       ],
     });
 
@@ -530,6 +557,7 @@ export class AssetService {
       lastLocation: hasLocation
         ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
         : null,
+      lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
       labels: asset.labelRecords || [],
     } as any;
   }
@@ -550,6 +578,8 @@ export class AssetService {
         'subCategory',
         'subCategory.category',
         'labelRecords',
+        'statusRecords',
+        'statusRecords.user',
       ],
     });
 
@@ -565,6 +595,7 @@ export class AssetService {
       lastLocation: hasLocation
         ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
         : null,
+      lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
       labels: asset.labelRecords || [],
     } as any;
   }
@@ -576,7 +607,7 @@ export class AssetService {
    * @returns Promise<Asset> - the soft-deleted asset entity
    * @throws NotFoundException if asset is not found
    */
-  @LogAsset('Removed asset', 'asset')
+  @LogAsset('Removed asset', AssetLogType.ASSET)
   async remove(uuid: string, userId: number) {
     const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: uuid },

@@ -2,11 +2,12 @@ import { Inject } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AssetLogService } from '../asset-log.service';
+import { AssetLogType } from '../enum/asset-log.enum';
 import { User } from '../../user/entities/user.entity';
 
 export type LogAssetMessageBuilder = (args: any[], result: any, ctx?: any) => Promise<string> | string;
 
-export function LogAsset(message: string | LogAssetMessageBuilder, type: string) {
+export function LogAsset(message: string | LogAssetMessageBuilder, type: AssetLogType) {
   const injectAssetLogService = Inject(AssetLogService);
   const injectUserRepository = Inject(getRepositoryToken(User));
 

@@ -8,6 +8,7 @@ import { Asset } from '../asset/entities/asset.entity';
 import { Location } from '../location/entities/location.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../asset-log/enum/asset-log.enum';
 
 @Injectable()
 export class AssetLocationService {   
@@ -31,7 +32,7 @@ export class AssetLocationService {
     const createLocationDto = args[2];
     const location = await ctx.locationRepository.findOne({ where: { locationUuid: createLocationDto.locationId } });
     return `Relocated asset to ${location?.name || 'Unknown'}`;
-  }, 'location')
+  }, AssetLogType.LOCATION)
   async create(
     userId: number,
     assetUuid: string,

@@ -1,8 +1,16 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
 import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
-import { Status } from '../enum/asset.enum';
 import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
+import { ResponseUserDto } from '../../user/dto/response-user.dto';
+
+export class ResponseUserSimpleDto {
+  @Expose()
+  name: string;
+
+  @Expose()
+  employeeId: string;
+}
 
 export class ResponsePropertyDto {
   @Expose({ name: 'assetPropertyUuid' })
@@ -67,6 +75,24 @@ export class ResponseAssetLastLocationDto {
   branch: ResponseBranchDto;
 }
 
+export class ResponseAssetStatusDto {
+  @Expose({ name: 'assetStatusUuid' })
+  id: string;
+
+  @Expose()
+  type: string;
+
+  @Expose()
+  note: string;
+
+  @Expose()
+  createdAt: Date;
+
+  @Expose()
+  @Type(() => ResponseUserSimpleDto)
+  user: ResponseUserSimpleDto;
+}
+
 export class ResponseAssetLabelDto {
   @Expose()
   key: string;
@@ -110,8 +136,6 @@ export class ResponseAssetDto {
   @Expose()
   purchaseDate: Date | null;
 
-  @Expose()
-  status: Status;
 
   @Expose()
   isLendable: boolean;
@@ -131,6 +155,10 @@ export class ResponseAssetDto {
   @Expose()
   @Type(() => ResponseAssetLastLocationDto)
   lastLocation?: ResponseAssetLastLocationDto | null;
+
+  @Expose()
+  @Type(() => ResponseAssetStatusDto)
+  lastStatus?: ResponseAssetStatusDto | null;
 
   @Expose({ name: 'labelRecords' })
   @Type(() => ResponseAssetLabelDto)

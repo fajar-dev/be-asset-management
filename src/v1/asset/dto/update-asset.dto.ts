@@ -4,7 +4,6 @@ import { SubCategory } from '../../../v1/sub-category/entities/sub-category.enti
 import { IsExist } from '../../..//common/validators/is-exist.decorator';
 import { IsOptional } from '../../../common/validators/optional.decorator';
 import { IsUniqueExceptSelf } from '../../../common/validators/is-unique-except-self.decorator';
-import { Status } from '../enum/asset.enum';
 
 export class CreateAssetPropertyValueDto {
   @IsString()
@@ -60,11 +59,6 @@ export class UpdateAssetDto {
   @Type(() => Date)
   purchaseDate: Date;
 
-  @IsEnum(Status, {
-    message: 'status must be one of: active, in repair, disposed',
-  })
-  @IsNotEmpty()
-  status: Status
 
   @Transform(({ value }) => value === 'true' || value === true || value === 1 || value === '1')
   @IsBoolean()
