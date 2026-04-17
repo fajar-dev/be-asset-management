@@ -419,7 +419,6 @@ export class AssetUtilsService {
                     purpose: 'Imported from Excel',
                     createdBy: userId,
                 });
-                console.log(holder)
             await this.assetHolderRepository.save(holder);
         }
 

@@ -28,11 +28,12 @@ export class FeedbackService {
     }
 
     const uploadedPaths: string[] = [];
-    for (const file of dto.images) {
-      const objectPath = await this.storageService.uploadFile('feedback', file);
-      if (objectPath){
-        uploadedPaths.push(objectPath);
-      }
+    if (dto.images?.length) {
+      const uploadPromises = dto.images.map(file =>
+        this.storageService.uploadFile('feedback', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const feedback = this.feedbackRepository.create({

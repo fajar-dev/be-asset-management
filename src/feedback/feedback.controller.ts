@@ -7,6 +7,7 @@ import {
   Query,
   DefaultValuePipe,
   ParseIntPipe,
+  ParseBoolPipe,
   ParseUUIDPipe,
   UseInterceptors,
   UploadedFiles,
@@ -57,13 +58,12 @@ export class FeedbackController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
-    @Query('by-user') byUser: string = 'true',
+    @Query('by-user', new DefaultValuePipe(true), ParseBoolPipe) byUser: boolean,
     @User() user: UserEntity,
   ) {
-    const isByUser = byUser === 'true';
     const feedbacks = await this.feedbackService.paginate(
       { page: +page, limit: +limit, search },
-      isByUser ? user.id : undefined
+      byUser ? user.id : undefined
     );
     return new ApiResponse('Feedback list fetched successfully', feedbacks);
   }

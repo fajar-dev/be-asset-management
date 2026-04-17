@@ -81,13 +81,12 @@ export class AssetHolderService {
     }
 
     const uploadedPaths: string[] = [];
-    if (assignAssetHolderDto.attachments) {
-      for (const file of assignAssetHolderDto.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (assignAssetHolderDto.attachments?.length) {
+      const uploadPromises = assignAssetHolderDto.attachments.map(file =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const assetHolder = this.assetHolderRepository.create({
@@ -139,13 +138,12 @@ export class AssetHolderService {
     }
 
     const uploadedPaths: string[] = [];
-    if (returnedAssetHolderDto.attachments) {
-      for (const file of returnedAssetHolderDto.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (returnedAssetHolderDto.attachments?.length) {
+      const uploadPromises = returnedAssetHolderDto.attachments.map(file =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const currentPaths = Array.isArray(lastAssignment.attachmentPaths) ? lastAssignment.attachmentPaths : [];

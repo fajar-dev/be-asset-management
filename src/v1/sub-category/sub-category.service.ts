@@ -147,6 +147,7 @@ export class SubCategoryService {
       .createQueryBuilder('subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
       .leftJoinAndSelect('subCategory.parent', 'parent')
+      .leftJoinAndSelect('subCategory.assetProperties', 'assetProperties')
       .select([
         'subCategory',
         'category.id',
@@ -156,6 +157,7 @@ export class SubCategoryService {
         'parent.subCategoryUuid',
         'parent.name',
         'parent.level',
+        'assetProperties'
       ])
       .orderBy('subCategory.level', 'ASC')
       .addOrderBy('subCategory.name', 'ASC')
@@ -178,14 +180,6 @@ export class SubCategoryService {
       page: options.page ?? 1,
     });
 
-    for (const sub of pagination.items) {
-      sub.assetProperties = await this.subCategoryRepository
-        .createQueryBuilder()
-        .relation(SubCategory, 'assetProperties')
-        .of(sub)
-        .loadMany();
-    }
-
     return pagination;
   }
 
@@ -200,37 +194,32 @@ export class SubCategoryService {
       where: { categoryUuid }
     });
 
-    const roots = await this.subCategoryRepository.find({
-      where: {
-        categoryId: category.id,
-        parentId: IsNull(),
-      },
+    const allSubs = await this.subCategoryRepository.find({
+      where: { categoryId: category.id },
       relations: ['assetProperties'],
-      order: { name: 'ASC' },
+      order: { level: 'ASC', name: 'ASC' },
     });
 
-    for (const root of roots) {
-      await this.loadChildren(root);
+    const subMap = new Map<number, SubCategory>();
+    const roots: SubCategory[] = [];
+
+    for (const sub of allSubs) {
+      sub.children = [];
+      subMap.set(sub.id, sub);
+    }
+
+    for (const sub of allSubs) {
+      if (!sub.parentId) {
+        roots.push(sub);
+      } else {
+        const parent = subMap.get(sub.parentId);
+        if (parent) {
+          parent.children.push(sub);
+        }
+      }
     }
 
     return roots;
-  }
-
-  /**
-   * Recursively load child sub-categories.
-   * 
-   * @param subCategory - Parent sub-category entity
-   */
-  private async loadChildren(subCategory: SubCategory): Promise<void> {
-    subCategory.children = await this.subCategoryRepository.find({
-      where: { parentId: subCategory.id },
-      relations: ['assetProperties'],
-      order: { name: 'ASC' },
-    });
-
-    for (const child of subCategory.children) {
-      await this.loadChildren(child);
-    }
   }
 
   /**

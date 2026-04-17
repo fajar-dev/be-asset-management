@@ -26,16 +26,15 @@ export class BranchService {
       });
       const branches = branchRes.data.data;
 
-      for (const b of branches) {
-      await this.branchRepository.upsert(
-        {
-          id: b.id,
-          idBranch: b.branch_id,
-          name: b.name,
-        },
-        ['idBranch'],
-      );
-    }
+      const branchEntities = branches.map((b: any) => ({
+        id: b.id,
+        idBranch: b.branch_id,
+        name: b.name,
+      }));
+
+      if (branchEntities.length > 0) {
+        await this.branchRepository.upsert(branchEntities, ['idBranch']);
+      }
 
       console.log(`Saved ${branches.length} branches`);
   }
