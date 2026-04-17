@@ -1,16 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Asset } from 'src/v1/asset/entities/asset.entity';
+import { Asset } from '../../v1/asset/entities/asset.entity';
 import { IsNull, Repository } from 'typeorm';
-import { AssetHolder } from 'src/v1/asset-holder/entities/asset-holder.entity';
-import { User } from 'src/v1/user/entities/user.entity';
+import { AssetHolder } from '../../v1/asset-holder/entities/asset-holder.entity';
+import { User } from '../../v1/user/entities/user.entity';
 import { ReturnBookDto } from './dto/return-book.dto';
-import { StorageService } from 'src/storage/storage.service';
-import { Employee } from 'src/v1/employee/entities/employee.entity';
-import { LogAsset } from 'src/v1/asset-log/decorator/log-asset.decorator';
-import { watermarkImage } from 'src/common/utils/image-watermark.util';
-import { AssetLogType } from 'src/v1/asset-log/enum/asset-log.enum';
-import { AssetStatusType } from 'src/v1/asset-status/enum/asset-status.enum';
+import { StorageService } from '../../storage/storage.service';
+import { Employee } from '../../v1/employee/entities/employee.entity';
+import { LogAsset } from '../../v1/asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../../v1/asset-log/enum/asset-log.enum';
+import { AssetStatusType } from '../../v1/asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class BookService {
@@ -231,7 +230,6 @@ export class BookService {
     lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
     lastAssignment.returnedAt = new Date();
     lastAssignment.purpose = body.purpose;
-    lastAssignment.updatedBy = user.id;
     
     await this.assetHolderRepository.save(lastAssignment);
     return { assetUuid: assetHolder.asset?.assetUuid || assetUuid, success: true } as any;

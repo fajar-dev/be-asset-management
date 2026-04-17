@@ -101,7 +101,6 @@ export class FeedbackService {
    */
   async update(
     uuid: string,
-    userId: number,
     updateFeedbackDto: UpdateFeedbackDto,
   ): Promise<Feedback> {
     const feedback = await this.feedbackRepository.findOneOrFail({
@@ -112,7 +111,6 @@ export class FeedbackService {
 
     feedback.status = updateFeedbackDto.status;
     feedback.reply = updateFeedbackDto.reply;
-    feedback.updatedBy = userId;
     return this.feedbackRepository.save(feedback);
   }
 }

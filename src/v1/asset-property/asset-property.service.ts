@@ -87,14 +87,12 @@ export class AssetPropertyService {
  * Update a asset property on sub category by UUID
  * @param subCategoryUuid - UUID of the sub category
  * @param uuid - UUID of the asset property to update
- * @param userId - ID of the user performing the update
  * @param UpdateAssetPropertyDto - DTO containing updated asset property on sub category data
  * @returns Promise<AssetProperty> - the updated asset property entity
  */
   async update(
     subCategoryUuid: string,
     uuid: string,
-    userId: number,
     updateAssetPropertyDto: UpdateAssetPropertyDto,
   ): Promise<AssetProperty> {
     const assetProperty = await this.assetPropertyRepository.findOneOrFail({
@@ -105,7 +103,6 @@ export class AssetPropertyService {
     });
     assetProperty.name = updateAssetPropertyDto.name
     assetProperty.dataType = updateAssetPropertyDto.dataType
-    assetProperty.updatedBy = userId
     return this.assetPropertyRepository.save(assetProperty);
   }
 
@@ -115,14 +112,13 @@ export class AssetPropertyService {
    * @param uuid - UUID of the asset property to delete
    * @returns Promise<import("typeorm").UpdateResult> - result of soft delete operation
    */
-  async remove(subCategoryUuid: string, uuid: string, userId: number) {
+  async remove(subCategoryUuid: string, uuid: string) {
     const assetProperty = await this.assetPropertyRepository.findOneOrFail({
       where: {
         assetPropertyUuid: uuid,
         subCategory: { subCategoryUuid },
       },
     });
-    assetProperty.deletedBy = userId;
     await this.assetPropertyRepository.save(assetProperty);
     return await this.assetPropertyRepository.softRemove(assetProperty);
   }

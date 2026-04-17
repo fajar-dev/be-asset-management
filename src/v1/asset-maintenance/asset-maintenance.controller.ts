@@ -65,12 +65,11 @@ export class AssetMaintenanceController {
   async update(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
     @Body() updateAssetMaintenanceDto: UpdateAssetMaintenanceDto,
   ) {
     return new ApiResponse(
       'Maintenances for asset updated successfully',
-      await this.assetMaintenanceService.update(assetUuid, uuid, user.id, updateAssetMaintenanceDto),
+      await this.assetMaintenanceService.update(assetUuid, uuid, updateAssetMaintenanceDto),
     );
   }
 
@@ -79,9 +78,8 @@ export class AssetMaintenanceController {
   async remove(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.assetMaintenanceService.remove(assetUuid, uuid, user.id);
+    await this.assetMaintenanceService.remove(assetUuid, uuid);
     return new ApiResponse('Maintenances for asset removed successfully');
   }
 }

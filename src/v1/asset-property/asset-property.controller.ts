@@ -60,12 +60,11 @@ export class AssetPropertyController {
   async update(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
     @Body() updateAssetPropertyDto: UpdateAssetPropertyDto,
   ) {
     return new ApiResponse(
       'Asset Property for sub category updated successfully',
-      await this.assetPropertyService.update(subCategoryUuid, uuid, user.id, updateAssetPropertyDto),
+      await this.assetPropertyService.update(subCategoryUuid, uuid, updateAssetPropertyDto),
     );
   }
 
@@ -74,9 +73,8 @@ export class AssetPropertyController {
   async remove(
     @Param('subCategoryUuid', new ParseUUIDPipe()) subCategoryUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.assetPropertyService.remove(subCategoryUuid, uuid, user.id);
+    await this.assetPropertyService.remove(subCategoryUuid, uuid);
     return new ApiResponse('Asset Property for sub category removed successfully');
   }
 }

@@ -13,12 +13,6 @@ export abstract class BaseEntity {
   @Column({ name:'created_by', type: 'int', nullable: true })
   createdBy: number;
 
-  @Column({ name:'updated_by', type: 'int', nullable: true })
-  updatedBy: number;
-
-  @Column({ name:'deleted_by', type: 'int', nullable: true })
-  deletedBy: number;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

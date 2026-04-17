@@ -79,7 +79,6 @@ export class AssetNoteService {
    * Update an existing asset note record
    * @param assetUuid - UUID of the asset
    * @param uuid - UUID of the note record to update
-   * @param userId - ID of the user performing the update
    * @param updateAssetNoteDto - DTO containing updated note data
    * @returns Promise<AssetNote> - the updated asset note record
    */
@@ -91,7 +90,6 @@ export class AssetNoteService {
   async update(
     assetUuid: string,
     uuid: string,
-    userId: number,
     updateAssetNoteDto: UpdateAssetNoteDto,
   ): Promise<AssetNote> {
     const assetNote = await this.assetNoteRepository.findOneOrFail({
@@ -102,7 +100,6 @@ export class AssetNoteService {
     });
     assetNote.note = updateAssetNoteDto.note;
     assetNote.occuredAt = updateAssetNoteDto.occuredAt;
-    assetNote.updatedBy = userId;
     return this.assetNoteRepository.save(assetNote);
   }
 
@@ -125,21 +122,19 @@ export class AssetNoteService {
    * Soft delete an asset note record
    * @param assetUuid - UUID of the asset
    * @param uuid - UUID of the note record to delete
-   * @param userId - ID of the user performing the deletion
    * @returns Promise<AssetNote> - the soft-deleted asset note record
    */
   @LogAsset(async (args, result, ctx) => {
     const dateStr = result?.occuredAt instanceof Date ? result.occuredAt.toISOString().split('T')[0] : String(result?.occuredAt || '').split('T')[0];
     return `Deleted note record ${dateStr}`;
   }, AssetLogType.NOTE)
-  async remove(assetUuid: string, uuid: string, userId: number): Promise<AssetNote> {
+  async remove(assetUuid: string, uuid: string): Promise<AssetNote> {
     const assetNote = await this.assetNoteRepository.findOneOrFail({
       where: {
         assetNoteUuid: uuid,
         asset: { assetUuid },
       },
     });
-    assetNote.deletedBy = userId;
     await this.assetNoteRepository.save(assetNote);
     return await this.assetNoteRepository.softRemove(assetNote);
   }

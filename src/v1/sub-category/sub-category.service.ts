@@ -279,14 +279,12 @@ export class SubCategoryService {
    * Update a sub-category.
    * 
    * @param uuid - UUID of the sub-category to update
-   * @param userId - ID of the user performing the update
    * @param updateSubCategoryDto - DTO containing updated data
    * @returns Updated SubCategory
    * @throws {BadRequestException} - If circular reference or invalid parent found
    */
   async update(
     uuid: string,
-    userId: number,
     updateSubCategoryDto: UpdateSubCategoryDto,
   ): Promise<SubCategory> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
@@ -316,7 +314,6 @@ export class SubCategoryService {
     subCategory.parentId = newParentId;
     subCategory.level = await this.calculateLevel(newParentId);
     subCategory.labels = updateSubCategoryDto.labels ?? null;
-    subCategory.updatedBy = userId;
 
     const updated = await this.subCategoryRepository.save(subCategory);
     await this.updateDescendantsLevels(updated.id);
@@ -328,10 +325,9 @@ export class SubCategoryService {
    * Soft delete a sub-category.
    * 
    * @param uuid - UUID of the sub-category to delete
-   * @param userId - ID of the user performing the deletion
    * @throws {BadRequestException} - If the sub-category has children, assets, or asset properties
    */
-  async remove(uuid: string, userId: number): Promise<void> {
+  async remove(uuid: string): Promise<void> {
     const subCategory = await this.subCategoryRepository.findOneOrFail({
       where: { subCategoryUuid: uuid },
       relations: ['children', 'assetProperties', 'assets'],
@@ -355,8 +351,6 @@ export class SubCategoryService {
       );
     }
 
-    subCategory.deletedBy = userId;
-    await this.subCategoryRepository.save(subCategory);
     await this.subCategoryRepository.softRemove(subCategory);
   }
 

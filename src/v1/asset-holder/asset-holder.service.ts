@@ -115,7 +115,6 @@ export class AssetHolderService {
     return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
   }, AssetLogType.HOLDER)
   async return(
-    userId: number,
     assetUuid: string,
     assetHolder: string,
     returnedAssetHolderDto: returnedAssetHolderDto,
@@ -153,7 +152,6 @@ export class AssetHolderService {
     lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
 
     lastAssignment.returnedAt = returnedAssetHolderDto.returnedAt
-    lastAssignment.updatedBy = userId
     await this.assetHolderRepository.save(lastAssignment);
     return true;
   }

@@ -182,7 +182,6 @@ export class AssetService {
       asset.price = updateAssetDto.price;
       asset.purchaseDate = updateAssetDto.purchaseDate;
       asset.isLendable = updateAssetDto.isLendable;
-      asset.updatedBy = userId;
       asset.imagePath = imagePath || asset.imagePath;
 
       await this.assetRepository.save(asset);
@@ -269,44 +268,21 @@ export class AssetService {
       labels?: string;
     },
   ): Promise<Pagination<Asset>> {
-    const {
-      search,
-      user,
-      subCategoryId,
-      categoryId,
-      status,
-      employeeId,
-      locationId,
-      branchId,
-      startDate,
-      endDate,
-      hasHolder,
-      labels,
-      sort = 'purchaseDate',
-      order = 'DESC',
-      ...paginationOptions
-    } = options;
+    const { search, user, subCategoryId, categoryId, status, employeeId, locationId, branchId, startDate, endDate, hasHolder, labels, sort = 'purchaseDate', order = 'DESC', ...paginationOptions } = options;
 
-    const queryBuilder = this.assetRepository.createQueryBuilder('asset')
-      .leftJoinAndSelect('asset.subCategory', 'subCategory')
-      .leftJoinAndSelect('subCategory.category', 'category')
-      .leftJoinAndSelect('asset.locationRecords', 'locationRecords')
-      .leftJoinAndSelect('locationRecords.location', 'location')
-      .leftJoinAndSelect('location.branch', 'branch')
-      // Join untuk pencarian active holder
-      .leftJoin('asset.holderRecords', 'activeHolder', 
-        'activeHolder.returnedAt IS NULL AND activeHolder.deletedAt IS NULL')
-      .leftJoin('activeHolder.employee', 'activeHolderEmployee')
-      .leftJoin('asset.labelRecords', 'labelRecords');
+    const queryBuilder = this.assetRepository.createQueryBuilder('asset');
 
     if (search) {
       queryBuilder.andWhere(
-        `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
+         `(asset.name LIKE :search OR asset.assetUuid LIKE :search OR asset.model LIKE :search OR asset.description LIKE :search 
           OR asset.brand LIKE :search OR asset.code LIKE :search OR asset.user LIKE :search 
-          OR asset.price LIKE :search OR activeHolderEmployee.full_name LIKE :search
-          OR category.name LIKE :search OR subCategory.name LIKE :search
-          OR location.name LIKE :search
-          OR labelRecords.value LIKE :search)`,
+          OR asset.price LIKE :search 
+          OR asset.subCategoryId IN (SELECT sc.id FROM sub_categories sc WHERE sc.name LIKE :search)
+          OR asset.subCategoryId IN (SELECT sc2.id FROM sub_categories sc2 INNER JOIN categories c ON sc2.category_id = c.id WHERE c.name LIKE :search)
+          OR asset.id IN (SELECT ah.asset_id FROM asset_holders ah INNER JOIN employees e ON ah.employee_id = e.id_employee WHERE ah.returned_at IS NULL AND ah.deleted_at IS NULL AND e.full_name LIKE :search)
+          OR asset.id IN (SELECT al.asset_id FROM asset_locations al INNER JOIN locations l ON al.location_id = l.id WHERE al.deleted_at IS NULL AND l.name LIKE :search)
+          OR asset.id IN (SELECT lbl.asset_id FROM asset_labels lbl WHERE lbl.value LIKE :search)
+         )`,
         { search: `%${search}%` },
       );
     }
@@ -316,117 +292,68 @@ export class AssetService {
     }
 
     if (subCategoryId) {
-      queryBuilder.andWhere('subCategory.subCategoryUuid = :subCategoryId', { subCategoryId });
+      queryBuilder.andWhere(`asset.subCategoryId IN (SELECT id FROM sub_categories WHERE sub_category_uuid = :subCategoryId)`, { subCategoryId });
     }
 
     if (categoryId) {
-      queryBuilder.andWhere('category.categoryUuid = :categoryId', { categoryId });
+      queryBuilder.andWhere(`asset.subCategoryId IN (SELECT id FROM sub_categories WHERE category_id IN (SELECT id FROM categories WHERE category_uuid = :categoryId))`, { categoryId });
     }
     
     if (status) {
-      queryBuilder.andWhere(qb => {
-        const subQuery = qb.subQuery()
-          .select('as.asset_id')
-          .from('asset_statuses', 'as')
-          .where('as.type = :status')
-          .andWhere(qb2 => {
-            const lastStatusSub = qb2.subQuery()
-              .select('MAX(as2.createdAt)')
-              .from('asset_statuses', 'as2')
-              .where('as2.asset_id = as.asset_id')
-              .getQuery();
-            return 'as.createdAt = ' + lastStatusSub;
-          })
-          .getQuery();
-        return 'asset.id IN ' + subQuery;
-      }).setParameter('status', status);
+      queryBuilder.andWhere(
+        `asset.id IN (
+          SELECT as1.asset_id FROM asset_statuses as1
+          WHERE as1.type = :status AND as1.created_at = (
+            SELECT MAX(as2.created_at) FROM asset_statuses as2 WHERE as2.asset_id = as1.asset_id
+          )
+        )`,
+        { status }
+      );
     }
-
 
     if (employeeId) {
-      queryBuilder.andWhere(qb => {
-        const subQuery = qb.subQuery()
-          .select('ah.asset_id')
-          .from('asset_holders', 'ah')
-          .where('ah.employee_id = :employeeId')
-          .andWhere('ah.returned_at IS NULL')
-          .andWhere('ah.deleted_at IS NULL')
-          .getQuery();
-        return 'asset.id IN ' + subQuery;
-      }).setParameter('employeeId', employeeId);
+      queryBuilder.andWhere(
+        `asset.id IN (SELECT ah.asset_id FROM asset_holders ah WHERE ah.employee_id = :employeeId AND ah.returned_at IS NULL AND ah.deleted_at IS NULL)`,
+        { employeeId }
+      );
     }
 
-    // Filter hasHolder: hanya tampilkan asset dengan active holder jika true
     if (hasHolder === true) {
-      queryBuilder.andWhere(qb => {
-        const subQuery = qb.subQuery()
-          .select('ah.asset_id')
-          .from('asset_holders', 'ah')
-          .where('ah.returned_at IS NULL')
-          .andWhere('ah.deleted_at IS NULL')
-          .getQuery();
-        return 'asset.id IN ' + subQuery;
-      });
+      queryBuilder.andWhere(
+        `asset.id IN (SELECT ah.asset_id FROM asset_holders ah WHERE ah.returned_at IS NULL AND ah.deleted_at IS NULL)`
+      );
     }
 
     if (locationId) {
       const locationIds = locationId.split(',').map(id => id.trim());
-      queryBuilder
-        .andWhere(qb => {
-          const subQuery = qb
-            .subQuery()
-            .select('al.asset_id')
-            .from('asset_locations', 'al')
-            .leftJoin('locations', 'l', 'al.location_id = l.id')
-            .where('al.deletedAt IS NULL')
-            .andWhere('l.location_uuid IN (:...locationUuids)')
-            .andWhere(qb2 => {
-              const firstLocSub = qb2
-                .subQuery()
-                .select('MIN(al2.createdAt)')
-                .from('asset_locations', 'al2')
-                .where('al2.asset_id = al.asset_id')
-                .andWhere('al2.deletedAt IS NULL')
-                .getQuery();
-
-              return `al.createdAt = ${firstLocSub}`;
-            })
-            .getQuery();
-
-          return `asset.id IN ${subQuery}`;
-        })
-        .setParameter('locationUuids', locationIds);
+      queryBuilder.andWhere(
+        `asset.id IN (
+          SELECT al1.asset_id FROM asset_locations al1
+          INNER JOIN locations l ON al1.location_id = l.id
+          WHERE al1.deleted_at IS NULL AND l.location_uuid IN (:...locationIds) AND al1.created_at = (
+            SELECT MIN(al2.created_at) FROM asset_locations al2 WHERE al2.asset_id = al1.asset_id AND al2.deleted_at IS NULL
+          )
+        )`,
+        { locationIds }
+      );
     }
 
     if (branchId) {
       const branchIds = branchId.split(',').map(id => id.trim());
-      queryBuilder.andWhere(qb => {
-        const subQuery = qb.subQuery()
-          .select('al.asset_id')
-          .from('asset_locations', 'al')
-          .leftJoin('locations', 'l', 'al.location_id = l.id')
-          .where('al.deletedAt IS NULL')
-          .andWhere('l.branch_id IN (:...branchIds)')
-          .andWhere(qb2 => {
-            const lastLocSub = qb2.subQuery()
-              .select('MAX(al2.createdAt)')
-              .from('asset_locations', 'al2')
-              .where('al2.asset_id = al.asset_id')
-              .andWhere('al2.deletedAt IS NULL')
-              .getQuery();
-            return 'al.createdAt = ' + lastLocSub;
-          })
-          .getQuery();
-
-        return 'asset.id IN ' + subQuery;
-      }).setParameter('branchIds', branchIds);
+      queryBuilder.andWhere(
+        `asset.id IN (
+          SELECT al1.asset_id FROM asset_locations al1
+          INNER JOIN locations l ON al1.location_id = l.id
+          WHERE al1.deleted_at IS NULL AND l.branch_id IN (:...branchIds) AND al1.created_at = (
+            SELECT MAX(al2.created_at) FROM asset_locations al2 WHERE al2.asset_id = al1.asset_id AND al2.deleted_at IS NULL
+          )
+        )`,
+        { branchIds }
+      );
     }
 
     if (startDate && endDate) {
-      queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder.andWhere('asset.purchaseDate BETWEEN :startDate AND :endDate', { startDate, endDate });
     } else if (startDate) {
       queryBuilder.andWhere('asset.purchaseDate >= :startDate', { startDate });
     } else if (endDate) {
@@ -435,41 +362,25 @@ export class AssetService {
 
     if (labels) {
       const labelFilters = labels.split(',');
-      let index = 0;
-
-      labelFilters.forEach((filter) => {
-        let key: string;
-        let value: string;
+      labelFilters.forEach((filter, index) => {
         let isNot = false;
+        let key, value;
 
         if (filter.includes('!=')) {
           [key, value] = filter.split('!=');
           isNot = true;
         } else if (filter.includes('=')) {
           [key, value] = filter.split('=');
-        } else {
-          return;
-        }
+        } else return;
 
-        // Clean up values
         key = key.trim();
         value = value.trim().replace(/\+/g, ' ');
 
-        const subQuery = this.assetLabelRepository.createQueryBuilder('al')
-          .select('al.assetId')
-          .where('al.key = :key' + index)
-          .andWhere('al.value = :value' + index)
-          .getQuery();
-
-        if (isNot) {
-          queryBuilder.andWhere(`asset.id NOT IN (${subQuery})`);
-        } else {
-          queryBuilder.andWhere(`asset.id IN (${subQuery})`);
-        }
-
-        queryBuilder.setParameter('key' + index, key);
-        queryBuilder.setParameter('value' + index, value);
-        index++;
+        const operator = isNot ? 'NOT IN' : 'IN';
+        queryBuilder.andWhere(
+          `asset.id ${operator} (SELECT al.asset_id FROM asset_labels al WHERE al.key = :key${index} AND al.value = :value${index})`,
+          { [`key${index}`]: key, [`value${index}`]: value }
+        );
       });
     }
 
@@ -603,17 +514,14 @@ export class AssetService {
     /**
    * Soft delete a asset by UUID
    * @param uuid - UUID of the asset to delete
-   * @param userId - ID of the user performing the deletion
    * @returns Promise<Asset> - the soft-deleted asset entity
    * @throws NotFoundException if asset is not found
    */
   @LogAsset('Removed asset', AssetLogType.ASSET)
-  async remove(uuid: string, userId: number) {
+  async remove(uuid: string) {
     const asset = await this.assetRepository.findOneOrFail({
       where: { assetUuid: uuid },
     });
-    asset.deletedBy = userId;
-    await this.assetRepository.save(asset);
     return await this.assetRepository.softRemove(asset);
   }
 }

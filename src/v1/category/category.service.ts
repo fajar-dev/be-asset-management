@@ -90,7 +90,6 @@ export class CategoryService {
    */
   async update(
     uuid: string,
-    userId: number,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     const category = await this.categoryRepository.findOneOrFail({
@@ -103,8 +102,6 @@ export class CategoryService {
     category.hasLocation = updateCategoryDto.hasLocation;
     category.hasMaintenance = updateCategoryDto.hasMaintenance;
     category.hasHolder = updateCategoryDto.hasHolder;
-    category.updatedBy = userId;
-
     return this.categoryRepository.save(category);
   }
 
@@ -114,7 +111,7 @@ export class CategoryService {
    * @returns Promise<import("typeorm").UpdateResult> - result of soft delete operation
    * @throws BadRequestException if category is in use by subcategories
    */
-  async remove(uuid: string, userId: number) {
+  async remove(uuid: string) {
     const category = await this.categoryRepository.findOneOrFail({
       where: { categoryUuid: uuid },
       relations: ['subCategories'],
@@ -126,7 +123,6 @@ export class CategoryService {
       );
     }
 
-    category.deletedBy = userId;
     await this.categoryRepository.save(category);
     return await this.categoryRepository.softRemove(category);
   }

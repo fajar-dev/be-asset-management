@@ -99,14 +99,12 @@ export class LocationService {
   /**
    * Update a location by UUID
    * @param uuid - UUID of the location to update
-   * @param userId - ID of the user updating the location
    * @param updateLocationDto - DTO containing updated location data
    * @returns Promise<Location> - the updated location entity
    * @throws NotFoundException if location is not found
    */
   async update(
     uuid: string,
-    userId: number,
     updateLocationDto: UpdateLocationDto,
   ): Promise<Location> {
     const location = await this.locationRepository.findOneOrFail({
@@ -116,7 +114,6 @@ export class LocationService {
     });
     location.name = updateLocationDto.name;
     location.branchId = updateLocationDto.branchId;
-    location.updatedBy = userId;
     return this.locationRepository.save(location);
   }
 
@@ -124,12 +121,11 @@ export class LocationService {
    * Soft delete a location by UUID
    * Prevent deletion if it is currently used by asset locations
    * @param uuid - UUID of the location to delete
-   * @param userId - ID of the user performing the deletion
    * @returns Promise<Location> - the soft-deleted location entity
    * @throws NotFoundException if location is not found
    * @throws BadRequestException if location is in use by assets
    */
-  async remove(uuid: string, userId: number): Promise<Location> {
+  async remove(uuid: string): Promise<Location> {
     const location = await this.locationRepository.findOneOrFail({
       where: { locationUuid: uuid },
       relations: ['assetLocations'],
@@ -141,9 +137,6 @@ export class LocationService {
         'Cannot delete location because it is currently in use by assets.',
       );
     }
-
-    location.deletedBy = userId;
-    await this.locationRepository.save(location);
     return await this.locationRepository.softRemove(location);
   }
 

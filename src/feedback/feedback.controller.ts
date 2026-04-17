@@ -85,12 +85,11 @@ export class FeedbackController {
   @Serialize(ResponseFeedbackDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
     @Body() updateFeedbackDto: UpdateFeedbackDto,
   ) {
     return new ApiResponse(
       'Feedback updated successfully',
-      await this.feedbackService.update(uuid, user.id, updateFeedbackDto),
+      await this.feedbackService.update(uuid, updateFeedbackDto),
     );
   }
 }

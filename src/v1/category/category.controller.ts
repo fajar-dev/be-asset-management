@@ -91,12 +91,11 @@ export class CategoryController {
   @Serialize(ResponseCategoryDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
     return new ApiResponse(
       'Category updated successfully',
-      await this.categoryService.update(uuid, user.id, updateCategoryDto),
+      await this.categoryService.update(uuid, updateCategoryDto),
     );
   }
 
@@ -104,9 +103,8 @@ export class CategoryController {
   @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.categoryService.remove(uuid, user.id);
+    await this.categoryService.remove(uuid);
     return new ApiResponse('Category removed successfully');
   }
 }

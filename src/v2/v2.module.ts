@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { BookModule } from './book/book.module';
-import { ApiKeyGuard } from 'src/auth/guards/ApiKeyGuard';
-import { JwtAuthGuard } from 'src/auth/guards/JwtAuthGuard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { UserModule } from 'src/v1/user/user.module';
+import { ApiKeyGuard } from '../auth/guards/ApiKeyGuard';
+import { JwtAuthGuard } from '../auth/guards/JwtAuthGuard';
+import { RolesGuard } from '../auth/guards/role.guard';
+import { UserModule } from '../v1/user/user.module';
 
 @Module({
   imports: [

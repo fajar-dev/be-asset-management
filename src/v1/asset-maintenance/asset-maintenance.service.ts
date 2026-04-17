@@ -105,7 +105,6 @@ export class AssetMaintenanceService {
   async update(
     assetUuid: string,
     uuid: string,
-    userId: number,
     updateAssetMaintenaceDto: UpdateAssetMaintenanceDto,
   ): Promise<AssetMaintenance> {
     const assetMaintenance = await this.assetMaintenanceRepository.findOneOrFail({
@@ -116,7 +115,6 @@ export class AssetMaintenanceService {
     });
     assetMaintenance.maintenanceAt = updateAssetMaintenaceDto.maintenanceAt;
     assetMaintenance.note = updateAssetMaintenaceDto.note;
-    assetMaintenance.updatedBy = userId;
     return this.assetMaintenanceRepository.save(assetMaintenance);
   }
   
@@ -131,14 +129,13 @@ export class AssetMaintenanceService {
     const dateStr = result?.maintenanceAt instanceof Date ? result.maintenanceAt.toISOString().split('T')[0] : String(result?.maintenanceAt || '').split('T')[0];
     return `Deleted maintenance record ${dateStr}`;
   }, AssetLogType.MAINTENANCE)
-  async remove(assetUuid: string, uuid: string, userId: number) {
+  async remove(assetUuid: string, uuid: string) {
     const assetMaintenance = await this.assetMaintenanceRepository.findOneOrFail({
       where: {
         assetMaintenanceUuid: uuid,
         asset: { assetUuid },
       },
     });
-    assetMaintenance.deletedBy = userId;
     await this.assetMaintenanceRepository.save(assetMaintenance);
     return await this.assetMaintenanceRepository.softRemove(assetMaintenance);
   }

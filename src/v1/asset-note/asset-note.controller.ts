@@ -60,12 +60,11 @@ export class AssetNoteController {
   async update(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   @Body() updateAssetNoteDto: UpdateAssetNoteDto,
   ) {
     return new ApiResponse(
     'Note for asset updated successfully',
-    await this.assetNoteService.update(assetUuid, uuid, user.id, updateAssetNoteDto),
+    await this.assetNoteService.update(assetUuid, uuid, updateAssetNoteDto),
     );
   }
 
@@ -74,9 +73,8 @@ export class AssetNoteController {
   async remove(
     @Param('assetUuid', new ParseUUIDPipe()) assetUuid: string,
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-  await this.assetNoteService.remove(assetUuid, uuid, user.id);
+  await this.assetNoteService.remove(assetUuid, uuid);
   return new ApiResponse('Note for asset removed successfully');
   }
 }

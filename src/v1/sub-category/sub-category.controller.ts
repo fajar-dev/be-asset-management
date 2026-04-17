@@ -103,12 +103,11 @@ export class SubCategoryController {
   @Serialize(ResponseSubCategoryDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
     @Body() updateSubCategoryDto: UpdateSubCategoryDto,
   ) {
     return new ApiResponse(
       'Sub category updated successfully',
-      await this.subCategoryService.update(uuid, user.id, updateSubCategoryDto),
+      await this.subCategoryService.update(uuid, updateSubCategoryDto),
     );
   }
 
@@ -116,9 +115,8 @@ export class SubCategoryController {
   @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.subCategoryService.remove(uuid, user.id);
+    await this.subCategoryService.remove(uuid);
     return new ApiResponse('Sub category removed successfully');
   }
 }
