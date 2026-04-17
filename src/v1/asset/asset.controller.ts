@@ -374,9 +374,8 @@ export class AssetController {
   @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.assetService.remove(uuid, user.id);
+    await this.assetService.remove(uuid);
     return new ApiResponse('Asset removed successfully');
   }
 }

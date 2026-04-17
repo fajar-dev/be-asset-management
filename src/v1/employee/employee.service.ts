@@ -36,23 +36,22 @@ export class EmployeeService {
 
     const employees = res.data.data;
 
-    for (const e of employees) {
-      await this.employeeRepository.upsert(
-        {
-          id: e.user_id,
-          idEmployee: sanitizeText(e.employee_id),
-          branchId: sanitizeText(e.branch_id),
-          fullName: sanitizeText(e.full_name),
-          jobPosition: sanitizeText(e.job_position),
-          email: sanitizeText(e.email),
-          mobilePhone: sanitizeText(e.whatsapp ?? e.mobile_phone),
-          photoProfile: sanitizeText(e.photo_profile),
-          jobLevel: sanitizeText(e.job_level),
-          organizationName: sanitizeText(e.organization_name),
-          statusJoin: sanitizeText(e.status_join),
-        },
-        ['idEmployee'],
-      );
+    const employeeEntities = employees.map((e: any) => ({
+      id: e.user_id,
+      idEmployee: sanitizeText(e.employee_id),
+      branchId: sanitizeText(e.branch_id),
+      fullName: sanitizeText(e.full_name),
+      jobPosition: sanitizeText(e.job_position),
+      email: sanitizeText(e.email),
+      mobilePhone: sanitizeText(e.whatsapp ?? e.mobile_phone),
+      photoProfile: sanitizeText(e.photo_profile),
+      jobLevel: sanitizeText(e.job_level),
+      organizationName: sanitizeText(e.organization_name),
+      statusJoin: sanitizeText(e.status_join),
+    }));
+
+    if (employeeEntities.length > 0) {
+      await this.employeeRepository.upsert(employeeEntities, ['idEmployee']);
     }
 
     console.log(`✅ Saved ${employees.length} employees`);

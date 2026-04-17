@@ -19,11 +19,11 @@ export class LocationController {
   @Serialize(ResponseLocationDto)
   async create(
     @User() user: UserEntity,
-    @Body() CreateLocationDto: CreateLocationDto,
+    @Body() createLocationDto: CreateLocationDto,
   ) {
     return new ApiResponse(
       'Location created successfully',
-      await this.locationService.create(user.id, CreateLocationDto),
+      await this.locationService.create(user.id, createLocationDto),
     );
   }
 
@@ -64,12 +64,11 @@ export class LocationController {
   @Serialize(ResponseLocationDto)
   async update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
-    @Body() UpdateLocationDto: UpdateLocationDto,
+    @Body() updateLocationDto: UpdateLocationDto,
   ) {
     return new ApiResponse(
       'Location updated successfully',
-      await this.locationService.update(uuid, user.id, UpdateLocationDto),
+      await this.locationService.update(uuid, updateLocationDto),
     );
   }
 
@@ -77,9 +76,8 @@ export class LocationController {
   @Roles(Role.ADMIN)
   async remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @User() user: UserEntity,
   ) {
-    await this.locationService.remove(uuid, user.id);
+    await this.locationService.remove(uuid);
     return new ApiResponse('Location removed successfully');
   }
 }

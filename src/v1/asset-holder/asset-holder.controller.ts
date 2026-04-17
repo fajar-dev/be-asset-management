@@ -109,7 +109,7 @@ export class AssetHolderController {
        attachments 
     };
     returnedAssetHolderDto.attachments = attachments;
-    await this.assetHolderService.return(user.id, assetUuid, uuid, returnedAssetHolderDto);
+    await this.assetHolderService.return(assetUuid, uuid, returnedAssetHolderDto);
     return new ApiResponse('Holder asset returned successfully');
   }
 
@@ -136,7 +136,6 @@ export class AssetHolderController {
     };
 
     await this.assetHolderService.return(
-      user.id,
       assetUuid,
       uuid,
       returnDto,

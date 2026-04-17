@@ -1,16 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Asset } from 'src/v1/asset/entities/asset.entity';
+import { Asset } from '../../v1/asset/entities/asset.entity';
 import { IsNull, Repository } from 'typeorm';
-import { AssetHolder } from 'src/v1/asset-holder/entities/asset-holder.entity';
-import { User } from 'src/v1/user/entities/user.entity';
+import { AssetHolder } from '../../v1/asset-holder/entities/asset-holder.entity';
+import { User } from '../../v1/user/entities/user.entity';
 import { ReturnBookDto } from './dto/return-book.dto';
-import { StorageService } from 'src/storage/storage.service';
-import { Employee } from 'src/v1/employee/entities/employee.entity';
-import { LogAsset } from 'src/v1/asset-log/decorator/log-asset.decorator';
-import { watermarkImage } from 'src/common/utils/image-watermark.util';
-import { AssetLogType } from 'src/v1/asset-log/enum/asset-log.enum';
-import { AssetStatusType } from 'src/v1/asset-status/enum/asset-status.enum';
+import { StorageService } from '../../storage/storage.service';
+import { Employee } from '../../v1/employee/entities/employee.entity';
+import { LogAsset } from '../../v1/asset-log/decorator/log-asset.decorator';
+import { AssetLogType } from '../../v1/asset-log/enum/asset-log.enum';
+import { AssetStatusType } from '../../v1/asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class BookService {
@@ -164,13 +163,12 @@ export class BookService {
     }
 
     const uploadedPaths: string[] = [];
-    if (body.attachments) {
-      for (const file of body.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (body.attachments?.length) {
+      const uploadPromises = body.attachments.map((file: any) =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const assetHolder = this.assetHolderRepository.create({
@@ -218,20 +216,18 @@ export class BookService {
     }
 
     const uploadedPaths: string[] = [];
-    if (body.attachments) {
-      for (const file of body.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (body.attachments?.length) {
+      const uploadPromises = body.attachments.map((file: any) =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const currentPaths = Array.isArray(lastAssignment.attachmentPaths) ? lastAssignment.attachmentPaths : [];
     lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
     lastAssignment.returnedAt = new Date();
     lastAssignment.purpose = body.purpose;
-    lastAssignment.updatedBy = user.id;
     
     await this.assetHolderRepository.save(lastAssignment);
     return { assetUuid: assetHolder.asset?.assetUuid || assetUuid, success: true } as any;
@@ -291,11 +287,15 @@ export class BookService {
           bookLoans: {}
         };
       }
+    }
 
-      const bookImageUrl = loan.asset.imagePath ? await this.storageService.getPreSignedUrl(loan.asset.imagePath) : null;
-      const attachments = loan.attachmentPaths || [];
-      const loanPhoto = attachments[0] ? await this.storageService.getPreSignedUrl(attachments[0]) : null;
-      const returnPhoto = attachments[1] ? await this.storageService.getPreSignedUrl(attachments[1]) : null;
+    await Promise.all(loans.map(async (loan) => {
+      const empId = loan.employee.idEmployee;
+      const [bookImageUrl, loanPhoto, returnPhoto] = await Promise.all([
+        loan.asset.imagePath ? this.storageService.getPreSignedUrl(loan.asset.imagePath) : Promise.resolve(null),
+        loan.attachmentPaths?.[0] ? this.storageService.getPreSignedUrl(loan.attachmentPaths[0]) : Promise.resolve(null),
+        loan.attachmentPaths?.[1] ? this.storageService.getPreSignedUrl(loan.attachmentPaths[1]) : Promise.resolve(null)
+      ]);
 
       employeeLoans[empId].bookLoans[loan.assetHolderUuid] = {
         code: loan.asset.code,
@@ -314,7 +314,7 @@ export class BookService {
           }
         }
       };
-    }
+    }));
 
     return [employeeLoans];
   }

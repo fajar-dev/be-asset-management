@@ -28,11 +28,12 @@ export class FeedbackService {
     }
 
     const uploadedPaths: string[] = [];
-    for (const file of dto.images) {
-      const objectPath = await this.storageService.uploadFile('feedback', file);
-      if (objectPath){
-        uploadedPaths.push(objectPath);
-      }
+    if (dto.images?.length) {
+      const uploadPromises = dto.images.map(file =>
+        this.storageService.uploadFile('feedback', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const feedback = this.feedbackRepository.create({
@@ -101,7 +102,6 @@ export class FeedbackService {
    */
   async update(
     uuid: string,
-    userId: number,
     updateFeedbackDto: UpdateFeedbackDto,
   ): Promise<Feedback> {
     const feedback = await this.feedbackRepository.findOneOrFail({
@@ -112,7 +112,6 @@ export class FeedbackService {
 
     feedback.status = updateFeedbackDto.status;
     feedback.reply = updateFeedbackDto.reply;
-    feedback.updatedBy = userId;
     return this.feedbackRepository.save(feedback);
   }
 }

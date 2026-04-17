@@ -81,13 +81,12 @@ export class AssetHolderService {
     }
 
     const uploadedPaths: string[] = [];
-    if (assignAssetHolderDto.attachments) {
-      for (const file of assignAssetHolderDto.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (assignAssetHolderDto.attachments?.length) {
+      const uploadPromises = assignAssetHolderDto.attachments.map(file =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const assetHolder = this.assetHolderRepository.create({
@@ -115,7 +114,6 @@ export class AssetHolderService {
     return `Returned asset from ${assetHolder?.employee?.fullName || 'Unknown'}`;
   }, AssetLogType.HOLDER)
   async return(
-    userId: number,
     assetUuid: string,
     assetHolder: string,
     returnedAssetHolderDto: returnedAssetHolderDto,
@@ -140,20 +138,18 @@ export class AssetHolderService {
     }
 
     const uploadedPaths: string[] = [];
-    if (returnedAssetHolderDto.attachments) {
-      for (const file of returnedAssetHolderDto.attachments) {
-        const objectPath = await this.storageService.uploadFile('asset-holder', file);
-        if (objectPath) {
-          uploadedPaths.push(objectPath);
-        }
-      }
+    if (returnedAssetHolderDto.attachments?.length) {
+      const uploadPromises = returnedAssetHolderDto.attachments.map(file =>
+        this.storageService.uploadFile('asset-holder', file),
+      );
+      const results = await Promise.all(uploadPromises);
+      uploadedPaths.push(...results.filter((path): path is string => !!path));
     }
 
     const currentPaths = Array.isArray(lastAssignment.attachmentPaths) ? lastAssignment.attachmentPaths : [];
     lastAssignment.attachmentPaths = [...currentPaths, ...uploadedPaths];
 
     lastAssignment.returnedAt = returnedAssetHolderDto.returnedAt
-    lastAssignment.updatedBy = userId
     await this.assetHolderRepository.save(lastAssignment);
     return true;
   }
