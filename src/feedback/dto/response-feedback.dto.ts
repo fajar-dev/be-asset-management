@@ -1,6 +1,37 @@
 import { Expose, Type as TransformType } from 'class-transformer';
 import { Status, Type } from '../enum/feedback.enum';
-import { ResponseUserDto } from '../../v1/user/dto/response-user.dto';
+
+class FeedbackUserDto {
+  @Expose({ name: 'userUuid' })
+  id: number;
+
+  @Expose()
+  employeeId: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  email: string;
+
+  @Expose()
+  avatar: string;
+
+  @Expose()
+  isActive: boolean;
+
+  @Expose()
+  lastLoginAt: Date | null;
+
+  @Expose()
+  lastLoginIp: string | null;
+
+  @Expose()
+  phoneNumber: string | null;
+
+  @Expose()
+  role: string;
+}
 
 export class ResponseFeedbackDto {
   @Expose({ name: 'feedbackUuid' })
@@ -28,6 +59,6 @@ export class ResponseFeedbackDto {
   imagePaths: string[];
 
   @Expose()
-  @TransformType(() => ResponseUserDto)
-  user: ResponseUserDto;
+  @TransformType(() => FeedbackUserDto)
+  user: FeedbackUserDto;
 }

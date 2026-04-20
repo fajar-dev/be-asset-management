@@ -1,5 +1,12 @@
 import { Expose, Type } from 'class-transformer';
-import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
+
+class LocationBranchDto {
+  @Expose({ name: 'idBranch' })
+  branchId: string;
+
+  @Expose()
+  name: string;
+}
 
 export class ResponseLocationDto {
   @Expose({ name: 'locationUuid' })
@@ -9,6 +16,6 @@ export class ResponseLocationDto {
   name: string;
 
   @Expose()
-  @Type(() => ResponseBranchDto)
-  branch: ResponseBranchDto
+  @Type(() => LocationBranchDto)
+  branch: LocationBranchDto;
 }

@@ -1,5 +1,24 @@
 import { Expose, Type } from 'class-transformer';
-import { ResponseLocationDto } from '../../location/dto/response-location.dto';
+
+class AssetLocationBranchDto {
+  @Expose({ name: 'idBranch' })
+  branchId: string;
+
+  @Expose()
+  name: string;
+}
+
+class AssetLocationLocationDto {
+  @Expose({ name: 'locationUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  @Type(() => AssetLocationBranchDto)
+  branch: AssetLocationBranchDto;
+}
 
 export class ResponseAssetLocationDto {
   @Expose({ name: 'assetLocationUuid' })
@@ -9,6 +28,6 @@ export class ResponseAssetLocationDto {
   createdAt: Date;
 
   @Expose()
-  @Type(() => ResponseLocationDto)
-  location: ResponseLocationDto;
+  @Type(() => AssetLocationLocationDto)
+  location: AssetLocationLocationDto;
 }
