@@ -56,4 +56,16 @@ export class StorageService {
       expiry,
     );
   }
+
+  public async getObject(filePath: string) {
+    const stream = await this.minioClient.getObject(
+      this.configService.getOrThrow('MINIO_STORAGE_BUCKET'),
+      filePath,
+    );
+    const stat = await this.minioClient.statObject(
+      this.configService.getOrThrow('MINIO_STORAGE_BUCKET'),
+      filePath,
+    );
+    return { stream, contentType: stat.metaData['content-type'] as string };
+  }
 }
