@@ -1,117 +1,85 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { IPaginationOptions, Pagination } from 'nestjs-typeorm-paginate';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
-import { Feedback } from './entities/feedback.entity';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { StorageService } from '../storage/storage.service';
-import { UpdateFeedbackDto } from './dto/update-feedback.dto';
+
+export interface FeedbackApiItem {
+  timestamp: string;
+  email: string;
+  image: string[];
+  url: string;
+  category: string;
+  message: string;
+  type: string;
+  reply: string;
+}
 
 @Injectable()
 export class FeedbackService {
   constructor(
-    @InjectRepository(Feedback)
-    private readonly feedbackRepository: Repository<Feedback>,
     private readonly storageService: StorageService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
    * Create a new feedback
-   * @param userId - the user submitting the feedback
+   * @param email - the user submitting the feedback
    * @param dto - DTO containing feedback data
    * @returns Promise<Feedback> - the created feedback entity
    */
-  async create(userId: number, dto: CreateFeedbackDto): Promise<Feedback> {
+  async create(email: string, dto: CreateFeedbackDto): Promise<void> {
     if (!dto.images || dto.images.length < 1 || dto.images.length > 3) {
       throw new BadRequestException('Images must be between 1 and 3 files');
     }
 
-    const uploadedPaths: string[] = [];
-    if (dto.images?.length) {
-      const uploadPromises = dto.images.map(file =>
-        this.storageService.uploadFile('feedback', file),
-      );
-      const results = await Promise.all(uploadPromises);
-      uploadedPaths.push(...results.filter((path): path is string => !!path));
-    }
+    const uploadPromises = dto.images.map(file =>
+      this.storageService.uploadFile('feedback', file),
+    );
+    const uploadedPaths = (await Promise.all(uploadPromises)).filter(
+      (path): path is string => !!path,
+    );
 
-    const feedback = this.feedbackRepository.create({
+    const scriptUrl = this.configService.getOrThrow<string>('FEEDBACK_SCRIPT_URL');
+    await axios.post(scriptUrl, {
+      email: email,
+      image: uploadedPaths,
+      url: dto.url,
       type: dto.type,
-      description: dto.description,
-      createdBy: userId,
-      imagePaths: uploadedPaths,
-      userId: userId,
+      message: dto.description,
     });
-
-    return this.feedbackRepository.save(feedback);
   }
 
-  /**
-   * Paginate feedbacks with optional search
-   * @param options - Pagination options plus optional search string
-   * @returns Promise<Pagination<Feedback>>
-   */
   async paginate(
     options: IPaginationOptions & { search?: string },
-    userId?: number, // optional
-  ): Promise<Pagination<Feedback>> {
-    const queryBuilder = this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .leftJoinAndSelect('feedback.user', 'user'); // join user
+    email: string,
+  ): Promise<Pagination<FeedbackApiItem>> {
+    const scriptUrl = this.configService.getOrThrow<string>('FEEDBACK_SCRIPT_URL');
+    const { data } = await axios.get<FeedbackApiItem[]>(scriptUrl);
 
-    if (userId) {
-      queryBuilder.where('feedback.userId = :userId', { userId });
-    }
+    let items = data.filter(item => item.email === email);
 
     if (options.search) {
-      const searchCondition = 'feedback.description LIKE :search';
-      if (userId) {
-        queryBuilder.andWhere(searchCondition, { search: `%${options.search}%` });
-      } else {
-        queryBuilder.where(searchCondition, { search: `%${options.search}%` });
-      }
+      const keyword = options.search.toLowerCase();
+      items = items.filter(item =>
+        item.message.toLowerCase().includes(keyword),
+      );
     }
 
-    queryBuilder.orderBy('feedback.createdAt', 'DESC');
+    const totalItems = items.length;
+    const currentPage = +options.page || 1;
+    const limit = +options.limit || 10;
+    const offset = (currentPage - 1) * limit;
+    const pagedItems = items.slice(offset, offset + limit);
 
-    return paginate(queryBuilder, {
-      limit: options.limit ?? 10,
-      page: options.page ?? 1,
+    return new Pagination<FeedbackApiItem>(pagedItems, {
+      totalItems,
+      itemCount: pagedItems.length,
+      itemsPerPage: limit,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage,
     });
-  }
-
-  /**
-   * Find one feedback by UUID
-   * @param uuid - UUID of the feedback
-   * @returns Promise<Feedback>
-   */
-  async findOne(uuid: string): Promise<Feedback> {
-    return await this.feedbackRepository.findOneOrFail({
-      where: { feedbackUuid: uuid },
-      relations: ['user'],
-    });
-  }
-  
-  /**
-   * Update a feedback by UUID
-   * @param uuid - UUID of the feedback to update
-   * @param updateFeedbackDto - DTO containing updated feedback data
-   * @returns Promise<Feedback> - the updated feedback entity
-   * @throws NotFoundException if feedback is not found
-   */
-  async update(
-    uuid: string,
-    updateFeedbackDto: UpdateFeedbackDto,
-  ): Promise<Feedback> {
-    const feedback = await this.feedbackRepository.findOneOrFail({
-      where: {
-        feedbackUuid: uuid,
-      },
-    });
-
-    feedback.status = updateFeedbackDto.status;
-    feedback.reply = updateFeedbackDto.reply;
-    return this.feedbackRepository.save(feedback);
   }
 }

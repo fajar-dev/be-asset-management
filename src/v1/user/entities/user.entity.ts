@@ -2,7 +2,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { BeforeInsert, Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { v7 as uuidv7 } from 'uuid';
 import { Role } from '../enum/role.enum';
-import { Feedback } from '../../../feedback/entities/feedback.entity';
 import { Employee } from '../../../v1/employee/entities/employee.entity';
 import { AssetLog } from '../../asset-log/entities/asset-log.entity';
 import { AssetStatus } from '../../asset-status/entities/asset-status.entity';
@@ -49,9 +48,6 @@ export class User extends BaseEntity {
     default: Role.USER,
   })
   role: Role;
-
-  @OneToMany(() => Feedback, (feedback) => feedback.user)
-  feedbacks: Feedback[];
 
   @OneToMany(() => AssetLog, (assetLog) => assetLog.user)
   assetLogs: AssetLog[];

@@ -2,6 +2,10 @@ import { IsEnum, IsNotEmpty, IsString, IsArray, ArrayMinSize, ArrayMaxSize, IsOp
 import { Type } from '../enum/feedback.enum';
 
 export class CreateFeedbackDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Url must not be empty' })
+  url: string;
+
   @IsEnum(Type, { message: 'Type must be one of the defined enum values' })
   type: Type;
 
