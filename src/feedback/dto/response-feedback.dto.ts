@@ -1,64 +1,33 @@
-import { Expose, Type as TransformType } from 'class-transformer';
-import { Status, Type } from '../enum/feedback.enum';
+import { Expose } from 'class-transformer';
 
-class FeedbackUserDto {
-  @Expose({ name: 'userUuid' })
-  id: number;
-
+export class ResponseFeedbackDto {
   @Expose()
-  employeeId: string;
-
-  @Expose()
-  name: string;
+  timestamp: string;
 
   @Expose()
   email: string;
 
   @Expose()
-  avatar: string;
+  image: string[];
 
   @Expose()
-  isActive: boolean;
+  imageUrls: string[];
 
   @Expose()
-  lastLoginAt: Date | null;
+  url: string;
 
   @Expose()
-  lastLoginIp: string | null;
+  category: string;
 
   @Expose()
-  phoneNumber: string | null;
+  message: string;
 
   @Expose()
-  role: string;
-}
-
-export class ResponseFeedbackDto {
-  @Expose({ name: 'feedbackUuid' })
-  id: string;
+  type: string;
 
   @Expose()
-  type: Type;
-
-  @Expose()
-  description: string;
-
-  @Expose()
-  status: Status;
+  status: string;
 
   @Expose()
   reply: string;
-
-  @Expose()
-  createdAt: Date;
-
-  @Expose()
-  updatedAt: Date;
-
-  @Expose()
-  imagePaths: string[];
-
-  @Expose()
-  @TransformType(() => FeedbackUserDto)
-  user: FeedbackUserDto;
 }

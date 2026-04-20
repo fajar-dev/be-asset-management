@@ -3,15 +3,11 @@ import {
   Get,
   Post,
   Body,
-  Param,
   Query,
   DefaultValuePipe,
   ParseIntPipe,
-  ParseBoolPipe,
-  ParseUUIDPipe,
   UseInterceptors,
   UploadedFiles,
-  Put,
 } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
@@ -22,15 +18,15 @@ import { ApiResponse } from '../common/utils/ApiResponse';
 import { ResponseFeedbackDto } from './dto/response-feedback.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PreSignedUrl } from '../common/decorator/presigned-url.decorator';
-import { SerializeV2Interceptor } from '..//common/interceptor/serialize-v2.interceptor';
-import { UpdateFeedbackDto } from './dto/update-feedback.dto';
+import { SerializeV2Interceptor } from '../common/interceptor/serialize-v2.interceptor';
+import { FeedbackApiItem } from './feedback.service';
+import { Pagination } from 'nestjs-typeorm-paginate';
 
 @Controller('feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post()
-  @Serialize(ResponseFeedbackDto)
   @UseInterceptors(FilesInterceptor('images', 3))
   async create(
     @Body() body: any,
@@ -42,15 +38,13 @@ export class FeedbackController {
       images,
     };
 
-    return new ApiResponse(
-      'Feedback created successfully',
-      await this.feedbackService.create(user.id, createFeedbackDto),
-    );
+    await this.feedbackService.create(user.email, createFeedbackDto);
+    return new ApiResponse('Feedback submitted successfully', null);
   }
 
   @Get()
   @PreSignedUrl([
-    { originalKey: 'imagePaths', urlKey: 'imageUrls' },
+    { originalKey: 'image', urlKey: 'imageUrls' },
   ])
   @Serialize(ResponseFeedbackDto)
   @UseInterceptors(SerializeV2Interceptor)
@@ -58,38 +52,12 @@ export class FeedbackController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('search', new DefaultValuePipe('')) search: string,
-    @Query('by-user', new DefaultValuePipe(true), ParseBoolPipe) byUser: boolean,
     @User() user: UserEntity,
-  ) {
+  ): Promise<ApiResponse<Pagination<FeedbackApiItem>>> {
     const feedbacks = await this.feedbackService.paginate(
       { page: +page, limit: +limit, search },
-      byUser ? user.id : undefined
+      user.email
     );
-    return new ApiResponse('Feedback list fetched successfully', feedbacks);
-  }
-
-  @Get(':uuid')
-  @PreSignedUrl([
-    { originalKey: 'imagePaths', urlKey: 'imageUrls' },
-  ])
-  @Serialize(ResponseFeedbackDto)
-  @UseInterceptors(SerializeV2Interceptor)
-  async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return new ApiResponse(
-      'Feedback fetched successfully',
-      await this.feedbackService.findOne(uuid),
-    );
-  }
-  
-  @Put(':uuid')
-  @Serialize(ResponseFeedbackDto)
-  async update(
-    @Param('uuid', new ParseUUIDPipe()) uuid: string,
-    @Body() updateFeedbackDto: UpdateFeedbackDto,
-  ) {
-    return new ApiResponse(
-      'Feedback updated successfully',
-      await this.feedbackService.update(uuid, updateFeedbackDto),
-    );
+    return new ApiResponse('Feedback retrieved successfully', feedbacks);
   }
 }
