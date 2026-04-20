@@ -1,15 +1,103 @@
 import { Expose, Transform, Type } from 'class-transformer';
-import { ResponseSubCategoryDto } from '../../sub-category/dto/response-sub-category.dto';
-import { ResponseEmployeeDto } from '../../../v1/employee/dto/response-employee.dto';
-import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
-import { ResponseUserDto } from '../../user/dto/response-user.dto';
-
 export class ResponseUserSimpleDto {
   @Expose()
   name: string;
 
   @Expose()
   employeeId: string;
+}
+
+class AssetBranchDto {
+  @Expose({ name: 'idBranch' })
+  branchId: string;
+
+  @Expose()
+  name: string;
+}
+
+class AssetEmployeeDto {
+  @Expose({ name: 'idEmployee' })
+  employeeId: string;
+
+  @Expose()
+  fullName: string;
+
+  @Expose()
+  jobPosition: string;
+
+  @Expose()
+  email: string;
+
+  @Expose()
+  mobilePhone: string;
+
+  @Expose()
+  photoProfile: string;
+
+  @Expose()
+  hasHolder: boolean;
+
+  @Expose()
+  @Type(() => AssetBranchDto)
+  branch: AssetBranchDto;
+}
+
+class AssetCategoryDto {
+  @Expose({ name: 'categoryUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  hasLocation: boolean;
+
+  @Expose()
+  hasMaintenance: boolean;
+
+  @Expose()
+  hasHolder: boolean;
+}
+
+class AssetPropertyDto {
+  @Expose({ name: 'assetPropertyUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  dataType: string;
+}
+
+class AssetSubCategoryDto {
+  @Expose({ name: 'subCategoryUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  level: number;
+
+  @Expose()
+  labels: string[] | null;
+
+  @Expose()
+  @Type(() => AssetCategoryDto)
+  category: AssetCategoryDto;
+
+  @Expose()
+  @Type(() => AssetSubCategoryDto)
+  parent: AssetSubCategoryDto | null;
+
+  @Expose()
+  @Type(() => AssetSubCategoryDto)
+  children: AssetSubCategoryDto[];
+
+  @Expose()
+  @Type(() => AssetPropertyDto)
+  assetProperties: AssetPropertyDto[];
 }
 
 export class ResponsePropertyDto {
@@ -56,8 +144,8 @@ export class ResponseAssetHolderDto {
   returnedAt?: Date | null;
 
   @Expose()
-  @Type(() => ResponseEmployeeDto)
-  employee: ResponseEmployeeDto;
+  @Type(() => AssetEmployeeDto)
+  employee: AssetEmployeeDto;
 }
 
 export class ResponseAssetLastLocationDto {
@@ -71,8 +159,8 @@ export class ResponseAssetLastLocationDto {
   name: string;
 
   @Expose()
-  @Type(() => ResponseBranchDto)
-  branch: ResponseBranchDto;
+  @Type(() => AssetBranchDto)
+  branch: AssetBranchDto;
 }
 
 export class ResponseAssetStatusDto {
@@ -141,8 +229,8 @@ export class ResponseAssetDto {
   isLendable: boolean;
 
   @Expose()
-  @Type(() => ResponseSubCategoryDto)
-  subCategory: ResponseSubCategoryDto;
+  @Type(() => AssetSubCategoryDto)
+  subCategory: AssetSubCategoryDto;
 
   @Expose({ name: 'propertyValues' })
   @Type(() => ResponseAssetPropertyValueDto)

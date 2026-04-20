@@ -1,5 +1,12 @@
 import { Expose, Type } from 'class-transformer';
-import { ResponseBranchDto } from '../../../v1/branch/dto/response-branch.dto';
+
+class EmployeeBranchDto {
+  @Expose({ name: 'idBranch' })
+  branchId: string;
+
+  @Expose()
+  name: string;
+}
 
 export class ResponseEmployeeDto {
   @Expose({ name: 'idEmployee' })
@@ -24,6 +31,6 @@ export class ResponseEmployeeDto {
   hasHolder: boolean;
 
   @Expose()
-  @Type(() => ResponseBranchDto)
-  branch: ResponseBranchDto;
+  @Type(() => EmployeeBranchDto)
+  branch: EmployeeBranchDto;
 }

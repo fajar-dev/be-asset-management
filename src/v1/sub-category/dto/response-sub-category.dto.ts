@@ -1,6 +1,33 @@
 import { Expose, Type } from 'class-transformer';
-import { ResponseCategoryDto } from '../../category/dto/response-category.dto';
-import { ResponseAssetPropertyDto } from '../../asset-property/dto/response-asset-property.dto';
+import { DataType } from '../../asset-property/enum/asset-property.enum';
+
+class SubCategoryCategoryDto {
+  @Expose({ name: 'categoryUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  hasLocation: boolean;
+
+  @Expose()
+  hasMaintenance: boolean;
+
+  @Expose()
+  hasHolder: boolean;
+}
+
+class SubCategoryAssetPropertyDto {
+  @Expose({ name: 'assetPropertyUuid' })
+  id: string;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  dataType: DataType;
+}
 
 export class ResponseSubCategoryDto {
   @Expose({ name: 'subCategoryUuid' })
@@ -16,8 +43,8 @@ export class ResponseSubCategoryDto {
   labels: string[] | null;
 
   @Expose()
-  @Type(() => ResponseCategoryDto)
-  category: ResponseCategoryDto;
+  @Type(() => SubCategoryCategoryDto)
+  category: SubCategoryCategoryDto;
 
   @Expose()
   @Type(() => ResponseSubCategoryDto)
@@ -28,6 +55,6 @@ export class ResponseSubCategoryDto {
   children: ResponseSubCategoryDto[];
 
   @Expose()
-  @Type(() => ResponseAssetPropertyDto)
-  assetProperties: ResponseAssetPropertyDto[];
+  @Type(() => SubCategoryAssetPropertyDto)
+  assetProperties: SubCategoryAssetPropertyDto[];
 }
