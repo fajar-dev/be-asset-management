@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset } from '../../v1/asset/entities/asset.entity';
 import { IsNull, Repository } from 'typeorm';
@@ -103,21 +103,27 @@ export class BookService {
   }
 
   async findOne(code: string): Promise<Asset> {
-    return await this.assetRepository.createQueryBuilder('asset')
+    const asset = await this.assetRepository.createQueryBuilder('asset')
       .leftJoinAndSelect('asset.subCategory', 'subCategory')
       .leftJoinAndSelect('subCategory.category', 'category')
+      .leftJoinAndSelect('asset.holderRecords', 'holderRecords', 'holderRecords.returnedAt IS NULL AND holderRecords.deletedAt IS NULL')
+      .leftJoinAndSelect('holderRecords.employee', 'employee')
       .where('asset.code = :code', { code })
-      .andWhere('category.name = :categoryName', { categoryName: 'Buku' })
-      .andWhere((qb) => {
-        const sub = qb.subQuery()
-          .select('ah.assetId')
-          .from(AssetHolder, 'ah')
-          .where('ah.returnedAt IS NULL')
-          .andWhere('ah.deletedAt IS NULL')
-          .getQuery();
-        return `asset.id NOT IN ${sub}`;
-      })
-      .getOneOrFail();
+      .getOne();
+
+    if (!asset) {
+      throw new NotFoundException(`Buku dengan kode ${code} tidak ditemukan.`);
+    }
+
+    if (asset.subCategory?.category?.name !== 'Buku') {
+      throw new NotFoundException(`Buku dengan kode ${code} tidak ditemukan.`);
+    }
+
+    if (asset.holderRecords && asset.holderRecords.length > 0) {
+      throw new BadRequestException(`Buku sedang dipinjam.`);
+    }
+
+    return asset;
   }
 
   @LogAsset(async (args, result, ctx) => {
@@ -135,11 +141,11 @@ export class BookService {
     const lastStatus = (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
 
     if (!lastStatus || lastStatus.type !== AssetStatusType.ACTIVE) {
-      throw new BadRequestException('The asset status is inactive.');
+      throw new BadRequestException('Status aset tidak aktif.');
     }
 
     if (!asset.isLendable) {
-      throw new BadRequestException('This asset is not lendable.');
+      throw new BadRequestException('Aset ini tidak dapat dipinjam.');
     }
 
     const activeEmployeeHolder = await this.assetHolderRepository.findOne({
@@ -151,7 +157,7 @@ export class BookService {
     });
 
     if (activeEmployeeHolder) {
-      throw new BadRequestException('You already have an active loan. Please return it first.');
+      throw new BadRequestException('Anda masih memiliki pinjaman aktif. Harap kembalikan terlebih dahulu.');
     }
 
     const lastAssignment = await this.assetHolderRepository.findOne({
@@ -159,7 +165,7 @@ export class BookService {
     });
 
     if (lastAssignment) {
-      throw new BadRequestException('The book is currently on loan.');
+      throw new BadRequestException('Buku sedang dipinjam.');
     }
 
     const uploadedPaths: string[] = [];
@@ -212,7 +218,7 @@ export class BookService {
     });
 
     if (!lastAssignment) {
-      throw new BadRequestException('Asset assignment record not found or already returned.');
+      throw new BadRequestException('Catatan peminjaman aset tidak ditemukan atau sudah dikembalikan.');
     }
 
     const uploadedPaths: string[] = [];
