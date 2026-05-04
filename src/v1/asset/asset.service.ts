@@ -331,7 +331,7 @@ export class AssetService {
           SELECT al1.asset_id FROM asset_locations al1
           INNER JOIN locations l ON al1.location_id = l.id
           WHERE al1.deleted_at IS NULL AND l.location_uuid IN (:...locationIds) AND al1.created_at = (
-            SELECT MIN(al2.created_at) FROM asset_locations al2 WHERE al2.asset_id = al1.asset_id AND al2.deleted_at IS NULL
+            SELECT MAX(al2.created_at) FROM asset_locations al2 WHERE al2.asset_id = al1.asset_id AND al2.deleted_at IS NULL
           )
         )`,
         { locationIds }
@@ -424,7 +424,7 @@ export class AssetService {
             ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
             : null,
           lastLocation: hasLocation
-            ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+            ? (asset.locationRecords || []).filter(l => !l.deletedAt).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.location ?? null
             : null,
           lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
           labels: asset.labelRecords || [],
@@ -466,7 +466,7 @@ export class AssetService {
         ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
         : null,
       lastLocation: hasLocation
-        ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+        ? (asset.locationRecords || []).filter(l => !l.deletedAt).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.location ?? null
         : null,
       lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
       labels: asset.labelRecords || [],
@@ -504,7 +504,7 @@ export class AssetService {
         ? (asset.holderRecords || []).find(h => !h.returnedAt && !h.deletedAt) ?? null
         : null,
       lastLocation: hasLocation
-        ? (asset.locationRecords || []).find(l => !l.deletedAt)?.location ?? null
+        ? (asset.locationRecords || []).filter(l => !l.deletedAt).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.location ?? null
         : null,
       lastStatus: (asset.statusRecords || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null,
       labels: asset.labelRecords || [],
