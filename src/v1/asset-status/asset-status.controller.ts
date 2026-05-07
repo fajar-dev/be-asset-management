@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, ParseUUIDPipe, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { AssetStatusService } from './asset-status.service';
 import { CreateAssetStatusDto } from './dto/create-asset-status.dto';
-import { ResponseAssetStatusDto } from '../asset/dto/response-asset.dto';
+import { ResponseAssetStatusDto } from './dto/response-asset-status.dto';
 import { Serialize } from '../../common/interceptor/serialize.interceptor';
 import { User } from '../../common/decorator/auth-user.decorator';
 import { User as UserEntity } from '../user/entities/user.entity';
