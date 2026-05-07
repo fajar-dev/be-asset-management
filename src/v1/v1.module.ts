@@ -1,4 +1,4 @@
-import { Controller, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CategoryModule } from './category/category.module';
 import { UserModule } from './user/user.module';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
@@ -112,7 +112,11 @@ import { AssetStatusModule } from './asset-status/asset-status.module';
           {
             path: '/user/my-assets',
             module: UserModule
-          }
+          },
+          {
+            path: '/gemini',
+            module: GeminiModule,
+          },
         ],
       },
     ]),
