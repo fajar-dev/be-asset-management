@@ -10,6 +10,8 @@ import { AssetHolder } from '../asset-holder/entities/asset-holder.entity';
 import { AssetLocation } from '../asset-location/entities/asset-location.entity';
 import { Location } from '../location/entities/location.entity';
 import { AssetLabel } from '../asset-label/entities/asset-label.entity';
+import { AssetStatus } from '../asset-status/entities/asset-status.entity';
+import { AssetStatusType } from '../asset-status/enum/asset-status.enum';
 
 @Injectable()
 export class AssetUtilsService {
@@ -27,7 +29,9 @@ export class AssetUtilsService {
         @InjectRepository(Location)
         private readonly locationRepository: Repository<Location>,
         @InjectRepository(AssetLabel)
-        private readonly assetLabelRepository: Repository<AssetLabel>
+        private readonly assetLabelRepository: Repository<AssetLabel>,
+        @InjectRepository(AssetStatus)
+        private readonly assetStatusRepository: Repository<AssetStatus>,
     ) {}
     /**
      * Retrieves all assets that match the given filters for Excel export.
@@ -410,6 +414,14 @@ export class AssetUtilsService {
         });
 
         const savedAsset = await this.assetRepository.save(asset);
+
+        await this.assetStatusRepository.save(
+            this.assetStatusRepository.create({
+                assetId: savedAsset.id,
+                type: AssetStatusType.ACTIVE,
+                userId: userId ?? null,
+            }),
+        );
 
         if (holderEmployeeId) {
             const holder = this.assetHolderRepository.create({
