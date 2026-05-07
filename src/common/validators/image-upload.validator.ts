@@ -13,7 +13,8 @@ export const ImageUploadValidator = new ParseFilePipeBuilder()
   )
   .addValidator(
     new FileTypeValidator({
-      fileType: /(jpg|jpeg|png)$/,
+      fileType: /image\/(jpeg|png)$/,
+      skipMagicNumbersValidation: true,
     }),
   )
   .build({
