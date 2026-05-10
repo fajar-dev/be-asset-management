@@ -24,6 +24,12 @@ export class AssetStatus {
     @Column({ name: 'type', type: 'enum', enum: AssetStatusType, default: AssetStatusType.ACTIVE })
     type: AssetStatusType;
 
+    @Column({ name: 'is_transferred', type: 'boolean', default: false })
+    isTransferred: boolean;
+
+    @Column({ name:'attachment_paths', type: 'json', nullable: true})
+    attachmentPaths: string[];
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
