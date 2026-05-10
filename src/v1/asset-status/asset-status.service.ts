@@ -7,6 +7,7 @@ import { Asset } from '../asset/entities/asset.entity';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { LogAsset } from '../asset-log/decorator/log-asset.decorator';
 import { AssetLogType } from '../asset-log/enum/asset-log.enum';
+import { StorageService } from '../../storage/storage.service';
 
 @Injectable()
 export class AssetStatusService {
@@ -15,6 +16,7 @@ export class AssetStatusService {
     private readonly assetStatusRepository: Repository<AssetStatus>,
     @InjectRepository(Asset)
     private readonly assetRepository: Repository<Asset>,
+    private readonly storageService: StorageService,
   ) {}
 
   @LogAsset(async (args, result, ctx) => {
@@ -30,11 +32,23 @@ export class AssetStatusService {
       where: { assetUuid },
     });
 
+    const uploadedPaths: string[] = [];
+    if (createAssetStatusDto.attachments?.length) {
+      const results = await Promise.all(
+        createAssetStatusDto.attachments.map(file =>
+          this.storageService.uploadFile('asset-status', file),
+        ),
+      );
+      uploadedPaths.push(...results.filter((p): p is string => !!p));
+    }
+
     const status = this.assetStatusRepository.create({
       assetId: asset.id,
       userId,
       type: createAssetStatusDto.type,
       note: createAssetStatusDto.note,
+      isTransferred: createAssetStatusDto.isTransferred ?? false,
+      attachmentPaths: uploadedPaths,
     });
 
     return this.assetStatusRepository.save(status);

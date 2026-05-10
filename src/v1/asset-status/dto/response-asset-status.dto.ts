@@ -13,6 +13,15 @@ export class ResponseAssetStatusDto {
   note: string | null;
 
   @Expose()
+  isTransferred: boolean;
+
+  @Expose()
+  attachmentPaths: string[];
+
+  @Expose()
+  attachmentUrls: string[];
+
+  @Expose()
   createdAt: Date;
 
   @Expose()
