@@ -310,11 +310,11 @@ export class BookService {
         subCategory: loan.asset.subCategory?.name || null,
         loanHistory: {
           loaning: {
-            loanPeriod: loan.assignedAt,
+            loanPeriod: loan.assignedAt ? (() => { const d = new Date(loan.assignedAt); const p = (n: number) => String(n).padStart(2, '0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; })() : null,
             loanPhoto: loanPhoto
           },
           return: {
-            returnTime: loan.returnedAt,
+            returnTime: loan.returnedAt ? (() => { const d = new Date(loan.returnedAt); const p = (n: number) => String(n).padStart(2, '0'); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; })() : null,
             returnPhoto: returnPhoto,
             linkReview: loan.purpose
           }
