@@ -98,7 +98,7 @@ export class AssetController {
     @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
+    @Query('hasHolder', new ParseBoolPipe({ optional: true })) hasHolder?: boolean,
     @Query('order', new DefaultValuePipe('DESC')) order?: string,
     @Query('sort', new DefaultValuePipe('createdAt')) sort?: string,
     @Query('labels') labels?: string,
@@ -137,7 +137,7 @@ export class AssetController {
     @Query('branchId') branchId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('hasHolder', new DefaultValuePipe(false), ParseBoolPipe) hasHolder?: boolean,
+    @Query('hasHolder', new ParseBoolPipe({ optional: true })) hasHolder?: boolean,
     @Query('search', new DefaultValuePipe('')) search?: string,
     @Query('labels') labels?: string,
   ) {
