@@ -164,6 +164,16 @@ export class AssetUtilsService {
                 .getQuery();
               return 'asset.id IN ' + subQuery;
             });
+        } else if (hasHolder === false) {
+            qb.andWhere(qb2 => {
+              const subQuery = qb2.subQuery()
+                .select('ah.asset_id')
+                .from('asset_holders', 'ah')
+                .where('ah.returned_at IS NULL')
+                .andWhere('ah.deleted_at IS NULL')
+                .getQuery();
+              return 'asset.id NOT IN ' + subQuery;
+            });
         }
 
         if (locationId) {

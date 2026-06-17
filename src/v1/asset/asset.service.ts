@@ -322,6 +322,10 @@ export class AssetService {
       queryBuilder.andWhere(
         `asset.id IN (SELECT ah.asset_id FROM asset_holders ah WHERE ah.returned_at IS NULL AND ah.deleted_at IS NULL)`
       );
+    } else if (hasHolder === false) {
+      queryBuilder.andWhere(
+        `asset.id NOT IN (SELECT ah.asset_id FROM asset_holders ah WHERE ah.returned_at IS NULL AND ah.deleted_at IS NULL)`
+      );
     }
 
     if (locationId) {
